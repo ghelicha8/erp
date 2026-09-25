@@ -10,5 +10,11 @@ export default defineConfig({
   ],
   resolve: {
     dedupe: ['react', 'react-dom']
+  },
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    // اجازه دسترسی از دامنه پیش‌نمایش محیط توسعه (پروکسی e2b)
+    allowedHosts: ['.e2b.app', 'localhost', '127.0.0.1']
   }
 })
