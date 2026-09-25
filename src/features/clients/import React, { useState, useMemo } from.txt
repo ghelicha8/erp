@@ -1,0 +1,265 @@
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ArrowRight, Star, Phone, Wallet, TrendingDown, 
+  CheckCircle, Banknote, Search, X, Calendar, 
+  Layers, Filter, FileText, Activity, Users, ShoppingCart, Truck, CreditCard, Image as ImageIcon
+} from 'lucide-react';
+
+import { useClientStore } from '../../store/clientStore';
+// بعداً استورهای مالی و پروژه هم اینجا ایمپورت میشن تا دیتای عنکبوتی رو محاسبه کنن
+
+// ============================================================================
+// کامپوننت‌های پایه و مشترک
+// ============================================================================
+const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
+  <div className={`relative rounded-2xl group bg-white/30 dark:bg-slate-800/40 backdrop-blur-xl border border-white/50 dark:border-slate-600/50 overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all ${className}`}>
+    <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
+      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
+    </div>
+    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
+  </div>
+);
+
+const GlassSelect = ({ value, onChange, options, icon: Icon, placeholder }: any) => (
+  <div className="relative h-[48px] rounded-2xl bg-white/40 dark:bg-slate-800/50 backdrop-blur-xl border border-white/60 dark:border-slate-600/50 flex items-center px-4 focus-within:border-indigo-500 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all">
+    {Icon && <Icon className="w-4 h-4 text-slate-400 shrink-0 ml-2" />}
+    <select value={value} onChange={e => onChange(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer appearance-none">
+      <option value="ALL" className="text-slate-900 bg-white">{placeholder}</option>
+      {options.map((opt: any) => (
+        <option key={opt.value} value={opt.value} className="text-slate-900 bg-white">{opt.label}</option>
+      ))}
+    </select>
+    <ChevronDownIcon className="w-4 h-4 text-slate-400 absolute left-4 pointer-events-none" />
+  </div>
+);
+const ChevronDownIcon = ({className}: {className?: string}) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
+
+// ============================================================================
+// لیست تب‌های ماژولار
+// ============================================================================
+const PROFILE_TABS = [
+  { id: 'dashboard', label: 'گزارشات و نمودارها', icon: Activity, color: 'text-indigo-500' },
+  { id: 'finance', label: 'مالی و کیف پول', icon: Wallet, color: 'text-emerald-500' },
+  { id: 'projects', label: 'پروژه‌ها و قراردادها', icon: Layers, color: 'text-blue-500' },
+  { id: 'invoices', label: 'فاکتورها و صورت‌وضعیت', icon: FileText, color: 'text-purple-500' },
+  { id: 'labor', label: 'نیروی کار', icon: Users, color: 'text-orange-500' },
+  { id: 'procurement', label: 'خرید و تدارکات', icon: ShoppingCart, color: 'text-teal-500' },
+  { id: 'logistics', label: 'لجستیک و ماشین‌آلات', icon: Truck, color: 'text-amber-500' },
+  { id: 'petty_cash', label: 'تنخواه', icon: CreditCard, color: 'text-rose-500' },
+  { id: 'documents', label: 'اسناد و مدارک', icon: ImageIcon, color: 'text-fuchsia-500' },
+];
+
+// ============================================================================
+// کامپوننت اصلی پروفایل
+// ============================================================================
+export default function ClientProfile({ clientId, onBack }: { clientId: string, onBack: () => void }) {
+  const client = useClientStore(state => state.clients.find(c => c.id === clientId));
+  
+  // استیت‌های فیلتر گلوبال (روی تمام تب‌ها اعمال می‌شود)
+  const [activeTab, setActiveTab] = useState('finance'); // تب پیش‌فرض روی مالی
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [selectedProject, setSelectedProject] = useState('ALL');
+  const [pageSize, setPageSize] = useState('50');
+
+  if (!client) return null;
+
+  // 💡 این مقادیر در مراحل بعدی از استور مالی (financeStore) محاسبه خواهند شد
+  // فعلاً مقادیر تستی (Mock) می‌گذاریم تا ساختار شکل بگیرد
+  const stats = {
+    debt: 125000000,
+    confirmedPaid: 45000000,
+    totalPaid: 85000000
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }}
+      className="w-full flex flex-col gap-6 pb-24 h-full relative"
+    >
+      
+      {/* ================= 1. هدر هویتی و ۴ کارت آماری ================= */}
+      <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/60 dark:border-slate-700/60 shadow-[0_10px_40px_rgba(0,0,0,0.05)] rounded-[2.5rem] p-6 sm:p-8 z-[100] relative">
+        <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center justify-between">
+          
+          {/* اطلاعات شخص و دکمه برگشت */}
+          <div className="flex items-center gap-5 w-full lg:w-auto">
+            <button 
+              onClick={onBack}
+              className="p-3 rounded-2xl bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-700 transition-all shrink-0 group"
+            >
+              <ArrowRight className="w-6 h-6 text-slate-600 dark:text-slate-300 group-hover:-translate-x-1 transition-transform" />
+            </button>
+            
+            <div className="relative shrink-0">
+              {client.avatar ? (
+                <img src={client.avatar} alt={client.name} className="w-20 h-20 rounded-[1.5rem] object-cover shadow-lg border-2 border-white dark:border-slate-700" />
+              ) : (
+                <div className="w-20 h-20 rounded-[1.5rem] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-black shadow-lg border-2 border-white/80 dark:border-slate-700">
+                  {client.name.substring(0, 1)}
+                </div>
+              )}
+              <div className="absolute -bottom-2 -right-2 bg-white dark:bg-slate-800 rounded-xl px-2 py-0.5 shadow-md border border-slate-100 dark:border-slate-700 flex items-center gap-1 text-xs font-black text-amber-500">
+                {client.creditScore} <Star className="w-3.5 h-3.5 fill-amber-500" />
+              </div>
+            </div>
+
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md w-max mb-1 border border-indigo-100 dark:border-indigo-500/20">
+                {client.type === 'PERSON' ? 'شخص حقیقی' : 'شخص حقوقی / شرکت'}
+              </span>
+              <h2 className="text-2xl font-black text-slate-800 dark:text-white drop-shadow-sm">
+                {client.name} <span className="text-indigo-600 dark:text-indigo-400">{client.lastName}</span>
+              </h2>
+              <span className="text-sm font-bold text-slate-500 flex items-center gap-1 mt-1.5 opacity-90">
+                <Phone className="w-4 h-4" /> {client.phone}
+              </span>
+            </div>
+          </div>
+
+          {/* ۴ کارت آماری نئونی */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full lg:w-auto flex-1">
+            {/* کارت ۱: کیف پول */}
+            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-4 rounded-[1.5rem] border border-white/80 dark:border-slate-600 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"><Wallet className="w-4 h-4" /></div>
+                <span className="text-[11px] font-bold text-slate-500">موجودی کیف پول</span>
+              </div>
+              <div className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1" dir="ltr">
+                {client.walletBalance.toLocaleString('fa-IR')} <span className="text-[10px] text-slate-400">تومان</span>
+              </div>
+            </div>
+
+            {/* کارت ۲: مانده بدهی */}
+            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-4 rounded-[1.5rem] border border-white/80 dark:border-slate-600 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-rose-400 to-red-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400"><TrendingDown className="w-4 h-4" /></div>
+                <span className="text-[11px] font-bold text-slate-500">مانده بدهی</span>
+              </div>
+              <div className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 flex items-center gap-1" dir="ltr">
+                {stats.debt.toLocaleString('fa-IR')} <span className="text-[10px] text-slate-400">تومان</span>
+              </div>
+            </div>
+
+            {/* کارت ۳: پرداختی قطعی (نقد + چک وصولی) */}
+            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-4 rounded-[1.5rem] border border-white/80 dark:border-slate-600 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400"><CheckCircle className="w-4 h-4" /></div>
+                <span className="text-[11px] font-bold text-slate-500">پرداختی قطعی</span>
+              </div>
+              <div className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400 flex items-center gap-1" dir="ltr">
+                {stats.confirmedPaid.toLocaleString('fa-IR')} <span className="text-[10px] text-slate-400">تومان</span>
+              </div>
+            </div>
+
+            {/* کارت ۴: کل پرداختی (نقد + تمام چک‌ها) */}
+            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-4 rounded-[1.5rem] border border-white/80 dark:border-slate-600 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-purple-400 to-fuchsia-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400"><Banknote className="w-4 h-4" /></div>
+                <span className="text-[11px] font-bold text-slate-500">ارزش کل پرداختی‌ها</span>
+              </div>
+              <div className="text-base sm:text-lg font-black text-purple-600 dark:text-purple-400 flex items-center gap-1" dir="ltr">
+                {stats.totalPaid.toLocaleString('fa-IR')} <span className="text-[10px] text-slate-400">تومان</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= 2. نوار فیلترهای گلوبال (شیشه‌ای) ================= */}
+      <div className="flex flex-col lg:flex-row items-center gap-3 bg-white/20 dark:bg-slate-900/20 backdrop-blur-xl border border-white/40 dark:border-slate-700/40 rounded-[2rem] p-3 z-[90] relative">
+        <NeonSearchWrapper className="w-full lg:w-1/3 h-[48px]">
+          <Search className="w-4 h-4 text-slate-400 shrink-0" />
+          <input 
+            placeholder="جستجو در تمام اطلاعات شخص..." 
+            value={globalSearch} 
+            onChange={(e) => setGlobalSearch(e.target.value)} 
+            className="w-full h-full bg-transparent border-none outline-none text-sm font-bold text-slate-800 dark:text-white pl-2 pr-4 transition-colors placeholder:text-slate-400" 
+          />
+          {globalSearch && (
+            <button onClick={() => setGlobalSearch('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+              <X className="w-3.5 h-3.5 text-slate-500" />
+            </button>
+          )}
+        </NeonSearchWrapper>
+
+        {/* فیلترهای کشویی */}
+        <div className="flex w-full lg:w-2/3 gap-3 overflow-x-auto modal-scrollbar pb-1 lg:pb-0">
+          <div className="min-w-[140px] flex-1">
+            <GlassSelect value={selectedProject} onChange={setSelectedProject} options={[]} icon={Layers} placeholder="تمام پروژه‌ها" />
+          </div>
+          <div className="min-w-[130px] flex-1">
+            <div className="relative h-[48px] rounded-2xl bg-white/40 dark:bg-slate-800/50 backdrop-blur-xl border border-white/60 dark:border-slate-600/50 flex items-center px-4 focus-within:border-indigo-500 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all">
+              <Calendar className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+              <input type="text" placeholder="از تاریخ..." value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-full bg-transparent outline-none text-sm font-bold text-slate-700 dark:text-slate-200" />
+            </div>
+          </div>
+          <div className="min-w-[130px] flex-1">
+            <div className="relative h-[48px] rounded-2xl bg-white/40 dark:bg-slate-800/50 backdrop-blur-xl border border-white/60 dark:border-slate-600/50 flex items-center px-4 focus-within:border-indigo-500 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all">
+              <Calendar className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+              <input type="text" placeholder="تا تاریخ..." value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-full bg-transparent outline-none text-sm font-bold text-slate-700 dark:text-slate-200" />
+            </div>
+          </div>
+          <div className="min-w-[110px]">
+            <GlassSelect value={pageSize} onChange={setPageSize} options={[{value:'10', label:'۱۰ عدد'}, {value:'20', label:'۲۰ عدد'}, {value:'50', label:'۵۰ عدد'}]} icon={Filter} placeholder="تعداد" />
+          </div>
+        </div>
+      </div>
+
+      {/* ================= 3. تب‌های ماژولار (ناوبری) ================= */}
+      <div className="w-full bg-white/30 dark:bg-slate-900/30 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 rounded-2xl p-1.5 z-[80] relative overflow-x-auto modal-scrollbar flex items-center gap-1.5">
+        {PROFILE_TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-black transition-all shrink-0 overflow-hidden ${
+                isActive ? 'text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-800/50 hover:text-slate-800 dark:hover:text-white'
+              }`}
+            >
+              {isActive && (
+                <motion.div layoutId="activeTabIndicator" className="absolute inset-0 bg-gradient-to-r from-slate-800 to-slate-700 dark:from-indigo-600 dark:to-purple-600 z-0" />
+              )}
+              <Icon className={`w-4 h-4 relative z-10 transition-colors ${isActive ? 'text-white' : tab.color}`} />
+              <span className="relative z-10">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ================= 4. محتوای داینامیک تب‌ها (مرحله بعدی) ================= */}
+      <div className="w-full flex-1 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/60 dark:border-slate-700/60 shadow-xl rounded-[2.5rem] p-6 sm:p-8 z-[70] relative min-h-[400px]">
+        
+        {/* Placeholder - تو مرحله بعد کدهای واقعی تب مالی رو اینجا میاریم */}
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col items-center justify-center h-full text-slate-400 py-20"
+          >
+            <div className="w-24 h-24 bg-white/50 dark:bg-slate-800/50 rounded-[2rem] border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center mb-6">
+               <Layers className="w-10 h-10 text-slate-300 dark:text-slate-500" />
+            </div>
+            <h3 className="text-xl font-black text-slate-600 dark:text-slate-300">محتوای تب «{PROFILE_TABS.find(t=>t.id===activeTab)?.label}»</h3>
+            <p className="text-sm font-bold mt-2 text-center max-w-md leading-relaxed">
+              این بخش در مرحله بعدی (طبق معماری عنکبوتی و استفاده از فیلترهای گلوبال بالا) با دقت ۱۰۰٪ طراحی و متصل می‌شود.
+            </p>
+          </motion.div>
+        </AnimatePresence>
+
+      </div>
+
+    </motion.div>
+  );
+}

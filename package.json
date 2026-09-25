@@ -1,0 +1,45 @@
+{
+  "name": "peyman-erp",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "chrono-node": "^2.10.1",
+    "comlink": "^4.4.2",
+    "dom-to-image-more": "^3.10.2",
+    "exceljs": "^4.4.0",
+    "fuse.js": "^7.5.0",
+    "html-to-image": "^1.11.13",
+    "html2canvas": "^1.4.1",
+    "jalaali-js": "^2.0.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "lucide-react": "^1.27.0",
+    "moment-jalaali": "^0.10.4",
+    "num2persian": "^4.3.0",
+    "papaparse": "^5.5.4",
+    "persian-date": "^1.1.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "recharts": "^3.10.0",
+    "sonner": "^2.0.7",
+    "xlsx": "^0.18.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  }
+}

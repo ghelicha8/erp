@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   انیمیشن و استایل‌های نوار تایمر نوتیفیکیشن (Toaster)
+   ========================================================================== */
+
+@variant dark (&:where(.dark, .dark *));
+@keyframes shrink-timer {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.toast-timer-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  animation: shrink-timer 5s linear forwards;
+}
+
+.toast-success::after {
+  background-color: #10b981;
+}
+
+.toast-error::after {
+  background-color: #f43f5e;
+}
+
+/* ==========================================================================
+   تبدیل سراسری تایتل‌های ساده به سبک گرافیکی و شیشه‌ای (PageTitle Style)
+   ========================================================================== */
+.view-container > h1, 
+.modal-content > h1:first-child,
+.main-content > h1:first-child {
+  @apply flex items-center gap-4 mb-8 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/60 dark:border-slate-700/60 p-5 rounded-[2rem] shadow-sm text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-indigo-800 dark:from-white dark:to-indigo-300 drop-shadow-sm;
+}
+/* ==========================================================================
+   اسکرول‌های گرافیکی، شیشه‌ای و مدرن سراسری (Glass Scrollbars)
+   ========================================================================== */
+.modal-scrollbar::-webkit-scrollbar,
+.glass-scroll::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track,
+.glass-scroll::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb,
+.glass-scroll::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  transition: background 0.3s ease;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover,
+.glass-scroll::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.8);
+}
