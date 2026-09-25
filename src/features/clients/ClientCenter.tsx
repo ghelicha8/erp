@@ -259,8 +259,8 @@ export default function ClientCenter() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-4 w-full">
-                <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[52px]">
+              <div className="flex flex-wrap items-center justify-end gap-4 w-full">
+                <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[200px] h-[52px]">
                   <Search className="w-5 h-5 text-slate-400 shrink-0" />
                   <input 
                     placeholder="جستجو نام یا شماره..." 

@@ -207,6 +207,7 @@ export default function LaborMiscModal({ isOpen, onClose, workerId, editEntryId 
 
     const entryToSave = {
       id: editEntryId || generateId(),
+      createdAt: new Date().toISOString(),
       title: data.title,
       amount: parseAmount(data.amount),
       category: data.category,

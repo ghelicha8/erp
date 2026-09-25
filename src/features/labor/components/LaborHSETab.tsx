@@ -10,6 +10,7 @@ import {
 import moment from 'moment-jalaali';
 import { toast } from 'sonner';
 import { useLaborStore } from '../../../store/laborStore';
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
 
 export default function LaborHSETab({ workerId }: { workerId: string }) {
   const { workers, logs } = useLaborStore();
@@ -26,7 +27,7 @@ export default function LaborHSETab({ workerId }: { workerId: string }) {
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
 
   const workerIncidents = useMemo(() => {
-    return logs.filter(l => l.workerId === workerId && l.hasIncident).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sortNewestFirst(logs.filter(l => l.workerId === workerId && l.hasIncident), 'append');
   }, [logs, workerId]);
 
   // 💡 تایمر اجرایی برای حذف قطعی مدارک بعد از ۵ ثانیه

@@ -9,6 +9,7 @@ import { useFinanceStore } from '../../../../store/financeStore';
 
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../../components/ui/GlassSelect';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
 
 interface PettyCashTabProps {
   projectId: string;
@@ -144,7 +145,7 @@ export default function PettyCashTab({ projectId }: PettyCashTabProps) {
   }, [pettyCashRecords, totalSpent]);
 
   const filteredRecords = useMemo(() => {
-    return pettyCashRecords
+    return sortNewestFirst(pettyCashRecords
       .filter((r: any) => {
         if (pendingDeleteIds.includes(r.id)) return false; // عدم نمایش مواردی که در حال حذف هستند
         const matchesSearch = !searchQuery || r.title.includes(searchQuery);
@@ -155,8 +156,7 @@ export default function PettyCashTab({ projectId }: PettyCashTabProps) {
         const matchesDateTo = !dateTo || r.date <= dateTo;
         
         return matchesSearch && matchesCategory && matchesPhase && matchesDateFrom && matchesDateTo;
-      })
-      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+      }), 'append');
   }, [pettyCashRecords, searchQuery, filterCategory, filterPhase, dateFrom, dateTo, pendingDeleteIds]);
 
   const paginatedRecords = useMemo(() => {

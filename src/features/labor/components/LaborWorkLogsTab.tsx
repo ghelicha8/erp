@@ -21,6 +21,7 @@ import { FloatingUndoToast, BulkSelectionToast } from '../../../components/ui/Sh
 
 // 💡 فراخوانی مودال یکپارچه و مادر از همین پوشه
 import UniversalLaborModal from './UniversalLaborModal';
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
 
 // ==========================================
 // 💡 توابع کمکی
@@ -220,7 +221,7 @@ export default function LaborWorkLogsTab({ workerId }: LaborWorkLogsTabProps) {
     if (selectedProjectFilter !== 'ALL') result = result.filter(l => l.projectId === selectedProjectFilter);
     if (selectedClientFilter !== 'ALL') result = result.filter(l => l.clientId === selectedClientFilter);
 
-    return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sortNewestFirst(result, 'append');
   }, [workerLogs, selectedDateFilter, searchQuery, dateFrom, dateTo, selectedProjectFilter, selectedClientFilter]);
 
   const paginatedLogs = useMemo(() => filteredLogs.slice(0, displayLimit), [filteredLogs, displayLimit]);

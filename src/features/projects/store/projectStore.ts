@@ -130,7 +130,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addConsumeRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, consumptions: [...(p.consumptions || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, consumptions: [...(p.consumptions || []), { ...record, id: crypto.randomUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
         get().recalculateProjectFinancials(projectId);
       },
@@ -149,7 +149,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addPettyCashRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, pettyCash: [...(p.pettyCash || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, pettyCash: [...(p.pettyCash || []), { ...record, id: crypto.randomUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
         get().recalculateProjectFinancials(projectId);
       },
@@ -168,7 +168,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addArchiveRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, archive: [...(p.archive || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, archive: [...(p.archive || []), { ...record, id: crypto.randomUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
       },
       updateArchiveRecord: (projectId, recordId, updatedData) => {

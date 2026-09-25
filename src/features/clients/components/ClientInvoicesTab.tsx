@@ -310,7 +310,7 @@ export default function ClientInvoicesTab({ clientId }: { clientId: string }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 bg-white/30 dark:bg-slate-900/30 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-sm rounded-[2rem] px-6 py-4 z-[50] relative">
-        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]">
+        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[200px] h-[46px]">
           <Search className="w-5 h-5 text-slate-400 shrink-0" />
           <input 
             placeholder="جستجو با شماره یا نام چاپی..." 

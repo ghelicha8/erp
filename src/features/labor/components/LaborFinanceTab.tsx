@@ -16,6 +16,7 @@ import { useLaborStore } from '../../../store/laborStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import NewTransactionModal from '../../projects/components/NewTransactionModal'; 
 import type { Transaction } from '../../../store/financeStore';
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
 
 
 const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
@@ -233,7 +234,7 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
     if (dateFrom) result = result.filter(r => r.date >= dateFrom);
     if (dateTo) result = result.filter(r => r.date <= dateTo);
     
-    result.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+    result = sortNewestFirst(result, 'append');
     if (pageSize !== 'ALL') result = result.slice(0, parseInt(pageSize));
     
     return result;

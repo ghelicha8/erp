@@ -14,6 +14,7 @@ import VehicleFormModal from './VehicleFormModal';
 
 // مسیر ایمپورت‌ها 
 import VehicleFinanceTab from './VehicleFinanceTab';
+import VehicleFreightTab from './VehicleFreightTab';
 
 // 🚨 مسیر فایل مودال که گفتید حل شده رو اینجا داریم 🚨
 import NewLogisticsModal from "../../projects/components/NewLogisticsModal";
@@ -346,6 +347,10 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
           {activeTab === 'finance' ? (
             <motion.div key="tab-finance" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
               <VehicleFinanceTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'freight' ? (
+            <motion.div key="tab-freight" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleFreightTab vehicleId={vehicleId} />
             </motion.div>
           ) : (
             <motion.div key={`placeholder-${activeTab}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="flex flex-col items-center justify-center w-full h-full text-slate-400 py-20">

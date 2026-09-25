@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 // ایمپورت استورها (مسیرها را بر اساس پوشه‌بندی خود تنظیم کنید)
 import { useFinanceStore } from '../../store/financeStore';
 import type { Transaction, ChequeStatus } from '../../store/financeStore';
+import { sortNewestFirst } from '../../core/utils/sortHelpers';
 
 
 // ============================================================================
@@ -134,11 +135,11 @@ export default function FinanceCenter() {
   }, [transactions]);
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(tx => {
+    return sortNewestFirst(transactions.filter(tx => {
       if (activeTab === 'CHEQUES' && tx.type !== 'CHEQUE') return false;
       const matchSearch = tx.description?.includes(searchQuery) || tx.amount.toString().includes(searchQuery);
       return matchSearch;
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // سورت نزولی
+    }), 'append'); // سورت نزولی
   }, [transactions, activeTab, searchQuery]);
 
   return (

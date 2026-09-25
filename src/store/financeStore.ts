@@ -37,6 +37,7 @@ export interface Transaction {
   isPurchaseSettlement?: boolean; 
   amount: number;
   date: string;
+  createdAt?: string;
   description?: string;
   direction: 'IN' | 'OUT';
   type: 'CASH' | 'CHEQUE';
@@ -77,7 +78,7 @@ export const useFinanceStore = create<FinanceState>()(
       transactions: [],
       
       addTransaction: (tx) => set((state) => ({
-        transactions: [...state.transactions, { ...tx, id: crypto.randomUUID() }]
+        transactions: [...state.transactions, { ...tx, id: crypto.randomUUID(), createdAt: new Date().toISOString() }]
       })),
       
       updateTransaction: (id, data) => set((state) => ({

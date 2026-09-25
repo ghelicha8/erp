@@ -17,6 +17,7 @@ import { FloatingUndoToast, BulkSelectionToast } from '../../../../components/ui
 
 // 💡 آدرس‌دهی دقیق و اصلاح‌شده (۳ لایه برگشت به عقب)
 import UniversalLaborModal from '../../../labor/components/UniversalLaborModal';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
 
 interface LaborTabProps {
   projectId: string;
@@ -165,7 +166,7 @@ export default function LaborTab({ projectId }: LaborTabProps) {
   ];
 
   const filteredLaborRecords = useMemo(() => {
-    return projectLogs
+    return sortNewestFirst(projectLogs
       .filter((r: any) => {
         if (pendingDeleteIds.includes(r.id) || r.paymentType === 'PROJECT_MONTHLY') return false;
         const matchSearch = !searchQuery ? true : (r.workerName?.includes(searchQuery) || r.workType?.includes(searchQuery));
@@ -178,8 +179,7 @@ export default function LaborTab({ projectId }: LaborTabProps) {
           else matchPhase = r.phaseId === selectedPhaseFilter;
         }
         return matchSearch && matchFrom && matchTo && matchPhase;
-      })
-      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+      }), 'append');
   }, [projectLogs, searchQuery, dateFrom, dateTo, selectedPhaseFilter, pendingDeleteIds]);
 
   // 💡 جادوی یکپارچه‌سازی: خواندن قراردادهای هوشمند از پروفایل کارگران و ترکیب با لاگ‌های قدیمی

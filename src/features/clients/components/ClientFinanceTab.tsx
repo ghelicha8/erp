@@ -17,6 +17,7 @@ import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../components/ui/GlassSelect';
 import NewTransactionModal from '../../projects/components/NewTransactionModal';
 import type { Transaction } from '../../../store/financeStore';
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
 
 
 const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR');
@@ -193,7 +194,7 @@ export default function ClientFinanceTab({ clientId }: { clientId: string }) {
     if (dateFrom) txs = txs.filter(t => t.date >= dateFrom);
     if (dateTo) txs = txs.filter(t => t.date <= dateTo);
 
-    txs.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+    txs = sortNewestFirst(txs, 'append');
     if (pageSize !== 'ALL') txs = txs.slice(0, parseInt(pageSize));
 
     return txs;

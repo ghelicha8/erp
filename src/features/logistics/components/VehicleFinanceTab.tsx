@@ -12,6 +12,7 @@ import GlassSelect from '../../../components/ui/GlassSelect';
 import { NeonSearchWrapper } from '../../../components/ui/SharedLaborUI';
 
 import VehicleTransactionModal from './VehicleTransactionModal';
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
 
 export default function VehicleFinanceTab({ vehicleId }: { vehicleId: string }) {
   
@@ -56,7 +57,7 @@ export default function VehicleFinanceTab({ vehicleId }: { vehicleId: string }) 
     if (dateFrom) txs = txs.filter(t => t.date >= dateFrom);
     if (dateTo) txs = txs.filter(t => t.date <= dateTo);
 
-    return txs.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+    return sortNewestFirst(txs, 'append');
   }, [transactions, vehicleId, searchQuery, typeFilter, dateFrom, dateTo]);
 
   const stats = useMemo(() => {

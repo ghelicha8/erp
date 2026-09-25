@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useClientStore } from '../../../../store/clientStore';
 import { useProjectStore } from '../../../projects/store/projectStore';
 import GlassSelect from '../../../../components/ui/GlassSelect';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
 
 interface ClientDocumentsTabProps {
   clientId: string;
@@ -149,7 +150,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
   }, [archiveRecords]);
 
   const filteredRecords = useMemo(() => {
-    return archiveRecords.filter((r: any) => {
+    return sortNewestFirst(archiveRecords.filter((r: any) => {
       if (pendingDeleteIds.includes(r.id)) return false;
       const matchesSearch = !searchQuery || 
         r.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -158,7 +159,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
         (r.linkedProjectName && r.linkedProjectName.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesFolder = filterFolder === 'ALL' || r.folder === filterFolder;
       return matchesSearch && matchesFolder;
-    }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }), 'append');
   }, [archiveRecords, searchQuery, filterFolder, pendingDeleteIds]);
 
   const toggleSelectAll = () => {

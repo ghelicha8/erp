@@ -10,6 +10,7 @@ export interface ClientDocument {
   type: 'PDF' | 'IMAGE' | 'DOCUMENT';
   size: string;
   date: string;
+  createdAt?: string;
   folder: string;
   base64Data: string;
   revision: string;
@@ -117,7 +118,7 @@ export const useClientStore = create<ClientState>()(
       addClientDocument: (clientId, documentData) => set((state) => ({
         clients: state.clients.map(c => {
           if (c.id === clientId) {
-            const newDoc = { ...documentData, id: crypto.randomUUID() };
+            const newDoc = { ...documentData, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
             return { ...c, archive: [...(c.archive || []), newDoc] };
           }
           return c;

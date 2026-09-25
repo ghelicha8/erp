@@ -43,6 +43,7 @@ export interface LogisticsLog {
   provider: string; // ID راننده
   vehicleInfo: string; // ID ماشین
   date: string;
+  createdAt?: string;
   internalCost: number;
   billedCost: number;
   driverWage: number;
@@ -81,7 +82,7 @@ export const useLogisticsStore = create<LogisticsState>()(
       tools: [],
       
       addLog: (log) => set((state) => ({
-        logs: [{ ...log, id: crypto.randomUUID() }, ...state.logs]
+        logs: [{ ...log, id: crypto.randomUUID(), createdAt: new Date().toISOString() }, ...state.logs]
       })),
       updateLog: (id, data) => set((state) => ({
         logs: state.logs.map(l => l.id === id ? { ...l, ...data } : l)

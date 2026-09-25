@@ -140,6 +140,7 @@ export interface LaborLog {
   workerId: string;
   workerName: string; 
   date: string;
+  createdAt?: string;
 
   startTime?: string;
   endTime?: string;
@@ -415,6 +416,7 @@ export const useLaborStore = create<LaborState>()(
           ...log, 
           recordType: log.recordType || 'WAGE',
           id: crypto.randomUUID(), 
+          createdAt: new Date().toISOString(),
           ...financials 
         };
         
@@ -430,6 +432,7 @@ export const useLaborStore = create<LaborState>()(
             ...log,
             recordType: log.recordType || 'WAGE',
             id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
             ...financials
           };
         });

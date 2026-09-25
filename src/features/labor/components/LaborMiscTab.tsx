@@ -14,6 +14,7 @@ import { useClientStore } from '../../../store/clientStore';
 
 import LaborMiscModal from './LaborMiscModal';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker'; // 💡 ایمپورت کامپوننت تقویم
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
 
 // ==========================================
 // 💡 استایل اسکرول شیشه‌ای
@@ -266,8 +267,7 @@ export default function LaborMiscTab({ workerId }: { workerId: string }) {
       result = result.filter(e => e.date <= dateTo);
     }
 
-    result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return result;
+    return sortNewestFirst(result, 'prepend');
   }, [activeMiscExpenses, searchTerm, categoryFilter, clientFilter, projectFilter, dateFrom, dateTo]);
 
   const displayedExpenses = displayLimit === 'ALL' ? filteredExpenses : filteredExpenses.slice(0, displayLimit as number);

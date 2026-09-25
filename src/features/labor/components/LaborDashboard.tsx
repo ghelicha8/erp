@@ -472,8 +472,8 @@ export default function LaborDashboard() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-4 w-full">
-                <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[52px]">
+              <div className="flex flex-wrap items-center justify-end gap-4 w-full">
+                <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[200px] h-[52px]">
                   <Search className="w-5 h-5 text-slate-400 shrink-0" />
                   <input placeholder="جستجو در نام، موبایل یا تخصص..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 transition-colors placeholder:text-slate-500" />
                   {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-4 h-4 text-slate-500 dark:text-slate-400" /></button>}

@@ -15,6 +15,7 @@ import { jsPDF } from 'jspdf';
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import { useProjectStore } from '../../store/projectStore';
 import { useFinanceStore } from '../../../../store/financeStore';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
 
 interface NotesTabProps {
   projectId: string;
@@ -190,12 +191,9 @@ export default function NotesTab({ projectId }: NotesTabProps) {
     });
 
     if (isMergedView) {
-      filtered = filtered.sort((a, b) => a.tag.localeCompare(b.tag));
+      filtered = sortNewestFirst(filtered, 'prepend').sort((a, b) => a.tag.localeCompare(b.tag));
     } else {
-      filtered = filtered.sort((a, b) => {
-        if (a.isPinned === b.isPinned) return new Date(b.date).getTime() - new Date(a.date).getTime();
-        return a.isPinned ? -1 : 1;
-      });
+      filtered = sortNewestFirst(filtered, 'prepend').sort((a, b) => (a.isPinned === b.isPinned) ? 0 : a.isPinned ? -1 : 1);
     }
     return filtered;
   }, [notes, searchQuery, selectedTagFilter, isMergedView, pendingDeleteIds]);
@@ -326,7 +324,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
       updatedNotes = notes.map((n: any) => n.id === noteToEdit.id ? { ...n, title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment } : n);
       toast.success('سند با موفقیت ویرایش شد.');
     } else {
-      updatedNotes = [{ id: crypto.randomUUID(), title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment, isPinned: false }, ...notes];
+      updatedNotes = [{ id: crypto.randomUUID(), createdAt: new Date().toISOString(), title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment, isPinned: false }, ...notes];
       toast.success('سند جدید در سیستم ثبت شد.');
     }
     updateProject(projectId, { notes: updatedNotes });

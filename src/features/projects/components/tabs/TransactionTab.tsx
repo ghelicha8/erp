@@ -15,6 +15,7 @@ import { useBulkSelection } from '../../../../hooks/useBulkSelection';
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../../components/ui/GlassSelect';
 import type { Transaction } from '../../../../store/financeStore';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
 
 // 💡 استفاده از چک‌باکس گرافیکی و انیمیشنی برای یکپارچگی با کل سیستم (تم بنفش/نیلی برای مالی)
 const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
@@ -133,7 +134,7 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
   }, [archiveUndo, deleteChequeHistory]);
 
   const filteredTransactions = useMemo(() => {
-    return allTransactions
+    return sortNewestFirst(allTransactions
       .filter(t => {
         if (t.referenceId !== projectId) return false;
         if (pendingDeleteIds.includes(t.id)) return false;
@@ -142,8 +143,7 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
         const matchTo = dateTo ? t.date <= dateTo : true;
         const matchPhase = selectedPhaseFilter === 'ALL' ? true : t.phaseId === selectedPhaseFilter;
         return matchSearch && matchFrom && matchTo && matchPhase;
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+      }), 'append');
   }, [allTransactions, projectId, searchQuery, dateFrom, dateTo, selectedPhaseFilter, pendingDeleteIds]);
 
   const paginatedTransactions = useMemo(() => {

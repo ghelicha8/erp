@@ -8,6 +8,7 @@ import {
 import { toast } from 'sonner';
 
 import GlassDatePicker from '../../components/ui/GlassDatePicker';
+import { sortNewestFirst } from '../../core/utils/sortHelpers';
 
 // ============================================================================
 // کامپوننت‌های پایه و استاندارد (الزام UI سیستم)
@@ -290,12 +291,12 @@ export default function AlertsCenter() {
   };
 
   const filteredAlerts = useMemo(() => {
-    return alerts.filter(a => {
+    return sortNewestFirst(alerts.filter(a => {
       if (pendingActionIds.includes(a.id)) return false;
       const matchTab = activeTab === 'ACTIVE' ? !a.isRead : a.isRead;
       const matchSearch = a.title.includes(searchQuery) || a.description.includes(searchQuery);
       return matchTab && matchSearch;
-    });
+    }), 'prepend');
   }, [alerts, activeTab, searchQuery, pendingActionIds]);
 
   const activeCount = alerts.filter(a => !a.isRead && !pendingActionIds.includes(a.id)).length;

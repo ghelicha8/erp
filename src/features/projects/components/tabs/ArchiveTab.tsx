@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { useProjectStore } from '../../store/projectStore';
 import GlassSelect from '../../../../components/ui/GlassSelect';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
 
 interface ArchiveTabProps {
   projectId: string;
@@ -101,7 +102,7 @@ export default function ArchiveTab({ projectId }: ArchiveTabProps) {
   }, [archiveRecords]);
 
   const filteredRecords = useMemo(() => {
-    return archiveRecords.filter((r: any) => {
+    return sortNewestFirst(archiveRecords.filter((r: any) => {
       if (pendingDeleteIds.includes(r.id)) return false;
       const matchesSearch = !searchQuery || 
         r.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -109,7 +110,7 @@ export default function ArchiveTab({ projectId }: ArchiveTabProps) {
         (r.note && r.note.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesFolder = filterFolder === 'ALL' || r.folder === filterFolder;
       return matchesSearch && matchesFolder;
-    }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }), 'append');
   }, [archiveRecords, searchQuery, filterFolder, pendingDeleteIds]);
 
   const toggleSelectAll = () => {
