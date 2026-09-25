@@ -30,7 +30,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   // 💡 جستجوی فوق هوشمند در هر دو دیتابیس
   const clientName = useMemo(() => {
     const client = clients.find(c => c.id === project.clientId) || crmClients.find(c => c.id === project.clientId);
-    return client ? `${client.name} ${client.lastName || ''}`.trim() : project.clientId;
+    return client ? `${client.name} ${'lastName' in client ? (client.lastName || '') : ''}`.trim() : project.clientId;
   }, [clients, crmClients, project.clientId]);
 
   const statusConfig = getStatusConfig(project.status);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { useProjectStore } from '../store/projectStore';
 import { useInventoryStore } from '../../../store/inventoryStore';
 import { usePurchaseStore } from '../../../store/purchaseStore';
+import { useLogisticsStore } from '../../../store/logisticsStore';
+import { useLaborStore } from '../../../store/laborStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 
 const toEnglishDigits = (str: string) => {
@@ -141,8 +143,9 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
   
   const project = useMemo(() => allProjects.find(p => p.id === localProjectId), [allProjects, localProjectId]);
 
-  const addLogisticsRecord = useProjectStore(state => state.addLogisticsRecord);
-  const addLaborRecord = useProjectStore(state => state.addLaborRecord); 
+  const addLogisticsLog = useLogisticsStore(state => state.addLog);
+  const addLaborLog = useLaborStore(state => state.addLog);
+  const allWorkers = useLaborStore(state => state.workers); 
   const updateProject = useProjectStore(state => state.updateProject);
 
   const inventoryMaterials = useInventoryStore(state => state.materials) || [];
@@ -379,7 +382,8 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
         const vehicleList = transportSource === 'INTERNAL' ? mockInternalVehicles : mockExternalVehicles;
         const finalVehicleName = vehicleList.find(v=>v.value===vehicleName)?.label || vehicleName;
 
-        addLogisticsRecord(localProjectId, { 
+        addLogisticsLog({
+          projectId: localProjectId, 
           type: 'TRANSPORT', 
           source: transportSource, 
           phaseId: phaseId === 'GENERAL' ? undefined : phaseId,
@@ -393,15 +397,27 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
         });
         
         if (transportSource === 'INTERNAL' && driverWage > 0) {
-          addLaborRecord(localProjectId, { 
-            workerName: finalDriverName, 
-            workType: 'راننده لجستیک', 
-            date: date, 
-            wage: driverWage, 
-            presence: 'FULL_DAY', 
-            description: `حمل بار خرید از ${finalVendor}`,
-            isPaid: isDriverWagePaid 
-          } as any);
+          const matchedDriver = allWorkers.find(w => `${w.name} ${w.lastName || ''}`.trim() === finalDriverName || w.name === driverName);
+          if (matchedDriver) {
+            addLaborLog({
+              workerId: matchedDriver.id,
+              workerName: `${matchedDriver.name} ${matchedDriver.lastName || ''}`.trim(),
+              date,
+              projectId: localProjectId || 'FREE',
+              attendance: 'PRESENT',
+              paymentType: 'DAILY',
+              workerUnit: 'SERVICE',
+              workerQuantity: 1,
+              workerRate: driverWage,
+              billedUnit: 'SERVICE',
+              billedQuantity: 1,
+              billedRate: 0,
+              workType: 'راننده لجستیک',
+              appliedStandardWorkHours: 8,
+              advancePayment: isDriverWagePaid ? driverWage : 0,
+              description: `حمل بار خرید از ${finalVendor}`,
+            });
+          }
         }
       }
 

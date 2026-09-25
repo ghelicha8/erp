@@ -409,7 +409,7 @@ export default function LaborDashboard() {
     const activeWorkersInContext = new Set();
     
     const filteredLogs = (logs || []).filter(log => {
-        if (yearFilter !== 'ALL' && !(log.date || log.startDate || '').startsWith(yearFilter)) return false;
+        if (yearFilter !== 'ALL' && !(log.date || '').startsWith(yearFilter)) return false;
         
         if (projectFilter !== 'ALL') {
             if (projectFilter === 'FREE' && log.projectId && log.projectId !== 'FREE') return false;
@@ -426,10 +426,10 @@ export default function LaborDashboard() {
     });
 
     filteredLogs.forEach(log => {
-        totalLaborCost += (safeNum(log.internalCost) || safeNum(log.totalWage) || safeNum(log.totalPrice) || 0);
+        totalLaborCost += (safeNum(log.internalCost) || 0);
         totalArbitrageProfit += safeNum(log.hiddenProfit);
         
-        const logDate = log.date || log.startDate || '';
+        const logDate = log.date || '';
         if (logDate === today && log.attendance === 'PRESENT') {
             presentTodayCount++;
         }

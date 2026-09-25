@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Wallet, ArrowUpRight, ArrowDownRight, CreditCard, 
-  Search, Plus, Receipt, Landmark, FileText, CheckCircle, 
-  AlertTriangle, X, RefreshCw, Banknote, Clock // 💡 کلمه Clock به آخر این لیست اضافه شد
+  Search, Plus, Receipt, Landmark, CheckCircle, 
+  AlertTriangle, X, Banknote, Clock // 💡 کلمه Clock به آخر این لیست اضافه شد
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import { useFinanceStore } from '../../store/financeStore';
 import type { Transaction, ChequeStatus } from '../../store/financeStore';
 
-import { useClientStore } from '../../store/clientStore';
 
 // ============================================================================
 // کامپوننت پایه جستجوی نئونی (یکپارچه با کل سیستم)
@@ -38,6 +37,7 @@ const ChequeCard = ({ tx, onAction }: { tx: Transaction, onAction: (id: string, 
   const statusConfig = {
     PENDING: { color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'در انتظار وصول' },
     CASHED: { color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'پاس شده' },
+    CASH_SETTLED: { color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'تسویه نقدی' },
     BOUNCED: { color: 'text-rose-500', bg: 'bg-rose-500/10', label: 'برگشت خورده' },
     RETURNED: { color: 'text-slate-500', bg: 'bg-slate-500/10', label: 'عودت داده شده' },
     EXCHANGED: { color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'تبدیل به نقد' },

@@ -18,6 +18,7 @@ export interface ClientDocument {
   // 💡 فیلدهای جدید برای گره زدن سند به پروژه خاص
   linkedProjectId?: string;
   linkedProjectName?: string;
+  isFromProjectTab?: boolean;
 }
 
 export interface Client {
@@ -40,7 +41,7 @@ export interface Client {
 
 interface ClientState {
   clients: Client[];
-  addClient: (client: Omit<Client, 'id' | 'isPinned' | 'creditScore' | 'archive'>) => void;
+  addClient: (client: Omit<Client, 'id' | 'isPinned' | 'creditScore' | 'archive'>) => string;
   updateClient: (id: string, data: Partial<Client>) => void;
   deleteClient: (id: string) => void;
   
@@ -72,15 +73,19 @@ export const useClientStore = create<ClientState>()(
         }
       ],
       
-      addClient: (clientData) => set((state) => ({
-        clients: [{
-          ...clientData, 
-          id: crypto.randomUUID(),
-          isPinned: false,
-          creditScore: 5, 
-          archive: []
-        }, ...state.clients]
-      })),
+      addClient: (clientData) => {
+        const id = crypto.randomUUID();
+        set((state) => ({
+          clients: [{
+            ...clientData,
+            id,
+            isPinned: false,
+            creditScore: 5,
+            archive: []
+          }, ...state.clients]
+        }));
+        return id;
+      },
       
       updateClient: (id, data) => set((state) => ({
         clients: state.clients.map(c => c.id === id ? { ...c, ...data } : c)

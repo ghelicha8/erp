@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CalendarDays, Activity, Eye, EyeOff, LayoutGrid, List as ListIcon, 
-  ChevronRight, ChevronLeft, Search, CheckCircle2, ShieldAlert,
+  ChevronRight, ChevronLeft, Search, ShieldAlert,
   Copy, Trash2, Building2, UserCircle, CheckCircle, X, Construction, 
-  TrendingUp, Banknote, ChevronDown, Check, Layers, Clock,
+  ChevronDown, Check, Clock,
   Edit, Plus // 💡 اضافه شدن آیکون‌های جا افتاده برای رفع ارور
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -188,7 +188,7 @@ export default function LaborWorkLogsTab({ workerId }: LaborWorkLogsTabProps) {
 
   // استیت‌های تقویم و انتخاب
   const [currentMonth, setCurrentMonth] = useState(moment());
-  const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
+  const [selectedDateFilter] = useState<string | null>(null);
   
   // 💡 استیت جدید برای باز شدن دراور (منوی کناری) در تقویم
   const [selectedDate, setSelectedDate] = useState<string | null>(null);

@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileDown, X, Layers, Wallet, Users, ShoppingCart, Truck, 
-  Filter, Merge, FileSpreadsheet, FileText, Activity, Bookmark, 
+  Filter, FileSpreadsheet, FileText, Activity, 
   ListChecks, Check, Loader2, Settings2, PenTool, Edit3, Palette, ArrowUpDown, Calculator, EyeOff, Wand2, ArrowLeftRight, FolderGit2, ChevronDown, CalendarClock, Coffee
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -364,19 +364,19 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
 
     // 💡 تفکیک هوشمند برای بخش نیروی کار (LABOR CONTEXT)
     if (derivedContext === 'LABOR') {
-      const laborLogsForWorker = allLaborLogs.filter(l => String(l.workerId) === String(workerId) && isMatch(l.projectId) && isDateMatch(l.date||l.startDate) && isPhaseMatch(l.phaseId||'GENERAL'));
+      const laborLogsForWorker = allLaborLogs.filter(l => String(l.workerId) === String(workerId) && isMatch(l.projectId) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL'));
 
       if (selectedModules.includes('LABOR_WORK_LOGS')) {
         laborLogsForWorker.filter(l => l.paymentType !== 'MONTHLY' && l.paymentType !== 'PROJECT_MONTHLY' && l.recordType !== 'PERK').forEach(l => {
           const { amount, profit } = calcCosts(l);
-          raw.push({ _id: `lab_w_${l.id}`, _index: globalIndex++, _module: 'LABOR_WORK_LOGS', module: 'تاریخچه کارکرد', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: l.workType || 'کارکرد روزانه', phase: getPhaseName(l.phaseId), amount, profit, receiptDetails: l.description || '-' });
+          raw.push({ _id: `lab_w_${l.id}`, _index: globalIndex++, _module: 'LABOR_WORK_LOGS', module: 'تاریخچه کارکرد', projectName: getProjectName(l.projectId), date: l.date, title: l.workType || 'کارکرد روزانه', phase: getPhaseName(l.phaseId), amount, profit, receiptDetails: l.description || '-' });
         });
       }
 
       if (selectedModules.includes('LABOR_MONTHLY')) {
         laborLogsForWorker.filter(l => l.paymentType === 'MONTHLY' || l.paymentType === 'PROJECT_MONTHLY').forEach(l => {
           const { amount, profit } = calcCosts(l);
-          raw.push({ _id: `lab_m_${l.id}`, _index: globalIndex++, _module: 'LABOR_MONTHLY', module: 'قرارداد ماهانه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: l.workType || 'حقوق ماهانه', phase: getPhaseName(l.phaseId), amount, profit, receiptDetails: l.description || '-' });
+          raw.push({ _id: `lab_m_${l.id}`, _index: globalIndex++, _module: 'LABOR_MONTHLY', module: 'قرارداد ماهانه', projectName: getProjectName(l.projectId), date: l.date, title: l.workType || 'حقوق ماهانه', phase: getPhaseName(l.phaseId), amount, profit, receiptDetails: l.description || '-' });
         });
       }
 
@@ -384,18 +384,18 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
         laborLogsForWorker.forEach(l => {
           if (l.recordType === 'PERK') {
             const { amount, profit } = calcCosts(l);
-            raw.push({ _id: `lab_misc_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: l.perkTitle || l.workType || 'هزینه متفرقه', amount, profit, receiptDetails: l.description || '-' });
+            raw.push({ _id: `lab_misc_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date, title: l.perkTitle || l.workType || 'هزینه متفرقه', amount, profit, receiptDetails: l.description || '-' });
           }
-          if (l.bonus && l.bonus > 0) raw.push({ _id: `lab_bns_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: 'پاداش / اضافه‌کار', amount: l.bonus, profit: 0, receiptDetails: '-' });
-          if (l.foodDeduction && l.foodDeduction > 0) raw.push({ _id: `lab_food_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: 'کسر غذا', amount: -l.foodDeduction, profit: 0, receiptDetails: '-' });
-          if (l.penaltyDeduction && l.penaltyDeduction > 0) raw.push({ _id: `lab_pen_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: 'جریمه / کسر کار', amount: -l.penaltyDeduction, profit: 0, receiptDetails: '-' });
+          if (l.bonus && l.bonus > 0) raw.push({ _id: `lab_bns_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date, title: 'پاداش / اضافه‌کار', amount: l.bonus, profit: 0, receiptDetails: '-' });
+          if (l.foodDeduction && l.foodDeduction > 0) raw.push({ _id: `lab_food_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date, title: 'کسر غذا', amount: -l.foodDeduction, profit: 0, receiptDetails: '-' });
+          if (l.penaltyDeduction && l.penaltyDeduction > 0) raw.push({ _id: `lab_pen_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date, title: 'جریمه / کسر کار', amount: -l.penaltyDeduction, profit: 0, receiptDetails: '-' });
         });
       }
 
       if (selectedModules.includes('LABOR_FINANCE')) {
         laborLogsForWorker.forEach(l => {
           if (l.advancePayment && l.advancePayment > 0) {
-            raw.push({ _id: `lab_adv_${l.id}`, _index: globalIndex++, _module: 'LABOR_FINANCE', module: 'تاریخچه پرداختی‌ها', date: l.date||l.startDate, title: 'مساعده ثبت شده در کارکرد', amount: l.advancePayment, receiptDetails: l.description || '-' });
+            raw.push({ _id: `lab_adv_${l.id}`, _index: globalIndex++, _module: 'LABOR_FINANCE', module: 'تاریخچه پرداختی‌ها', date: l.date, title: 'مساعده ثبت شده در کارکرد', amount: l.advancePayment, receiptDetails: l.description || '-' });
           }
         });
         
@@ -424,7 +424,7 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
       }
 
       if (selectedModules.includes('LABOR')) {
-        allLaborLogs.filter(l => isMatch(l.projectId) && isDateMatch(l.date||l.startDate) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
+        allLaborLogs.filter(l => isMatch(l.projectId) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
           const { amount, profit } = calcCosts(l);
           const advance = safeNum(l.advancePayment);
           const { paid, detailsStr } = getLinkedPayments(l.id);
@@ -434,12 +434,12 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
           if (settlementFilter === 'UNPAID' && remain <= 0) return;
           const finalDetails = advance > 0 ? `مساعده/پرداختی: ${advance.toLocaleString('fa-IR')} ${detailsStr !== '-' ? ' | ' + detailsStr : ''}` : detailsStr;
           
-          raw.push({ _id: `lab_${l.id}`, _index: globalIndex++, _module: 'LABOR', module: 'نیروی کار', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: l.workType || 'آزاد', vendor: l.workerName || '-', phase: getPhaseName(l.phaseId), amount, paidAmount: totalPaid, remain, paymentDetails: finalDetails, profit, dueDate: '-', receiptDetails: l.description || '-' });
+          raw.push({ _id: `lab_${l.id}`, _index: globalIndex++, _module: 'LABOR', module: 'نیروی کار', projectName: getProjectName(l.projectId), date: l.date, title: l.workType || 'آزاد', vendor: l.workerName || '-', phase: getPhaseName(l.phaseId), amount, paidAmount: totalPaid, remain, paymentDetails: finalDetails, profit, dueDate: '-', receiptDetails: l.description || '-' });
         });
       }
 
       if (selectedModules.includes('LOGISTICS')) {
-        allLogs.filter(l => isMatch(l.projectId) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
+        allLogs.filter(l => isMatch(l.projectId || undefined) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
           const { amount, profit } = calcCosts(l);
           const { paid, detailsStr } = getLinkedPayments(l.id);
           const remain = amount - paid;

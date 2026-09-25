@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { 
   Package, AlertTriangle, PlusCircle, MinusCircle, 
-  X, CheckCircle, ChevronDown,
-  History, BarChart2, Calendar, Edit, Trash2, Search,
+  X, CheckCircle,
+  History, BarChart2, Trash2, Search,
   PieChart, Activity, RefreshCcw, ShieldAlert
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -54,7 +54,7 @@ const parseAmount = (val?: string) => Number((val || '0').replace(/,/g, ''));
 
 const AnimatedNumber = ({ value, format = true }: { value: number, format?: boolean }) => {
   const count = useMotionValue(0);
-  const displayValue = useTransform(count, (latest) => format ? Math.round(latest).toLocaleString() : Math.round(latest));
+  const displayValue = useTransform(count, (latest): string => format ? Math.round(latest).toLocaleString() : String(Math.round(latest)));
   useEffect(() => { const controls = animate(0, value, { duration: 1.5, ease: "easeOut", onUpdate: (v) => count.set(v) }); return controls.stop; }, [value, count]);
   return <motion.span>{displayValue}</motion.span>;
 };
@@ -512,7 +512,7 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
                       <YAxis stroke="#94a3b8" fontSize={10} />
                       <RechartsTooltip content={<CustomChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.1)' }} />
                       <Bar dataKey="current" name="موجودی فعلی" fill="url(#barGradient)" radius={[6, 6, 0, 0]} barSize={40} animationDuration={1500}>
-                        {barChartData.map((entry, index) => (<Cell key={`cell-${index}`} />))}
+                        {barChartData.map((_entry, index) => (<Cell key={`cell-${index}`} />))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -631,7 +631,7 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
                         { value: 'TRANSFER', label: 'انتقال و قرض به پروژه‌ای دیگر' }
                       ]} 
                       value={consumeReason} 
-                      onChange={setConsumeReason} 
+                      onChange={(v) => setConsumeReason(v as 'USE' | 'WASTE' | 'TRANSFER')} 
                     />
                   </div>
 

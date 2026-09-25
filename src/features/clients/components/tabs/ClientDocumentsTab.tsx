@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Archive, FileUp, FileText, Image as ImageIcon, Trash2, Download, Search, X, FolderOpen, 
-  FileCheck, File, Eye, Info, List, Grid, Edit3, Tag, MessageSquare, ExternalLink, 
+  FileCheck, File, Eye, List, Grid, Edit3, Tag, MessageSquare, ExternalLink, 
   CheckSquare, CheckCircle, User, ShieldCheck, Mail, Briefcase, Link as LinkIcon
 } from 'lucide-react';
 import { toast } from 'sonner';

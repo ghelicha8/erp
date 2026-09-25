@@ -16,13 +16,13 @@ import ClientFormModal from '../../clients/components/ClientFormModal';
 const projectSchema = z.object({
   name: z.string().min(3, 'نام پروژه باید حداقل ۳ حرف باشد'),
   clientId: z.string().min(1, 'انتخاب کارفرما از لیست الزامی است'),
-  contractType: z.enum(['METRI', 'CONTRAT', 'PERCENTAGE', 'CUSTOM'] as const, {
-    required_error: 'لطفاً نوع قرارداد را مشخص کنید',
+  contractType: z.enum(['METRI', 'CONTRAT', 'PERCENTAGE', 'COST_ONLY', 'CUSTOM'] as const, {
+    error: 'لطفاً نوع قرارداد را مشخص کنید',
   }),
   startDate: z.string().min(1, 'انتخاب تاریخ شروع الزامی است'),
   profilePhoto: z.string().optional(),
-  photos: z.array(z.string()).max(10, 'حداکثر می‌توانید ۱۰ عکس آپلود کنید').default([]),
-  phasePhotos: z.array(z.string()).max(5, 'حداکثر ۵ تصویر قرارداد').default([]),
+  photos: z.array(z.string()).max(10, 'حداکثر می‌توانید ۱۰ عکس آپلود کنید').optional(),
+  phasePhotos: z.array(z.string()).max(5, 'حداکثر ۵ تصویر قرارداد').optional(),
   area: z.string().optional(),
   unitPrice: z.string().optional(),
   fixedPrice: z.string().optional(),
@@ -35,6 +35,7 @@ const contractTypeOptions = [
   { value: 'CONTRAT', label: 'مقطوع (کنترات)' },
   { value: 'METRI', label: 'متری' },
   { value: 'PERCENTAGE', label: 'درصدی (پیمان مدیریت)' },
+  { value: 'COST_ONLY', label: 'فقط هزینه' },
   { value: 'CUSTOM', label: 'سفارشی / متفرقه' },
 ];
 

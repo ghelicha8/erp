@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { QrCode, Camera, Send, Globe, Phone, MapPin, Percent } from 'lucide-react';
 import type { Invoice, InvoiceItem } from '../../store/invoiceStore';
 

@@ -78,7 +78,7 @@ const GlassInputWrapper = ({ children, className = '', icon: Icon }: any) => (
   </div>
 );
 
-const PhaseCard = ({ phase, index, isLast, onUpdate, projectTotalExpenditure }: { phase: any, index: number, isLast: boolean, onUpdate: (id: string, data: any) => void, projectTotalExpenditure: number }) => {
+const PhaseCard = ({ phase, isLast, onUpdate, projectTotalExpenditure }: { phase: any, isLast: boolean, onUpdate: (id: string, data: any) => void, projectTotalExpenditure: number }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false); 
   
@@ -480,9 +480,8 @@ export default function PhaseManagementTab({ projectId }: PhaseManagementTabProp
             {phases.map((phase: any, index: number) => (
               <PhaseCard 
                 key={phase.id} 
-                phase={phase} 
-                index={index} 
-                isLast={index === phases.length - 1} 
+                phase={phase}
+                isLast={index === phases.length - 1}
                 onUpdate={handleUpdatePhase} 
                 projectTotalExpenditure={projectCostSum} 
               />

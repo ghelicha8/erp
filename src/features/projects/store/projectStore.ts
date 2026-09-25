@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Project, ContractType } from '../types/project.types';
-import type { LaborRecord } from '../types/core.types';
+import type { ContractType } from '../types/project.types';
 
 export const rialToToman = (rialAmount: number | undefined): number => {
   if (!rialAmount) return 0;

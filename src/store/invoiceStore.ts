@@ -75,8 +75,11 @@ export interface Invoice {
   attachments: string[];      
   editHistory: EditHistory[]; 
   
-  shareToken: string;         
-  notes?: string;             
+  shareToken: string;
+  notes?: string;
+  isOfficial?: boolean;
+  terms?: string;
+  signatures?: { client?: string; approver?: string; preparer?: string; }; 
 }
 
 interface InvoiceState {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,7 +31,7 @@ const materialUsageSchema = z.object({
   quantity: z.string().min(1, 'وارد کردن مقدار/تعداد الزامی است'),
   declaredPrice: z.string().min(1, 'تعیین قیمت اعلامی به کارفرما الزامی است'),
   date: z.string().min(1, 'تاریخ مصرف الزامی است'),
-  deductFromInventory: z.boolean().default(true),
+  deductFromInventory: z.boolean().optional(),
   description: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.sourceType === 'INVENTORY' && !data.materialId) {
@@ -126,10 +126,8 @@ export default function NewMaterialUsageModal({ projectId, isOpen, onClose }: Ne
 
   const onSubmit = (data: MaterialFormValues) => {
     const rawQuantity = Number(data.quantity.replace(/,/g, ''));
-    const rawDeclaredPrice = Number(data.declaredPrice.replace(/,/g, ''));
-    const rawCostPrice = data.sourceType === 'MARKET' ? Number(data.costPrice?.replace(/,/g, '') || 0) : (selectedInventoryItem?.costPrice || 0);
 
-    if (rawQuantity <= 0) return toast.error('مقدار مصرفی نامعتبر است');
+    if (rawQuantity <= 0) { toast.error('مقدار مصرفی نامعتبر است'); return; }
 
     try {
       // ۱. اگر منبع انبار است و تیک کسر خورده، از انبار مرکزی کم کن
@@ -143,18 +141,6 @@ export default function NewMaterialUsageModal({ projectId, isOpen, onClose }: Ne
 
       // ۲. ساخت رکورد مصرف جهت ارسال به استور پروژه (کد زیر به صورت مفهومی پیاده شده است.
       // شما می‌توانید این آبجکت را در آرایه‌ی materialRecords پروژه خودتان Push کنید)
-      const usageRecord = {
-        id: crypto.randomUUID(),
-        projectId,
-        materialName: data.sourceType === 'INVENTORY' ? selectedInventoryItem?.name : data.materialName,
-        unit: data.sourceType === 'INVENTORY' ? selectedInventoryItem?.unit : data.unit,
-        quantity: rawQuantity,
-        costPrice: rawCostPrice,             // قیمت مخفی پیمانکار
-        declaredPrice: rawDeclaredPrice,     // قیمت صورت وضعیت کارفرما
-        date: data.date,
-        description: data.description,
-        source: data.sourceType
-      };
 
       // TODO: اینجا تابع addMaterialRecord را به projectStore اضافه کرده و فراخوانی کنید
       // useProjectStore.getState().addMaterialRecord(projectId, usageRecord);

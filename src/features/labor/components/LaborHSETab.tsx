@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ShieldAlert, HeartPulse, FileBadge, PhoneCall, AlertTriangle, 
+  HeartPulse, FileBadge, PhoneCall, AlertTriangle, 
   Syringe, FileWarning, Fingerprint, CalendarClock, Activity, 
   FileText, ShieldCheck, Globe, X, ExternalLink,
   Download, Trash2, CheckSquare, Check, ImageOff
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { useLaborStore } from '../../../store/laborStore';
 
 export default function LaborHSETab({ workerId }: { workerId: string }) {
-  const { workers, logs, updateWorker } = useLaborStore();
+  const { workers, logs } = useLaborStore();
   const worker = workers.find(w => w.id === workerId);
 
   const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
@@ -109,7 +109,7 @@ export default function LaborHSETab({ workerId }: { workerId: string }) {
   // مدارکی که در لیست انتظار حذف نیستند
   const displayedDocs = (worker.documents || []).map((doc, idx) => ({
     ...doc,
-    safeId: doc.id ? String(doc.id) : doc.url ? String(doc.url) : `legacy-doc-${idx}`
+    safeId: doc.id ? String(doc.id) : doc.fileUrl ? String(doc.fileUrl) : `legacy-doc-${idx}`
   })).filter(doc => !pendingDeleteIds.includes(doc.safeId));
 
   const toggleDocSelection = (safeId: string) => {
@@ -305,10 +305,10 @@ export default function LaborHSETab({ workerId }: { workerId: string }) {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {displayedDocs.map((doc) => {
                         const safeId = doc.safeId; 
-                        const docUrl = doc.url || '';
+                        const docUrl = doc.fileUrl || '';
                         const isLegacyBlob = docUrl.startsWith('blob:');
-                        const isImage = doc.type?.startsWith('image/') || docUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-                        const isVideo = doc.type?.startsWith('video/') || docUrl.match(/\.(mp4|mkv|webm)$/i);
+                        const isImage = doc.mimeType?.startsWith('image/') || docUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+                        const isVideo = doc.mimeType?.startsWith('video/') || docUrl.match(/\.(mp4|mkv|webm)$/i);
                         const isSelected = selectedForDelete.includes(safeId);
 
                         return (

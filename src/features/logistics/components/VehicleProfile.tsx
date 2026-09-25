@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, Truck, Wallet, Wrench, ShieldAlert, FileText, Settings, 
@@ -18,8 +18,8 @@ import VehicleFinanceTab from './VehicleFinanceTab';
 // 🚨 مسیر فایل مودال که گفتید حل شده رو اینجا داریم 🚨
 import NewLogisticsModal from "../../projects/components/NewLogisticsModal";
 
-const ExportBuilder = ({ vehicleId, context, onClose }: any) => null;
-const ImportBuilder = ({ vehicleId, context, onClose }: any) => null;
+const ExportBuilder = (_props: any) => null;
+const ImportBuilder = (_props: any) => null;
 
 const VEHICLE_TABS = [
   { id: 'finance', label: 'تاریخچه مالی', icon: Wallet, color: 'text-emerald-500', activeClass: 'text-emerald-600 dark:text-emerald-400' },

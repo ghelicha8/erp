@@ -6,8 +6,8 @@ import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, CheckCircle, Banknote, FileSignature, UploadCloud, Trash2, Image as ImageIcon,
-  ClipboardPaste, AlignLeft, PieChart, Wand2, RefreshCcw, DollarSign, AlertTriangle, 
-  ArrowDownLeft, Layers, Wallet, Plus, SplitSquareHorizontal, Link, FileText
+  ClipboardPaste, AlignLeft, PieChart, 
+  ArrowDownLeft, Wallet, Plus, SplitSquareHorizontal, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,7 +28,7 @@ const transactionSchema = z.object({
   date: z.string().min(1, 'تاریخ الزامی است'),
   type: z.enum(['CASH', 'CHEQUE', 'COMBINED'] as const),
   description: z.string().optional(),
-  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').default([]),
+  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').optional(),
   textReceipt: z.string().optional(),
   issuer: z.string().optional(),
   sayyadId: z.string().optional(),
@@ -141,7 +141,7 @@ export default function ClientTransactionModal({ clientId, isOpen, onClose, edit
   });
 
   const txType = watch('type');
-  const txDir = watch('direction') || 'IN'; 
+
   const txAttachments = watch('attachments') || [];
   const selectedStatus = watch('status'); 
 
@@ -207,49 +207,6 @@ export default function ClientTransactionModal({ clientId, isOpen, onClose, edit
     }));
   };
 
-  const handleSplit5050 = () => {
-    const total = parseAmount(watch('totalAmount'));
-    const half = Math.floor(total / 2);
-    setValue('cashAmount', formatAmount(half.toString()), { shouldValidate: true });
-    setValue('amount', formatAmount((total - half).toString()), { shouldValidate: true }); 
-  };
-
-  const handleRemainderToCheque = () => {
-    const total = parseAmount(watch('totalAmount'));
-    const cash = parseAmount(watch('cashAmount'));
-    setValue('amount', formatAmount(Math.max(total - cash, 0).toString()), { shouldValidate: true });
-  };
-
-  const handleRemainderToCash = () => {
-    const total = parseAmount(watch('totalAmount'));
-    const cheque = parseAmount(watch('amount'));
-    setValue('cashAmount', formatAmount(Math.max(total - cheque, 0).toString()), { shouldValidate: true });
-  };
-
-  const handlePrepareExchange = () => {
-    if (!currentTransaction || !currentTransaction.chequeDetails) return;
-    const snapshotData = {
-      bank: watch('bank'), serialNumber: watch('serialNumber'), issuer: watch('issuer'), sayyadId: watch('sayyadId'),
-      series: watch('series'), dueDate: watch('dueDate'), issueDate: watch('issueDate'), amount: parseAmount(watch('amount')),
-      attachments: txAttachments, textReceipt: watch('textReceipt'), description: watch('description')
-    };
-    const newRecord: ChequeHistory = {
-        id: crypto.randomUUID(), date: new Date().toLocaleDateString('fa-IR'), previousStatus: currentTransaction.chequeDetails.status, 
-        newStatus: 'EXCHANGED', description: 'بایگانی جهت تعویض با چک جایگزین', attachments: [], snapshot: snapshotData
-    };
-    setPendingHistory([newRecord]);
-    setSpecialMode('EXCHANGING');
-    setValue('serialNumber', ''); setValue('bank', ''); setValue('dueDate', ''); setValue('issueDate', ''); setValue('sayyadId', ''); setValue('series', ''); setValue('attachments', []); setValue('status', 'PENDING');
-    setValue('description', `چک جایگزین بابت تعویض چک قبلی (سریال ${currentTransaction.chequeDetails.serialNumber})`);
-  };
-
-  const handlePrepareCashing = () => {
-    if (!currentTransaction) return;
-    setSpecialMode('CASHING');
-    setValue('type', 'CASH');
-    setValue('description', `دریافت نقدی به جای چک (سریال ${currentTransaction.chequeDetails?.serialNumber || 'نامشخص'})`);
-  };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -273,7 +230,7 @@ export default function ClientTransactionModal({ clientId, isOpen, onClose, edit
 
     try {
       if (currentTransaction && specialMode === 'CASHING') {
-        exchangeChequeForCash(currentTransaction.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد', data.attachments);
+        exchangeChequeForCash(currentTransaction.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد', data.attachments || []);
         toast.success('تراکنش نقدی ثبت شد و چک قبلی در بایگانی قرار گرفت.');
         onClose(); return;
       }
@@ -284,7 +241,7 @@ export default function ClientTransactionModal({ clientId, isOpen, onClose, edit
         allocations: allocations, 
         date: data.date, 
         direction: 'IN', 
-        attachments: data.attachments, 
+        attachments: data.attachments || [], 
         textReceipt: data.textReceipt 
       };
 
@@ -293,7 +250,7 @@ export default function ClientTransactionModal({ clientId, isOpen, onClose, edit
 
       if (currentTransaction) {
         if (currentTransaction.type === 'CHEQUE' && data.status !== currentTransaction.chequeDetails?.status) {
-          changeChequeStatus(currentTransaction.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments);
+          changeChequeStatus(currentTransaction.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments || []);
         }
         updateTransaction(currentTransaction.id, { ...basePayload, amount: rawAmount, type: data.type, description: data.description, ...(data.type === 'CHEQUE' && { chequeDetails: chequeData }) });
         toast.success(specialMode === 'EXCHANGING' ? 'چک جایگزین ثبت شد.' : 'تراکنش به‌روزرسانی شد');
@@ -520,7 +477,7 @@ export default function ClientTransactionModal({ clientId, isOpen, onClose, edit
               <div className="space-y-2 relative z-50">
                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">تاریخ تراکنش</label>
                 <Controller control={control} name="date" render={({ field: { onChange, value } }) => (
-                  <GlassDatePicker value={value} onChange={onChange} hasError={!!errors.date} />
+                  <GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.date} />
                 )} />
               </div>
 
@@ -550,7 +507,7 @@ export default function ClientTransactionModal({ clientId, isOpen, onClose, edit
                         <div className="space-y-2"><label className={`text-xs font-bold text-slate-600 dark:text-slate-400`}>شماره سریال چک *</label><input {...register('serialNumber')} className={`w-full bg-white/60 dark:bg-black/20 border rounded-2xl px-4 py-3.5 outline-none font-mono text-left ${errors.serialNumber ? 'border-rose-500' : 'border-slate-200 dark:border-slate-700'}`} dir="ltr" /></div>
                         <div className="space-y-2"><label className="text-xs font-bold text-slate-600 dark:text-slate-400">سری چک</label><input {...register('series')} className="w-full bg-white/60 dark:bg-black/20 border border-white/40 rounded-2xl px-4 py-3.5 outline-none font-mono text-left" dir="ltr" /></div>
                         <div className="space-y-2 relative z-[90]"><label className={`text-xs font-bold text-slate-600 dark:text-slate-400`}>بانک *</label><Controller control={control} name="bank" render={({ field }) => (<GlassSelect options={bankOptions} value={field.value || ''} onChange={field.onChange} placeholder="انتخاب بانک" hasError={!!errors.bank} />)} /></div>
-                        <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-4 z-[80]"><label className={`text-xs font-bold text-slate-600 dark:text-slate-400`}>تاریخ سررسید (وصول) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
+                        <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-4 z-[80]"><label className={`text-xs font-bold text-slate-600 dark:text-slate-400`}>تاریخ سررسید (وصول) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
                       </div>
                     </div>
                   </motion.div>

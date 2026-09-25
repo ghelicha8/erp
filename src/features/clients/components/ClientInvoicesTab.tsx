@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Search, X, Edit, Trash2, CheckCircle, Eye, Check,
-  FileDown, Copy, Link as LinkIcon, MessageSquareWarning, 
-  CalendarDays, AlertTriangle, ShieldAlert, Image as ImageIcon
+  FileDown, Copy, MessageSquareWarning,
+  CalendarDays, AlertTriangle, ShieldAlert, Image as ImageIcon, ChevronRight, ChevronLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,12 +12,11 @@ import { toast } from 'sonner';
 import domtoimage from 'dom-to-image-more';
 import jsPDF from 'jspdf';
 
-import { useInvoiceStore, type InvoiceStatus } from '../../../store/invoiceStore';
+import { useInvoiceStore } from '../../../store/invoiceStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { useClientStore } from '../../../store/clientStore';
 
-import InvoiceBuilder from '../../projects/components/InvoiceBuilder';
 import GlassSelect from '../../../components/ui/GlassSelect';
 // 💡 ایمپورت قالب اصلی فاکتور
 import A4InvoiceTemplate from '../../../components/ui/A4InvoiceTemplate';
@@ -39,21 +38,6 @@ const NeonSearchWrapper = ({ children, className = '' }: { children: React.React
   </div>
 );
 
-const InvoiceStatusBadge = ({ status }: { status: InvoiceStatus }) => {
-  const config = {
-    DRAFT: { label: 'پیش‌نویس', color: 'text-slate-500', bg: 'bg-slate-500/15', border: 'border-slate-500/40' },
-    PROFORMA: { label: 'پیش‌فاکتور', color: 'text-amber-500', bg: 'bg-amber-500/15', border: 'border-amber-500/40' },
-    SUBMITTED: { label: 'ارسال شده', color: 'text-blue-500', bg: 'bg-blue-500/15', border: 'border-blue-500/40' },
-    OVERDUE: { label: 'سررسید گذشته', color: 'text-rose-500', bg: 'bg-rose-500/15', border: 'border-rose-500/40' },
-    PAID: { label: 'تسویه کامل', color: 'text-emerald-500', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40' },
-  };
-  const current = config[status] || config.DRAFT;
-  return (
-    <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-xl border ${current.border} ${current.bg} ${current.color} text-xs font-bold shadow-sm whitespace-nowrap`}>
-      {current.label}
-    </span>
-  );
-};
 
 // 🚀 موتور تولید و دانلود مستقیم PDF با کیفیت بالا (مخصوص EXE و Android بدون کرش)
 const exportDirectPDF = async (elementId: string, fileName: string) => {
@@ -396,7 +380,7 @@ export default function ClientInvoicesTab({ clientId }: { clientId: string }) {
                     
                     <td className="p-5 align-top">
                       <div className="flex flex-col gap-1.5">
-                        <span className="font-bold text-sm text-slate-700 dark:text-slate-300">{getProjectName(inv.projectId)}</span>
+                        <span className="font-bold text-sm text-slate-700 dark:text-slate-300">{getProjectName(inv.projectId || '')}</span>
                         {isPrintedNameDifferent && (
                           <span className="text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md border border-amber-200 dark:border-amber-500/20 w-max inline-flex items-center gap-1">
                             <Eye className="w-3 h-3"/> چاپ بنام: {inv.clientName}
@@ -609,7 +593,7 @@ export default function ClientInvoicesTab({ clientId }: { clientId: string }) {
                      <tr key={idx} className="border-b border-slate-200 text-sm even:bg-slate-50">
                         <td className="p-3 border border-slate-200 font-bold">{inv.date}</td>
                         <td className="p-3 border border-slate-200 font-mono font-bold text-indigo-600">{inv.invoiceNumber}</td>
-                        <td className="p-3 border border-slate-200 text-sm">{getProjectName(inv.projectId)}</td>
+                        <td className="p-3 border border-slate-200 text-sm">{getProjectName(inv.projectId || '')}</td>
                         <td className="p-3 border border-slate-200 text-center font-mono font-black text-slate-700">{formatNum(tTotal)}</td>
                         <td className="p-3 border border-slate-200 text-center font-mono font-black text-emerald-600">{formatNum(tPaid)}</td>
                         <td className="p-3 border border-slate-200 text-center font-mono font-black text-rose-600">{formatNum(tDebt)}</td>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, Truck, Hash, Save, Camera, Palette, Calendar 
+  X, Save, Camera,  
 } from 'lucide-react';
 import { toast } from 'sonner';
 

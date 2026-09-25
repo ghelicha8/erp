@@ -24,6 +24,7 @@ export interface ParsedRow {
   
   calculatedDiscount: number; 
   calculatedTax: number; 
+  calculatedMarkup: number; 
   calculatedManagementFee: number; 
   calculatedGoodPerformance: number; 
   calculatedInsurance: number; 
@@ -104,7 +105,7 @@ const PHASE_DICTIONARY: Record<string, ProjectPhaseGuess> = {
   'سقف کاذب': 'FINISHING', 'رابیتس': 'FINISHING', 'نورمخفی': 'FINISHING', 'هالوژن': 'FINISHING', 
   'لوستر': 'FINISHING', 'پریز': 'FINISHING', 'کابل': 'FINISHING', 'چسب': 'FINISHING', 'دستگیره': 'FINISHING',
   'سفیدکاری': 'FINISHING', 'نقاشی': 'FINISHING', 'کابینت': 'FINISHING', 'نصبیات': 'FINISHING', 'پکیج': 'FINISHING',
-  'قرنیز': 'FINISHING', 'آینه کاری': 'FINISHING', 'موکت': 'FINISHING', 'یراق آلات': 'FINISHING', 'آیفون تصویری': 'FINISHING'
+  'آینه کاری': 'FINISHING', 'موکت': 'FINISHING', 'یراق آلات': 'FINISHING', 'آیفون تصویری': 'FINISHING'
 };
 
 const normalizePersianText = (text: string) => {
@@ -146,12 +147,10 @@ const parsePercentage = (val: any): number => {
 };
 
 export class ImportEngine {
-  private masterData: SystemMasterData;
   private fuseEngines: { workers: Fuse<any>; vehicles: Fuse<any>; inventory: Fuse<any>; };
   private standardTaxRates: number[];
 
   constructor(masterData: SystemMasterData) {
-    this.masterData = masterData;
     this.standardTaxRates = masterData.activeTaxRates || [0.09, 0.10]; 
     
     this.fuseEngines = {
@@ -236,6 +235,7 @@ export class ImportEngine {
         percentageRaw: String(rawPercentage),
         calculatedDiscount: 0,
         calculatedTax: 0,
+        calculatedMarkup: 0,
         calculatedManagementFee: 0,
         calculatedGoodPerformance: 0,
         calculatedInsurance: 0,

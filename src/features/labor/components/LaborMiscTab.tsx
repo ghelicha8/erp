@@ -5,10 +5,9 @@ import {
   Package, Coffee, Shirt, Bus, Banknote, ShieldAlert, 
   Trash2, CalendarClock, Building2, UserCircle, Calculator, Info,
   Search, ChevronDown, Check, Edit2, SlidersHorizontal, ListFilter,
-  CheckSquare, CheckCircle, X
+  CheckCircle, X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import moment from 'moment-jalaali';
 import { useLaborStore } from '../../../store/laborStore';
 import { useProjectStore } from '../../projects/store/projectStore'; 
 import { useClientStore } from '../../../store/clientStore';
@@ -150,7 +149,7 @@ const PortalSelect = ({ value, onChange, options, placeholder, icon: Icon, searc
 };
 
 export default function LaborMiscTab({ workerId }: { workerId: string }) {
-  const { workers, updateWorker } = useLaborStore();
+  const { workers } = useLaborStore();
   const { projects } = useProjectStore();
   const { clients } = useClientStore();
   
@@ -409,7 +408,7 @@ export default function LaborMiscTab({ workerId }: { workerId: string }) {
 
                     return (
                       <motion.div key={exp.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} 
-                        onClick={() => toggleDocSelection(exp.id)}
+                        onClick={() => toggleSelection(exp.id)}
                         className={`group flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${isSelected ? 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] bg-pink-50 dark:bg-pink-900/20' : !isCalculated ? 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/50 hover:border-slate-300' : isDeducted ? 'bg-rose-50/50 dark:bg-rose-900/10 border-rose-100 dark:border-rose-800/30 hover:border-rose-300 dark:hover:border-rose-700' : 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30 hover:border-emerald-300 dark:hover:border-emerald-700'}`}>
                         
                         <div className="flex items-start lg:items-center gap-4">

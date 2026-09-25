@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, BarChart3, Target, ShoppingBag, BellRing, 
   CalendarDays, FileSignature, Receipt, Briefcase, Users, 
   HardHat, Truck, Package, Factory, Settings,
-  Menu, X, Sun, Moon, Calendar as CalendarIcon, UserCircle, Activity, ChevronLeft
+  Menu, Sun, Moon, Calendar as CalendarIcon, UserCircle, Activity, ChevronLeft
 } from 'lucide-react';
 
 // ============================================================================

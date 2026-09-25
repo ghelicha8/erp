@@ -35,6 +35,7 @@ export interface ToolProfile {
 export interface LogisticsLog {
   id: string;
   projectId: string | null; 
+  clientId?: string;
   phaseId?: string;
   type: 'TRANSPORT' | 'EQUIPMENT';
   source: 'INTERNAL' | 'EXTERNAL';
@@ -46,6 +47,7 @@ export interface LogisticsLog {
   billedCost: number;
   driverWage: number;
   // 💡 این دو فیلد اضافه شدند تا تعداد و قیمت واحد ذخیره بشه
+  unit?: string;
   qty?: number; 
   unitPrice?: number; 
 }

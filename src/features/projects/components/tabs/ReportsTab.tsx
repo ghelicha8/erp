@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useFinanceStore } from '../../../../store/financeStore';
 import { 
@@ -6,7 +6,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts';
 import { 
-  Activity, Filter, Gem, Wallet, AlertTriangle, Briefcase, Calculator
+  Activity, Filter, Gem, Wallet, AlertTriangle, Briefcase, 
 } from 'lucide-react';
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../../components/ui/GlassSelect';
@@ -326,7 +326,7 @@ export default function ReportsTab({ project }: { project: any }) {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={expenseBreakdown} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
-                    {expenseBreakdown.map((entry, index) => (
+                    {expenseBreakdown.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>

@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Transition } from 'framer-motion';
 import { Search, LayoutGrid, List, Activity, CheckCircle, PauseCircle, Briefcase, Plus, ChevronDown } from 'lucide-react';
 
 import { useProjectStore, rialToToman } from '../store/projectStore';
@@ -81,7 +82,7 @@ export default function ProjectList() {
     return filtered.slice(0, displayLimit);
   }, [projects, searchQuery, displayLimit, clients]);
 
-  const layoutSpring = { type: 'spring', stiffness: 300, damping: 25 };
+  const layoutSpring: Transition = { type: 'spring', stiffness: 300, damping: 25 };
 
   return (
     <AnimatePresence mode="wait">

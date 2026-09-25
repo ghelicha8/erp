@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
-import { Upload, Database, GitMerge, FileWarning, CheckCircle, Trash2, ArrowRightLeft } from 'lucide-react';
-import { SmartMergeEngine, ImportStrategy } from './SmartMergeEngine';
+import { Upload, Database, FileWarning, Trash2, ArrowRightLeft } from 'lucide-react';
+import { SmartMergeEngine, type ImportStrategy } from './SmartMergeEngine';
 
 // فیلدهای استانداردی که دیتابیس ما نیاز دارد (بسته به ماژولی که کاربر انتخاب کرده)
 const DB_SCHEMAS: Record<string, { key: string, label: string, required?: boolean }[]> = {

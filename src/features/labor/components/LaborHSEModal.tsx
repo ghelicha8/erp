@@ -293,7 +293,7 @@ export default function LaborHSEModal({ isOpen, onClose, workerId }: LaborHSEMod
                    <label className="text-[11px] font-black text-slate-600 dark:text-slate-400 flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5 text-amber-500"/> تاریخ انقضای پروانه کار / ویزا</label>
                    <div className="h-[48px] relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-inner group focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all [&_input]:bg-transparent [&_input]:border-none [&_input]:shadow-none text-slate-800 dark:text-slate-200 [&_input]:text-slate-800 dark:[&_input]:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500">
                      <Controller control={control} name="workPermitExpiry" render={({ field: { onChange, value } }) => (
-                       <GlassDatePicker value={value} onChange={onChange} />
+                       <GlassDatePicker value={value || ''} onChange={onChange} />
                      )} />
                    </div>
                  </div>

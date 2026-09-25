@@ -56,7 +56,8 @@ export interface LoanInstallment {
 export interface DocumentRecord {
   id: string;
   title: string;
-  fileUrl?: string; 
+  fileUrl?: string;
+  mimeType?: string;
   documentType: 'ID_CARD' | 'CONTRACT' | 'PROMISSORY_NOTE' | 'CERTIFICATE' | 'OTHER';
   uploadDate: string;
 }

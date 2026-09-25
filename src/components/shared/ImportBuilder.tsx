@@ -3,14 +3,15 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileUp, X, CheckCircle, Database, LayoutTemplate, AlertTriangle, 
-  CheckSquare, Banknote, HardHat, ShoppingCart, Truck, Sparkles, Shuffle, Ban, Eye,
-  Activity, ShieldAlert, Check, FileWarning, Search, Info, UserSquare, FolderGit2,
-  BrainCircuit, CreditCard, Phone, Fingerprint, Receipt, Building2, Layers, ChevronDown, Download, FileSpreadsheet, CalendarClock, Coffee
+  CheckSquare, Banknote, HardHat, ShoppingCart, Truck, Shuffle,
+  ShieldAlert, Check, FileWarning, UserSquare,
+  BrainCircuit, CreditCard, Phone, Fingerprint, Receipt, Building2, Layers, ChevronDown, Download, FileSpreadsheet, CalendarClock, Coffee, Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import * as ExcelJS from 'exceljs';
 import Papa from 'papaparse';
+import moment from 'moment-jalaali';
 
 import { useProjectStore } from '../../features/projects/store/projectStore';
 import { useFinanceStore } from '../../store/financeStore';
@@ -86,9 +87,8 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
   const allPurchases = usePurchaseStore(state => state.purchases) || [];
   const allLogistics = useLogisticsStore(state => state.logs) || [];
 
-  const addLaborRecord = useProjectStore(state => state.addLaborRecord);
-  const addPurchaseRecord = useProjectStore(state => state.addPurchaseRecord);
-  const addLogisticsRecord = useProjectStore(state => state.addLogisticsRecord);
+  const addPurchase = usePurchaseStore(state => state.addPurchase);
+  const addLogisticsLog = useLogisticsStore(state => state.addLog);
   const addTransaction = useFinanceStore(state => state.addTransaction);
 
   const derivedContext = context || (projectId ? 'PROJECT' : clientId ? 'CLIENT' : workerId ? 'LABOR' : 'GLOBAL');
@@ -358,13 +358,13 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
         if (r._targetModule === 'FINANCE') {
           isDuplicate = allTransactions.some(t => t.date === r.date && safeNum(t.amount) === r.amount);
         } else if (r._targetModule === 'LABOR') {
-          isDuplicate = allLabor.some(l => (l.date === r.date || l.startDate === r.date) && (safeNum(l.wage) === r.amount || safeNum(l.amount) === r.amount));
+          isDuplicate = allLabor.some(l => l.date === r.date && (safeNum(l.internalCost) === r.amount || safeNum(l.billedCost) === r.amount));
         } else if (r._targetModule === 'LABOR_MONTHLY' || r._targetModule === 'LABOR_MISC') {
-          isDuplicate = allLabor.some(l => (l.date === r.date || l.startDate === r.date) && (safeNum(l.amount) === r.amount || safeNum(l.bonus) === r.amount || safeNum(l.foodDeduction) === r.amount));
+          isDuplicate = allLabor.some(l => l.date === r.date && (safeNum(l.internalCost) === r.amount || safeNum(l.bonus) === r.amount || safeNum(l.foodDeduction) === r.amount));
         } else if (r._targetModule === 'PURCHASES') {
-          isDuplicate = allPurchases.some(p => p.date === r.date && (safeNum(p.totalCost) === r.amount || safeNum(p.amount) === r.amount || safeNum(p.billedCost) === r.amount));
+          isDuplicate = allPurchases.some(p => p.date === r.date && (safeNum(p.internalCost) === r.amount || safeNum(p.billedCost) === r.amount));
         } else if (r._targetModule === 'LOGISTICS') {
-          isDuplicate = allLogistics.some(l => l.date === r.date && (safeNum(l.totalCost) === r.amount || safeNum(l.amount) === r.amount || safeNum(l.fee) === r.amount || safeNum(l.billedCost) === r.amount));
+          isDuplicate = allLogistics.some(l => l.date === r.date && (safeNum(l.internalCost) === r.amount || safeNum(l.billedCost) === r.amount));
         }
 
         const newActions = [...r.needsUserAction];
@@ -602,24 +602,47 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
           } as any);
         } 
         else if (row._targetModule === 'LABOR') {
-          addLaborRecord(pId || 'FREE', {
-            ...baseData, workerName: row.title || 'نیروی ایمپورتی', workType: row.typeDetail || 'آزاد', 
-            wage: row.amount, billedCost: billedAmt, description: richNotes
-          } as any);
+          const matchedWorker = allWorkers.find(w => `${w.name} ${w.lastName || ''}`.trim() === String(row.title || '').trim());
+          if (!matchedWorker) { errorsCount++; continue; }
+          laborLogsToInsert.push({
+            recordType: 'WAGE',
+            workerId: matchedWorker.id,
+            workerName: `${matchedWorker.name} ${matchedWorker.lastName || ''}`,
+            projectId: pId || 'FREE',
+            date: baseData.date,
+            phaseId: row.selectedPhaseId === 'GENERAL' ? undefined : row.selectedPhaseId,
+            workType: row.typeDetail || 'کارکرد ایمپورتی',
+            attendance: 'PRESENT',
+            paymentType: 'DAILY',
+            workerUnit: row.unit || 'DAY',
+            workerQuantity: row.qty || 1,
+            workerRate: (row.unitPrice && row.unitPrice > 0) ? row.unitPrice : (row.amount / (row.qty || 1)),
+            billedUnit: row.unit || 'DAY',
+            billedQuantity: row.qty || 1,
+            billedRate: billedAmt > 0 ? (billedAmt / (row.qty || 1)) : 0,
+            description: richNotes,
+            advancePayment: 0,
+          });
         }
         else if (row._targetModule === 'PURCHASES') {
-          addPurchaseRecord(pId || 'FREE', {
-            ...baseData, title: row.typeDetail || 'کالای وارد شده', vendor: row.title || 'فروشنده عمومی',
-            billedCost: billedAmt, internalCost: row.qty * row.unitPrice, source: 'MARKET', 
+          addPurchase({
+            projectId: pId || 'FREE',
+            phaseId: row.selectedPhaseId === 'GENERAL' ? undefined : row.selectedPhaseId,
+            title: row.typeDetail || 'کالای وارد شده', vendor: row.title || 'فروشنده عمومی',
+            date: baseData.date,
+            billedCost: billedAmt, internalCost: row.qty * row.unitPrice,
             quantity: row.qty, unit: row.unit || 'مورد', notes: richNotes
-          } as any);
+          });
         }
         else if (row._targetModule === 'LOGISTICS') {
-          addLogisticsRecord(pId || 'FREE', {
-            ...baseData, type: 'TRANSPORT', source: 'EXTERNAL', provider: row.title || 'راننده عمومی',
-            vehicleInfo: '-', title: row.typeDetail || 'مسیر وارد شده', 
-            billedCost: billedAmt, internalCost: row.amount, description: richNotes
-          } as any);
+          addLogisticsLog({
+            projectId: pId || 'FREE',
+            phaseId: row.selectedPhaseId === 'GENERAL' ? undefined : row.selectedPhaseId,
+            type: 'TRANSPORT', source: 'EXTERNAL', provider: row.title || 'راننده عمومی',
+            vehicleInfo: '-', title: row.typeDetail || 'مسیر وارد شده',
+            date: baseData.date,
+            billedCost: billedAmt, internalCost: row.amount, driverWage: 0
+          });
         }
         successCount++;
       }

@@ -40,10 +40,6 @@ interface LogisticsTabProps {
   projectId: string;
 }
 
-const formatNumber = (num: number | string | undefined) => {
-  if (num === undefined || num === null || num === '') return '0';
-  return num.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-};
 
 const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
   <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>

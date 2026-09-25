@@ -25,7 +25,7 @@ const UNIT_TYPES: Record<string, string> = {
 };
 
 export default function LaborPriceBookTab({ workerId }: { workerId: string }) {
-  const { workers, specialtyTags, updateWorker } = useLaborStore();
+  const { workers, specialtyTags } = useLaborStore();
   const worker = workers.find(w => w.id === workerId);
   
   const [editId, setEditId] = useState<string | null>(null);
@@ -278,7 +278,7 @@ export default function LaborPriceBookTab({ workerId }: { workerId: string }) {
       {/* 💡 پورتال مرکزی تایمر حذف (Undo Toast) */}
       <FloatingUndoToast 
         undoItems={undoItems} 
-        onCancel={(undoId, items) => {
+        onCancel={(undoId: string, items: string[]) => {
           setPendingDeleteIds(prev => prev.filter(id => !items.includes(id)));
           setUndoItems(prev => prev.filter(u => u.id !== undoId));
           toast.success('عملیات لغو شد');

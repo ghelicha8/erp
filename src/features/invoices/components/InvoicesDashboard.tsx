@@ -5,7 +5,7 @@ import {
   Search, Copy, Trash2, Edit, FileText, 
   Image as ImageIcon, CheckCircle, AlertTriangle, 
   ChevronRight, ChevronLeft, X, Check,
-  FileDown, MessageSquareWarning, CalendarDays, ShieldAlert, Printer, Eye, Plus
+  FileDown, CalendarDays, ShieldAlert, Eye, Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import domtoimage from 'dom-to-image-more';
 import jsPDF from 'jspdf';
 
-import { useInvoiceStore, type InvoiceStatus } from '../../../store/invoiceStore';
+import { useInvoiceStore } from '../../../store/invoiceStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
 import { useSettingsStore } from '../../../store/settingsStore';
@@ -41,21 +41,6 @@ const NeonSearchWrapper = ({ children, className = '' }: { children: React.React
   </div>
 );
 
-const InvoiceStatusBadge = ({ status }: { status: InvoiceStatus }) => {
-  const config = {
-    DRAFT: { label: 'پیش‌نویس', color: 'text-slate-500', bg: 'bg-slate-500/15', border: 'border-slate-500/40' },
-    PROFORMA: { label: 'پیش‌فاکتور', color: 'text-amber-500', bg: 'bg-amber-500/15', border: 'border-amber-500/40' },
-    SUBMITTED: { label: 'ارسال شده', color: 'text-blue-500', bg: 'bg-blue-500/15', border: 'border-blue-500/40' },
-    OVERDUE: { label: 'سررسید گذشته', color: 'text-rose-500', bg: 'bg-rose-500/15', border: 'border-rose-500/40' },
-    PAID: { label: 'تسویه کامل', color: 'text-emerald-500', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40' },
-  };
-  const current = config[status] || config.DRAFT;
-  return (
-    <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-xl border ${current.border} ${current.bg} ${current.color} text-xs font-bold shadow-sm whitespace-nowrap`}>
-      {current.label}
-    </span>
-  );
-};
 
 // 🚀 موتور تولید و دانلود مستقیم PDF
 const exportDirectPDF = async (elementId: string, fileName: string) => {

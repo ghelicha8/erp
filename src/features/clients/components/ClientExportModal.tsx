@@ -1,12 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo } from 'react';
+import { motion} from 'framer-motion';
 import { 
   FileDown, X, Layers, Wallet, Users, ShoppingCart, Truck, 
   Settings, Filter, CheckSquare, Square,
   Merge, FileSpreadsheet, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
-import moment from 'moment-jalaali';
 
 // 💡 مسیر استورهای گلوبال (۳ تا نقطه برای خروج از features/clients/components)
 import { useFinanceStore } from '../../../store/financeStore';
@@ -48,7 +47,6 @@ export default function ClientExportModal({ clientId, onClose }: ClientExportMod
   const allLogs = useLogisticsStore(state => state.logs);
   const allLaborLogs = useLaborStore(state => state.logs);
 
-  const [step, setStep] = useState<1 | 2>(1);
   
   // فیلترها
   const [selectedModules, setSelectedModules] = useState<string[]>(MODULES.map(m => m.id));
@@ -98,8 +96,8 @@ export default function ClientExportModal({ clientId, onClose }: ClientExportMod
     }
 
     if (selectedModules.includes('LABOR')) {
-      allLaborLogs.filter(l => (l.clientId === clientId || clientProjectIds.includes(l.projectId || '')) && isMatchProject(l.projectId) && isMatchDate(l.date || l.startDate)).forEach(l => {
-        rawData.push({ _type: 'LABOR', date: l.date || l.startDate, title: l.workerName, vendor: l.workType, amount: getPrice(l), projectId: l.projectId });
+      allLaborLogs.filter(l => (l.clientId === clientId || clientProjectIds.includes(l.projectId || '')) && isMatchProject(l.projectId) && isMatchDate(l.date)).forEach(l => {
+        rawData.push({ _type: 'LABOR', date: l.date, title: l.workerName, vendor: l.workType, amount: getPrice(l), projectId: l.projectId });
       });
     }
 

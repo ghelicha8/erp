@@ -4,11 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, X, CheckCircle, Clock, Banknote, FileSignature, 
   Edit, Trash2, Image as ImageIcon, ArrowLeftRight, AlertTriangle, 
-  Wallet, Layers, Check, ChevronDown, Download, Activity,
-  Archive, History, ArrowUpRight, ArrowDownRight, Filter
+  Layers, Check, ChevronDown, Download,
+  Archive, ArrowUpRight, ArrowDownRight, Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
-import moment from 'moment-jalaali';
 
 import { useFinanceStore } from '../../../store/financeStore';
 import { useProjectStore } from '../../projects/store/projectStore';
@@ -18,7 +17,6 @@ import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import NewTransactionModal from '../../projects/components/NewTransactionModal'; 
 import type { Transaction } from '../../../store/financeStore';
 
-const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR');
 
 const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
   <div onClick={(e) => { e.stopPropagation(); onChange(); }} className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm shrink-0 ${checked ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 border-purple-400 shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105' : 'bg-white/60 dark:bg-slate-800/60 border-slate-300 dark:border-slate-600 hover:border-indigo-400'}`}>
@@ -129,15 +127,14 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
   const [dateTo, setDateTo] = useState('');
   const [selectedProjectFilter, setSelectedProjectFilter] = useState<string>('ALL');
   const [txTypeFilter, setTxTypeFilter] = useState<string>('ALL'); 
-  const [pageSize, setPageSize] = useState<string>('ALL');
+  const [pageSize] = useState<string>('ALL');
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
   const [undoItems, setUndoItems] = useState<{ id: string, items: { id: string, source: 'FINANCE' | 'LABOR' }[], expireAt: number }[]>([]);
   
-  const [selectedReceiptTx, setSelectedReceiptTx] = useState<any | null>(null);
-  const [selectedArchiveTx, setSelectedArchiveTx] = useState<Transaction | null>(null);
-  const [expandedArchiveId, setExpandedArchiveId] = useState<string | null>(null);
+  const [, setSelectedReceiptTx] = useState<any | null>(null);
+  const [, setSelectedArchiveTx] = useState<Transaction | null>(null);
   const [archiveUndo, setArchiveUndo] = useState<{ txId: string, historyId: string, expireAt: number } | null>(null);
   
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
@@ -208,7 +205,7 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
     logs.forEach(log => {
       if (log.workerId !== workerId || pendingDeleteIds.includes(log.id)) return;
       const pId = log.projectId || 'FREE';
-      const logDate = log.date || log.startDate || '';
+      const logDate = log.date || '';
 
       if (log.advancePayment > 0) records.push({ id: `adv_${log.id}`, realId: log.id, source: 'LABOR', date: logDate, description: log.description ? `مساعده: ${log.description}` : 'مساعده کارکرد روزانه', amount: log.advancePayment, direction: 'OUT', type: 'CASH', projectId: pId });
       if (log.bonus && log.bonus > 0) records.push({ id: `bon_${log.id}`, realId: log.id, source: 'LABOR', date: logDate, description: log.description ? `پاداش: ${log.description}` : 'پاداش و تشویقی', amount: log.bonus, direction: 'OUT', type: 'CASH', projectId: pId });
@@ -246,15 +243,6 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
   const toggleSelection = (id: string) => setSelectedIds(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
   const handleSelectAll = () => isAllSelected ? setSelectedIds([]) : setSelectedIds(visibleRecords.map(t => t.id));
   
-  const triggerDeleteGroup = () => {
-    const itemsToDelete = selectedIds.map(id => {
-      const rec = unifiedRecords.find(r => r.id === id);
-      return { id: rec.realId || rec.id, source: rec.source };
-    });
-    setUndoItems(prev => [...prev, { id: Date.now().toString(), items: itemsToDelete, expireAt: Date.now() + 5000 }]);
-    setPendingDeleteIds(prev => [...prev, ...itemsToDelete.map(i => i.id)]);
-    setSelectedIds([]); 
-  };
 
   const triggerSingleDelete = (record: any) => {
     const targetId = record.realId || record.id;

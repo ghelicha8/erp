@@ -237,7 +237,6 @@ export default function LaborTab({ projectId }: LaborTabProps) {
   const calendarDays = useMemo(() => {
     moment.loadPersian({ usePersianDigits: false, dialect: 'persian-modern' });
     const startOfMonth = currentMonth.clone().startOf('jMonth');
-    const endOfMonth = currentMonth.clone().endOf('jMonth');
     const daysInMonth = moment.jDaysInMonth(currentMonth.jYear(), currentMonth.jMonth());
 
     let startDayOfWeek = startOfMonth.day() + 1; 

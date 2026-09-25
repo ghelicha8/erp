@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, Star, Phone, Wallet, TrendingDown, 
-  CheckCircle, Banknote, Layers, FileText, Activity, 
+  ArrowRight, Star, Phone, Wallet, 
+  CheckCircle, Layers, FileText, Activity, 
   Users, ShoppingCart, Truck, Image as ImageIcon, Edit2, Briefcase, Calculator,
-  FileDown, FileUp, Percent 
+  FileDown, FileUp,  
 } from 'lucide-react';
 import moment from 'moment-jalaali';
 
@@ -132,17 +132,17 @@ export default function ClientProfile({ clientId, onBack }: { clientId: string, 
       let totalCost = 0;
       const pPurchases = allPurchases.filter(p => p.projectId === proj.id);
       pPurchases.filter((p:any) => isInYear(p.date)).forEach((p:any) => {
-        totalCost += safeNum(p.billedCost) || safeNum(p.internalCost) || safeNum(p.totalPrice) || safeNum(p.totalCost) || safeNum(p.amount) || 0;
+        totalCost += safeNum(p.billedCost) || safeNum(p.internalCost) || 0;
       });
       
       const pLabor = allLaborLogs.filter(l => l.projectId === proj.id);
-      pLabor.filter((l:any) => isInYear(l.date || l.startDate)).forEach((l:any) => {
-         totalCost += safeNum(l.billedCost) || safeNum(l.internalCost) || safeNum(l.totalWage) || safeNum(l.salary) || safeNum(l.totalPrice) || safeNum(l.amount) || 0;
+      pLabor.filter((l:any) => isInYear(l.date)).forEach((l:any) => {
+         totalCost += safeNum(l.billedCost) || safeNum(l.internalCost) || 0;
       });
 
       const pLogs = allLogs.filter(l => l.projectId === proj.id);
       pLogs.filter((l:any) => isInYear(l.date)).forEach((l:any) => {
-         totalCost += safeNum(l.billedCost) || safeNum(l.internalCost) || safeNum(l.totalCost) || safeNum(l.fee) || safeNum(l.amount) || 0;
+         totalCost += safeNum(l.billedCost) || safeNum(l.internalCost) || 0;
       });
 
       let projCalculatedDebt = 0;
@@ -174,20 +174,20 @@ export default function ClientProfile({ clientId, onBack }: { clientId: string, 
       globalDebt += (projCalculatedDebt - projectPaid); 
     });
 
-    allLaborLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && l.clientId === clientId && isInYear(l.date || l.startDate)).forEach(l => {
-       const cost = safeNum(l.billedCost) || safeNum(l.internalCost) || safeNum(l.totalWage) || safeNum(l.salary) || safeNum(l.totalPrice) || safeNum(l.amount) || 0;
+    allLaborLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && l.clientId === clientId && isInYear(l.date)).forEach(l => {
+       const cost = safeNum(l.billedCost) || safeNum(l.internalCost) || 0;
        globalBilled += cost;
        globalDebt += cost; 
     });
 
     allPurchases.filter(p => (!p.projectId || p.projectId === 'FREE') && p.clientId === clientId && isInYear(p.date)).forEach(p => {
-       const cost = safeNum(p.billedCost) || safeNum(p.internalCost) || safeNum(p.totalPrice) || safeNum(p.totalCost) || safeNum(p.amount) || 0;
+       const cost = safeNum(p.billedCost) || safeNum(p.internalCost) || 0;
        globalBilled += cost;
        globalDebt += cost; 
     });
 
     allLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && l.clientId === clientId && isInYear(l.date)).forEach(l => {
-       const cost = safeNum(l.billedCost) || safeNum(l.internalCost) || safeNum(l.totalCost) || safeNum(l.fee) || safeNum(l.amount) || 0;
+       const cost = safeNum(l.billedCost) || safeNum(l.internalCost) || 0;
        globalBilled += cost;
        globalDebt += cost; 
     });

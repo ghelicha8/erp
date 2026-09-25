@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,17 +6,17 @@ import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, CalendarDays, Activity, Briefcase, Building2, UserCircle, 
-  CheckCircle2, Plus, Trash2, ChevronDown, Check, Search,
-  Mic, CloudRain, Sun, Snowflake, Wind, ShieldAlert, HardHat, 
-  Pickaxe, Clock, Calculator, SquareActivity, PlayCircle, Layers, 
-  RotateCcw, Zap, CheckCircle, Users, Banknote, ShieldCheck, Copy, Edit,
-  UserPlus, Hash, Ruler, Tag, FileSignature, Wallet
+  CheckCircle2, Trash2, ChevronDown, Check, Search,
+  CloudRain, Sun, Snowflake, Wind, HardHat, 
+  Pickaxe, Clock, SquareActivity, Layers, 
+  Zap,
+  UserPlus, Hash, Ruler, Tag, FileSignature
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
 
 import { useLaborStore } from '../../../store/laborStore';
-import type { WeatherCondition, WorkUnit, LaborRecordType, AttendanceStatus, WorkerProfile } from '../../../store/laborStore';
+import type { WeatherCondition, WorkUnit, LaborRecordType, AttendanceStatus, WorkerProfile, PaymentType } from '../../../store/laborStore';
 
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
@@ -46,13 +46,14 @@ const shiftSchema = z.object({
   endTime: z.string().optional(),
   specialtyId: z.string().optional(),
   workType: z.string().min(1, 'شرح کار الزامی است'),
-  projectId: z.string().default('FREE'),
-  phaseId: z.string().default('GENERAL'),
+  clientId: z.string().optional(),
+  projectId: z.string().optional(),
+  phaseId: z.string().optional(),
   billedUnit: z.string(),
   billedQuantity: z.string().min(1),
   billedRate: z.string().min(1),
-  isCoveredByClientMonthly: z.boolean().default(false),
-  isBilledAsFullDay: z.boolean().default(false),
+  isCoveredByClientMonthly: z.boolean().optional(),
+  isBilledAsFullDay: z.boolean().optional(),
 });
 
 const logSchema = z.object({
@@ -60,7 +61,7 @@ const logSchema = z.object({
   workerUnit: z.string(),
   workerQuantity: z.string().min(1),
   workerRate: z.string().min(1),
-  isCoveredByUsMonthly: z.boolean().default(false),
+  isCoveredByUsMonthly: z.boolean().optional(),
   
   shifts: z.array(shiftSchema).min(1, 'حداقل یک شیفت باید ثبت شود'),
 
@@ -87,11 +88,6 @@ const GlassScrollStyles = () => (
   `}</style>
 );
 
-const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 shadow-sm focus-within:border-indigo-500/60 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all duration-300 overflow-hidden group ${className}`}>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center">{children}</div>
-  </div>
-);
 
 const GlowSwitch = ({ checked, onChange, label, sublabel, theme = 'indigo' }: any) => {
   const isIndigo = theme === 'indigo';
@@ -311,7 +307,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const { workers, addBulkLogs, specialtyTags, addOrUpdateWorker, updateLog } = useLaborStore();
+  const { workers, addBulkLogs, specialtyTags, updateLog } = useLaborStore();
   const { projects } = useProjectStore();
   const { clients } = useClientStore();
 
@@ -350,8 +346,8 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
   const watchAll = watch();
 
   // 💡 استیت‌های انتخاب هوشمند نیروی کار
-  const [workerNameInput, setWorkerNameInput] = useState('');
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [, setWorkerNameInput] = useState('');
+  const [, setShowAutocomplete] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<WorkerProfile | null>(null);
   const autocompleteRef = useRef<HTMLDivElement>(null);
   
@@ -362,7 +358,6 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
   const [weather, setWeather] = useState<WeatherCondition>('NORMAL');
   const [hasIncident, setHasIncident] = useState(false);
   const [showTimeInputs, setShowTimeInputs] = useState(false); 
-  const [isRecording, setIsRecording] = useState(false);
   const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
 
   const [isBulkDate, setIsBulkDate] = useState(false);
@@ -378,7 +373,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
     return false;
   }, [watchAll.date, selectedWorker]);
 
-  const hasMonthlyContractWithClient = (shiftProjectId: string) => {
+  const hasMonthlyContractWithClient = (_shiftProjectId: string) => {
     if (!selectedWorker) return false;
     if (selectedWorker.defaultPaymentType === 'PROJECT_MONTHLY') return true;
     return false;
@@ -496,14 +491,6 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
     { id: 'ITEM', label: 'آیتم/عدد', icon: Hash }, { id: 'SERVICE', label: 'سرویس', icon: Activity }, { id: 'CONTRACT', label: 'پروژه‌ای/کنترات', icon: FileSignature }, { id: 'MONTH', label: 'ماهانه', icon: CalendarDays }
   ];
 
-  const paymentTypeOptions = [
-    { id: 'DAILY', label: 'روزمزد', icon: Wallet },
-    { id: 'HOURLY', label: 'ساعتی (اضافه‌کاری)', icon: Clock },
-    { id: 'PIECE_WORK', label: 'دانه‌ای / مقداری', icon: Hash },
-    { id: 'CONTRACT', label: 'مقطوع / کنترات موضعی', icon: FileSignature },
-    { id: 'MONTHLY', label: 'حقوق ماهیانه (پرسنل ما)', icon: CalendarDays },
-    { id: 'PROJECT_MONTHLY', label: 'حقوق مستمر (سرایدار/نگهبان)', icon: ShieldCheck }, 
-  ];
 
   const weatherIcons: { id: WeatherCondition; icon: any; color: string }[] = [
     { id: 'SUNNY', icon: Sun, color: 'text-amber-500' }, { id: 'CLOUDY', icon: CloudRain, color: 'text-slate-400' }, { id: 'RAINY', icon: CloudRain, color: 'text-blue-500' }, { id: 'SNOWY', icon: Snowflake, color: 'text-cyan-300' }, { id: 'WINDY', icon: Wind, color: 'text-teal-400' }
@@ -576,14 +563,6 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
     toast.success('یک شیفت کاری جدید به امروز اضافه شد.');
   };
 
-  const toggleRecording = () => {
-    if (isRecording) { 
-      setIsRecording(false); 
-      setVoiceUrl('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'); 
-      toast.success('گزارش صوتی ضبط شد!'); 
-    }
-    else { setIsRecording(true); toast.info('در حال ضبط صدا...'); }
-  };
 
   // Logic: Live 3D Arbitrage Calculator
   const totalWorkerBaseRaw = parseAmount(watchAll.workerRate) * parseAmount(watchAll.workerQuantity);
@@ -629,7 +608,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
 
         return {
           recordType: 'WAGE' as LaborRecordType,
-          projectId: shift.projectId,
+          projectId: shift.projectId || 'FREE',
           clientId: clientId, // 💡 قفل شده روی کارفرما
           phaseId: shift.phaseId === 'GENERAL' ? undefined : shift.phaseId,
           workerId: workerProfile.id,
@@ -778,7 +757,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
               {/* 💡 بخش ۲: شیفت‌های کاری */}
               <div className="space-y-4">
                 {fields.map((shift, index) => {
-                  const shiftProjectId = watchAll.shifts[index].projectId;
+                  const shiftProjectId = watchAll.shifts[index].projectId || 'FREE';
                   
                   // 💡 استخراج فازهای پروژه انتخاب شده
                   const activeProject = shiftProjectId !== 'FREE' ? projects.find(p => p.id === shiftProjectId) : null;
@@ -831,7 +810,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
                             <div className="grid grid-cols-2 gap-3 relative z-[85]">
                               <div className="space-y-1 relative min-w-0">
                                 <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1"><UserCircle className="w-3 h-3 text-indigo-500"/> کارفرما</label>
-                                <Controller control={control} name={`shifts.${index}.clientId`} render={({ field }) => (
+                                <Controller control={control} name={`shifts.${index}.clientId`} render={() => (
                                   <PortalSelect options={activeClientOptions} value={clientId} onChange={() => {}} disabled={true} placeholder="قفل شده" icon={Briefcase} />
                                 )} />
                               </div>

@@ -5,7 +5,7 @@ import {
   Notebook, Search, ChevronDown, X, Tag, Calendar, 
   Edit, Trash2, Combine, AlignRight, AlignCenter, AlignLeft, 
   Database, Banknote, Star, FileSpreadsheet, Printer,
-  HardHat, ShoppingCart, Truck, FileText, Package, Eye, Layers, AlertCircle, Type, Box, CheckCircle
+  HardHat, ShoppingCart, Truck, FileText, Eye, Layers, AlertCircle, Type, Box, CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -275,7 +275,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
         const parsedBlocks = JSON.parse(note.content) as NoteBlock[];
         parsedBlocks.forEach(block => {
           if (block.type === 'text') {
-            blocksHtml += `<div class="text-block" style="text-align: ${note.textAlignment || 'right'}; margin: 15px 0; font-size: 14px;">${block.content.replace(/\n/g, '<br/>')}</div>`;
+            blocksHtml += `<div class="text-block" style="text-align: ${note.textAlignment || 'right'}; margin: 15px 0; font-size: 14px;">${(block.content ?? '').replace(/\n/g, '<br/>')}</div>`;
           } else if (block.type === 'table' && block.html) {
             blocksHtml += block.html; 
           }
@@ -323,7 +323,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
     const finalContentStr = JSON.stringify(blocks);
     let updatedNotes;
     if (noteToEdit) {
-      updatedNotes = notes.map(n => n.id === noteToEdit.id ? { ...n, title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment } : n);
+      updatedNotes = notes.map((n: any) => n.id === noteToEdit.id ? { ...n, title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment } : n);
       toast.success('سند با موفقیت ویرایش شد.');
     } else {
       updatedNotes = [{ id: crypto.randomUUID(), title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment, isPinned: false }, ...notes];
@@ -334,7 +334,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
   };
 
   const togglePin = (id: string) => {
-    const updatedNotes = notes.map(n => n.id === id ? { ...n, isPinned: !n.isPinned } : n);
+    const updatedNotes = notes.map((n: any) => n.id === id ? { ...n, isPinned: !n.isPinned } : n);
     updateProject(projectId, { notes: updatedNotes });
   };
 

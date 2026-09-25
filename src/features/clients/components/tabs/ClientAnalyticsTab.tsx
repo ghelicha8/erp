@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -153,7 +153,7 @@ export default function ClientAnalyticsTab({ clientId }: { clientId: string }) {
           pBilled += getPurchaseBilled(p);
         }
       });
-      allLaborLogs.filter(l => l.projectId === proj.id && isMatchDateFilters(l.date || l.startDate, startDate, endDate, yearFilter)).forEach(l => {
+      allLaborLogs.filter(l => l.projectId === proj.id && isMatchDateFilters(l.date, startDate, endDate, yearFilter)).forEach(l => {
         if (phaseFilter === 'ALL' || l.phaseId === phaseFilter) {
           pInternal += getLaborInternal(l);
           pBilled += getLaborBilled(l);
@@ -200,7 +200,7 @@ export default function ClientAnalyticsTab({ clientId }: { clientId: string }) {
       allPurchases.filter(p => (!p.projectId || p.projectId === 'FREE') && isClientRelated(p) && isMatchDateFilters(p.date, startDate, endDate, yearFilter)).forEach(p => {
         fInternal += getPurchaseInternal(p); fBilled += getPurchaseBilled(p);
       });
-      allLaborLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && isClientRelated(l) && isMatchDateFilters(l.date || l.startDate, startDate, endDate, yearFilter)).forEach(l => {
+      allLaborLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && isClientRelated(l) && isMatchDateFilters(l.date, startDate, endDate, yearFilter)).forEach(l => {
         fInternal += getLaborInternal(l); fBilled += getLaborBilled(l);
       });
       allLogisticsLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && isClientRelated(l) && isMatchDateFilters(l.date, startDate, endDate, yearFilter)).forEach(l => {

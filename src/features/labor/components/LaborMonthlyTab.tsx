@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import moment from 'moment-jalaali';
 import { 
   CalendarDays, Wallet, TrendingDown, TrendingUp, 
-  Clock, AlertTriangle, UserX, ShieldAlert, BadgeInfo, 
-  Coins, CheckCircle2, FileText, ChevronLeft
+  Clock, AlertTriangle, UserX, BadgeInfo, 
+  Coins, CheckCircle2, FileText, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -122,7 +122,8 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
       billedRate: 0,
       isCoveredByUsMonthly: true,
       workType: type === 'ABSENT' ? 'غیبت در طول قرارداد ماهانه' : 'مرخصی بدون حقوق',
-      appliedStandardWorkHours: worker.standardWorkHours || 8
+      appliedStandardWorkHours: worker.standardWorkHours || 8,
+      advancePayment: 0
     });
     
     toast.success(type === 'ABSENT' ? 'غیبت ثبت شد و از حقوق کسر می‌گردد.' : 'مرخصی بدون حقوق ثبت شد.');
@@ -298,4 +299,4 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
       )}
     </motion.div>
   );
-}LaborMonthlyTab.tsx
+}

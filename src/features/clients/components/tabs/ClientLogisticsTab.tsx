@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Truck, Search, X, Layers, Edit, Trash2, CheckCircle,
+  Truck, Search, X, Edit, Trash2, CheckCircle,
   HardHat, Banknote, Wrench, Route, Briefcase
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,14 +30,6 @@ const parseNumber = (str: string) => {
   return Number(str.replace(/,/g, '')) || 0;
 };
 
-const getTodayDate = () => {
-  const d = new Date().toLocaleDateString('fa-IR');
-  const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-  return d.split('').map(c => {
-    let pIdx = persianNumbers.indexOf(c);
-    return pIdx >= 0 ? pIdx : c;
-  }).join('').split('/').map(p => p.padStart(2, '0')).join('/');
-};
 
 const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
   <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
@@ -81,7 +73,7 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'TRANSPORT' | 'EQUIPMENT'>('TRANSPORT');
   const [modalSource, setModalSource] = useState<'INTERNAL' | 'EXTERNAL'>('EXTERNAL');
-  const [editId, setEditId] = useState<string | null>(null);
+  const [editId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: '', projectId: '', phaseId: 'GENERAL', date: '', provider: '', vehicleInfo: '', internalCost: '', billedCost: '', driverWage: ''

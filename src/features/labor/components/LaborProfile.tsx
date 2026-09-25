@@ -231,7 +231,7 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
     const filteredLogs = (logs || []).filter(l => {
         if (l.workerId !== workerId) return false;
         
-        if (yearFilter !== 'ALL' && !(l.date || l.startDate || '').startsWith(yearFilter)) return false;
+        if (yearFilter !== 'ALL' && !(l.date || '').startsWith(yearFilter)) return false;
         
         if (projectFilter !== 'ALL') {
             if (projectFilter === 'FREE' && l.projectId && l.projectId !== 'FREE') return false;
@@ -253,7 +253,7 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
     let totalPaid = 0;   
     
     filteredLogs.forEach(log => {
-      totalEarned += (safeNum(log.internalCost) || safeNum(log.totalWage) || safeNum(log.totalPrice) || 0);
+      totalEarned += (safeNum(log.internalCost) || 0);
       totalPaid += safeNum(log.advancePayment) || 0;
       totalPaid += safeNum(log.loanDeduction) || 0;
     });

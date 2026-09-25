@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Briefcase, Activity, CheckCircle, PauseCircle, ChevronDown, 
-  ArrowLeft, Layers, Banknote, Image as ImageIcon, FolderOpen, 
-  UploadCloud, X, LayoutGrid, FileText, Search
+  ArrowLeft, Layers, Banknote,
+  X, LayoutGrid, Search
 } from 'lucide-react';
 
 import { useProjectStore } from '../../projects/store/projectStore';

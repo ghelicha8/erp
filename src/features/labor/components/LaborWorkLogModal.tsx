@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,17 +6,17 @@ import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, CalendarDays, Activity, Briefcase, Building2, UserCircle, 
-  CheckCircle2, Plus, Trash2, ChevronDown, Check, Search,
-  Mic, CloudRain, Sun, Snowflake, Wind, ShieldAlert, HardHat, 
-  Pickaxe, Clock, Calculator, SquareActivity, PlayCircle, Layers, 
-  RotateCcw, Zap, CheckCircle, Users, Banknote, ShieldCheck, Copy, Edit,
-  UserPlus, Hash, Ruler, Tag, FileSignature, Wallet
+  CheckCircle2, Trash2, ChevronDown, Check, Search,
+  Mic, CloudRain, Sun, Snowflake, Wind, HardHat, 
+  Pickaxe, Clock, SquareActivity, PlayCircle, Layers, 
+  RotateCcw, Zap,
+  Hash, Ruler, Tag, FileSignature, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
 
 import { useLaborStore } from '../../../store/laborStore';
-import type { WeatherCondition, WorkUnit, LaborRecordType, AttendanceStatus, WorkerProfile } from '../../../store/laborStore';
+import type { WeatherCondition, WorkUnit, LaborRecordType, AttendanceStatus} from '../../../store/laborStore';
 
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
@@ -44,14 +44,14 @@ const shiftSchema = z.object({
   endTime: z.string().optional(),
   specialtyId: z.string().optional(),
   workType: z.string().min(1, 'شرح کار الزامی است'),
-  clientId: z.string().default('FREE'),
-  projectId: z.string().default('FREE'),
-  phaseId: z.string().default('GENERAL'),
+  clientId: z.string().optional(),
+  projectId: z.string().optional(),
+  phaseId: z.string().optional(),
   billedUnit: z.string(),
   billedQuantity: z.string().min(1),
   billedRate: z.string().min(1),
-  isCoveredByClientMonthly: z.boolean().default(false),
-  isBilledAsFullDay: z.boolean().default(false),
+  isCoveredByClientMonthly: z.boolean().optional(),
+  isBilledAsFullDay: z.boolean().optional(),
 });
 
 const logSchema = z.object({
@@ -59,7 +59,7 @@ const logSchema = z.object({
   workerUnit: z.string(),
   workerQuantity: z.string().min(1),
   workerRate: z.string().min(1),
-  isCoveredByUsMonthly: z.boolean().default(false),
+  isCoveredByUsMonthly: z.boolean().optional(),
   
   shifts: z.array(shiftSchema).min(1, 'حداقل یک شیفت باید ثبت شود'),
 
@@ -67,7 +67,7 @@ const logSchema = z.object({
   overtimeWage: z.string().optional(),
   
   // 💡 متغیر جدید برای مدیریت اضافه یا کسر شدن پول غذا
-  isFoodAddition: z.boolean().default(false),
+  isFoodAddition: z.boolean().optional(),
   foodDeduction: z.string().optional(),
   
   penaltyDeduction: z.string().optional(),
@@ -90,11 +90,6 @@ const GlassScrollStyles = () => (
   `}</style>
 );
 
-const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 shadow-sm focus-within:border-indigo-500/60 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all duration-300 overflow-hidden group ${className}`}>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center">{children}</div>
-  </div>
-);
 
 const GlowSwitch = ({ checked, onChange, label, sublabel, theme = 'indigo' }: any) => {
   const isIndigo = theme === 'indigo';
@@ -585,7 +580,7 @@ export default function LaborWorkLogModal({ isOpen, onClose, workerId, editData,
 
         return {
           recordType: 'WAGE' as LaborRecordType,
-          projectId: shift.projectId,
+          projectId: shift.projectId || 'FREE',
           clientId: shift.clientId, 
           phaseId: shift.phaseId === 'GENERAL' ? undefined : shift.phaseId,
           workerId: worker.id,

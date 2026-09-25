@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, AlertCircle, CheckCircle, ChevronDown, 
+  X, CheckCircle, 
   Banknote, FileSignature, UploadCloud, Trash2, Image as ImageIcon,
-  ClipboardPaste, AlignLeft, PieChart, Wand2, RefreshCcw, DollarSign, AlertTriangle, Link,
-  SplitSquareHorizontal, Wallet, Plus, FileText
+  ClipboardPaste, AlignLeft, PieChart, Wand2, RefreshCcw, DollarSign, AlertTriangle,
+  SplitSquareHorizontal, Wallet, Plus, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,7 +34,7 @@ const transactionSchema = z.object({
   direction: z.enum(['IN', 'OUT'] as const),
   type: z.enum(['CASH', 'CHEQUE', 'COMBINED'] as const),
   description: z.string().optional(),
-  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').default([]),
+  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').optional(),
   textReceipt: z.string().optional(),
   issuer: z.string().optional(),
   sayyadId: z.string().optional(),
@@ -134,7 +134,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
   const project = useProjectStore(state => state.projects.find(p => p.id === projectId));
   const phaseOptions = useMemo(() => [
     { value: 'GENERAL', label: 'هزینه عمومی (بدون فاز)' },
-    ...(project?.phases?.map(p => ({ value: p.id, label: p.name })) || [])
+    ...(project?.phases?.map((p: any) => ({ value: p.id, label: p.name })) || [])
   ], [project?.phases]);
 
   // 💡 فیلتر هوشمند فاکتورهای خرید از استور جدید
@@ -340,7 +340,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
 
     try {
       if (currentTransaction && specialMode === 'CASHING') {
-        exchangeChequeForCash(currentTransaction.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد / حواله', data.attachments);
+        exchangeChequeForCash(currentTransaction.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد / حواله', data.attachments || []);
         toast.success('تراکنش نقدی ثبت شد و مشخصات چک قبلی در بایگانی قرار گرفت.');
         onClose(); return;
       }
@@ -351,7 +351,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
         allocations: allocations, 
         date: data.date, 
         direction: data.direction, 
-        attachments: data.attachments, 
+        attachments: data.attachments || [], 
         textReceipt: data.textReceipt 
       };
 
@@ -362,7 +362,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
 
       if (currentTransaction) {
         if (currentTransaction.type === 'CHEQUE' && data.status !== currentTransaction.chequeDetails?.status) {
-          changeChequeStatus(currentTransaction.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments);
+          changeChequeStatus(currentTransaction.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments || []);
         }
         
         updateTransaction(currentTransaction.id, {
@@ -475,7 +475,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                     <div className="space-y-2 relative z-50">
                       <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">تاریخ عملیات</label>
                       <Controller control={control} name="date" render={({ field: { onChange, value } }) => (
-                        <GlassDatePicker value={value} onChange={onChange} hasError={!!errors.date} />
+                        <GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.date} />
                       )} />
                     </div>
                   </motion.div>
@@ -508,7 +508,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                     <div className="space-y-2 pt-2 relative z-50">
                       <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">تاریخ عملیات ترکیبی</label>
                       <Controller control={control} name="date" render={({ field: { onChange, value } }) => (
-                        <GlassDatePicker value={value} onChange={onChange} />
+                        <GlassDatePicker value={value || ''} onChange={onChange} />
                       )} />
                     </div>
                   </motion.div>
@@ -606,7 +606,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                                   updateAllocation(alloc.id, 'description', `بابت تسویه ${p.label.split('|')[0]}`);
                                   if (!alloc.amount || alloc.amount === 0) {
                                     const unallocated = Math.max(totalEnteredAmount - (totalAllocatedAmount - (alloc.amount || 0)), 0);
-                                    const suggestedAmount = Math.min(p.remainingAmount || 0, unallocated);
+                                    const suggestedAmount = Math.min((p as { remainingAmount?: number }).remainingAmount || 0, unallocated);
                                     if (suggestedAmount > 0) updateAllocation(alloc.id, 'amount', suggestedAmount);
                                   }
                                 }
@@ -750,7 +750,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                         <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-4 z-[80]">
                           <label className={`text-xs font-bold text-slate-600 dark:text-slate-400`}>تاریخ وصول (سررسید) *</label>
                           <Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (
-                            <GlassDatePicker value={value} onChange={onChange} hasError={!!errors.dueDate} />
+                            <GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.dueDate} />
                           )} />
                         </div>
                       </div>

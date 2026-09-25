@@ -80,7 +80,7 @@ const transactionSchema = z.object({
   date: z.string().min(1, 'تاریخ الزامی است'),
   type: z.enum(['CASH', 'CHEQUE', 'COMBINED'] as const),
   description: z.string().optional(),
-  attachments: z.array(z.string()).default([]),
+  attachments: z.array(z.string()).optional(),
   textReceipt: z.string().optional(),
   issuer: z.string().optional(),
   sayyadId: z.string().optional(),
@@ -341,7 +341,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
       clientId: transactionClientId, 
       projectId: transactionProjectId, 
       allocations: finalAllocations.length > 0 ? finalAllocations : undefined, 
-      date: data.date, direction: 'OUT', attachments: data.attachments, textReceipt: data.textReceipt 
+      date: data.date, direction: 'OUT', attachments: data.attachments || [], textReceipt: data.textReceipt 
     };
 
     const newIdBase = crypto.randomUUID(); 
@@ -401,7 +401,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
                 <motion.div key="single" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2 relative z-[100]">
                     <label className="text-sm font-black text-slate-700 dark:text-slate-200 flex items-center gap-1"><CalendarDays className="w-4 h-4 text-indigo-500"/> تاریخ عملیات</label>
-                    <Controller control={control} name="date" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} hasError={!!errors.date} />)} />
+                    <Controller control={control} name="date" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.date} />)} />
                   </div>
                   <div className="space-y-2 relative">
                     <label className="text-sm font-black text-slate-700 dark:text-slate-200 flex items-center justify-between gap-1 w-full">
@@ -457,7 +457,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
                   </div>
                   <div className="space-y-2 pt-2 relative z-50">
                     <label className="text-sm font-black text-slate-700 dark:text-slate-200">تاریخ عملیات ترکیبی</label>
-                    <Controller control={control} name="date" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} />)} />
+                    <Controller control={control} name="date" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} />)} />
                   </div>
                 </motion.div>
               )}
@@ -483,7 +483,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
               ) : (
                 <div className="space-y-4">
                   <AnimatePresence>
-                    {allocations.map((alloc, idx) => (
+                    {allocations.map((alloc, _idx) => (
                       <motion.div key={alloc.id} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative group overflow-visible">
                         <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden md:block">
                           <button type="button" onClick={() => removeAllocationRow(alloc.id)} className="w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Trash2 className="w-4 h-4"/></button>
@@ -584,7 +584,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
                       <div className="space-y-2"><label className="text-sm font-black text-slate-700 dark:text-slate-300">شماره سریال چک *</label><input {...register('serialNumber')} className={`w-full bg-white/80 dark:bg-slate-900/80 border rounded-2xl px-4 py-3.5 outline-none font-mono text-left text-slate-800 dark:text-white shadow-inner font-black ${errors.serialNumber ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-slate-200 dark:border-slate-700 focus:ring-2 ring-cyan-500/30'}`} dir="ltr" /></div>
                       <div className="space-y-2"><label className="text-sm font-black text-slate-700 dark:text-slate-300">سری چک (اختیاری)</label><input {...register('series')} className="w-full bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 outline-none font-mono text-left focus:ring-2 ring-cyan-500/30 text-slate-800 dark:text-white shadow-inner font-bold" dir="ltr" /></div>
                       <div className="space-y-2 relative z-[90]"><label className="text-sm font-black text-slate-700 dark:text-slate-300">بانک صادرکننده *</label><Controller control={control} name="bank" render={({ field }) => (<PortalSelect options={bankOptions} value={field.value || ''} onChange={field.onChange} placeholder="انتخاب بانک" hasError={!!errors.bank} />)} /></div>
-                      <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-5 z-[80]"><label className="text-sm font-black text-slate-700 dark:text-slate-300">تاریخ وصول (سررسید) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
+                      <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-5 z-[80]"><label className="text-sm font-black text-slate-700 dark:text-slate-300">تاریخ وصول (سررسید) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
                     </div>
                   </div>
                 </motion.div>

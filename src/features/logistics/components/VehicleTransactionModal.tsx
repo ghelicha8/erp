@@ -7,13 +7,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, CheckCircle, Banknote, FileSignature, UploadCloud, Trash2, Image as ImageIcon,
   ClipboardPaste, AlignLeft, PieChart, ArrowDownRight, ArrowUpRight,
-  Truck, Wrench, Building2, Layers, Plus, SplitSquareHorizontal, Users,
+  Truck, Wrench, Building2, Layers, Plus, Users,
   Archive, RefreshCcw, AlertTriangle, Combine, Split, ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useFinanceStore } from '../../../store/financeStore';
-import type { ChequeStatus, ChequeHistory, TransactionAllocation } from '../../../store/financeStore';
+import type { ChequeStatus, ChequeHistory} from '../../../store/financeStore';
 import { useProjectStore } from '../../projects/store/projectStore'; 
 import { useClientStore } from '../../../store/clientStore';
 import { useLaborStore } from '../../../store/laborStore';
@@ -31,7 +31,7 @@ const transactionSchema = z.object({
   date: z.string().min(1, 'تاریخ الزامی است'),
   type: z.enum(['CASH', 'CHEQUE', 'COMBINED'] as const),
   description: z.string().optional(),
-  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').default([]),
+  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').optional(),
   textReceipt: z.string().optional(),
   issuer: z.string().optional(),
   sayyadId: z.string().optional(),
@@ -178,7 +178,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
   const { addTransaction, updateTransaction, changeChequeStatus, exchangeChequeForCash } = useFinanceStore();
   const allProjects = useProjectStore(state => state.projects) || [];
   const allClients = useClientStore(state => state.clients) || [];
-  const laborStoreData = useLaborStore(state => state.laborers || (state as any).logs || []);
+  const laborStoreData = useLaborStore(state => state.workers);
   const drivers = Array.isArray(laborStoreData) ? laborStoreData : [];
 
   const [txDirection, setTxDirection] = useState<'IN' | 'OUT'>('IN');
@@ -367,7 +367,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
 
     try {
       if (editData && specialMode === 'CASHING') {
-        exchangeChequeForCash(editData.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد', data.attachments);
+        exchangeChequeForCash(editData.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد', data.attachments || []);
         toast.success('تراکنش نقدی ثبت شد و چک قبلی بایگانی گردید.');
         onClose(); return;
       }
@@ -398,7 +398,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
       });
 
       const basePayload: any = { 
-        referenceId: vehicleId, allocations: finalAllocations, date: data.date, direction: txDirection, description: data.description, type: data.type, attachments: data.attachments, textReceipt: data.textReceipt 
+        referenceId: vehicleId, allocations: finalAllocations, date: data.date, direction: txDirection, description: data.description, type: data.type, attachments: data.attachments || [], textReceipt: data.textReceipt 
       };
 
       const finalHistory = [...(editData?.chequeDetails?.history || []), ...pendingHistory];
@@ -406,7 +406,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
 
       if (editData) {
         if (editData.type === 'CHEQUE' && data.status !== editData.chequeDetails?.status) {
-          changeChequeStatus(editData.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments);
+          changeChequeStatus(editData.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments || []);
         }
         updateTransaction(editData.id, { ...basePayload, amount: rawAmount, ...(data.type === 'CHEQUE' && { chequeDetails: chequeData }) });
         toast.success(specialMode === 'EXCHANGING' ? 'چک جایگزین در سیستم ثبت شد.' : 'تراکنش با موفقیت ویرایش شد.');
@@ -538,7 +538,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                 <div className="space-y-2 relative z-50">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">تاریخ عملیات</label>
                   <Controller control={control} name="date" render={({ field: { onChange, value } }) => (
-                    <GlassDatePicker value={value} onChange={onChange} hasError={!!errors.date} />
+                    <GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.date} />
                   )} />
                 </div>
               </div>
@@ -586,7 +586,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                                 </div>
                                 <div className="z-50 space-y-1.5">
                                   <label className="text-[10px] font-bold text-slate-500">پروژه (خودکار کارفرما را ست می‌کند)</label>
-                                  <GlassSelect options={[{value:'', label:'آزاد (بدون پروژه)'}, ...allProjects.filter(p => !alloc.clientId || p.clientId === alloc.clientId).map(p => ({value: p.id, label: p.name}))]} value={alloc.projectId || ''} onChange={(v) => updateAllocationRow(alloc.id, 'projectId', v)} placeholder="انتخاب پروژه" disabled={alloc.clientId && !allProjects.some(p => p.clientId === alloc.clientId)} />
+                                  <GlassSelect options={[{value:'', label:'آزاد (بدون پروژه)'}, ...allProjects.filter(p => !alloc.clientId || p.clientId === alloc.clientId).map(p => ({value: p.id, label: p.name}))]} value={alloc.projectId || ''} onChange={(v) => updateAllocationRow(alloc.id, 'projectId', v)} placeholder="انتخاب پروژه" disabled={!!alloc.clientId && !allProjects.some(p => p.clientId === alloc.clientId)} />
                                 </div>
                               </div>
                             </div>
@@ -679,7 +679,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                         <div className="space-y-2"><label className="text-xs font-bold text-slate-600">شماره سریال چک *</label><input {...register('serialNumber')} className={`w-full bg-white/60 border rounded-2xl px-4 py-3.5 outline-none font-mono text-left ${errors.serialNumber ? 'border-rose-500' : 'border-slate-200'}`} dir="ltr" /></div>
                         <div className="space-y-2"><label className="text-xs font-bold text-slate-600">سری چک</label><input {...register('series')} className="w-full bg-white/60 border border-white/40 rounded-2xl px-4 py-3.5 outline-none font-mono text-left" dir="ltr" /></div>
                         <div className="space-y-2 relative z-[90]"><label className="text-xs font-bold text-slate-600">بانک *</label><Controller control={control} name="bank" render={({ field }) => (<GlassSelect options={bankOptions} value={field.value || ''} onChange={field.onChange} placeholder="انتخاب بانک" hasError={!!errors.bank} />)} /></div>
-                        <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-4 z-[80]"><label className="text-xs font-bold text-slate-600">تاریخ سررسید (وصول) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
+                        <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-4 z-[80]"><label className="text-xs font-bold text-slate-600">تاریخ سررسید (وصول) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
                       </div>
                     </div>
                   </motion.div>

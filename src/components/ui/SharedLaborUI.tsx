@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChevronDown, Search, Check, CheckCircle, Trash2, CalendarDays, Calendar, X } from 'lucide-react';
-import moment from 'moment-jalaali';
+import { Clock, ChevronDown, Search, Check, CheckCircle, Trash2, Calendar, X } from 'lucide-react';
 import DatePickerPkg from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
@@ -83,12 +82,13 @@ export const AnimatedCheckbox = ({ checked, onChange, theme = 'amber' }: { check
 // 5. سوییچ‌های درخشان (Glow Switch)
 // ==========================================
 export const GlowSwitch = ({ checked, onChange, label, sublabel, theme = 'indigo' }: any) => {
-  const colors: any = {
+  const palette: Record<string, { border: string; bg: string; thumb: string; text: string; glow: string }> = {
     indigo: { border: 'border-indigo-400', bg: 'bg-indigo-50/80 dark:bg-indigo-900/30', thumb: 'bg-indigo-500', text: 'text-indigo-700 dark:text-indigo-300', glow: 'shadow-[0_0_15px_rgba(99,102,241,0.4)]' },
     blue: { border: 'border-blue-400', bg: 'bg-blue-50/80 dark:bg-blue-900/30', thumb: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.4)]' },
     rose: { border: 'border-rose-400', bg: 'bg-rose-50/80 dark:bg-rose-900/30', thumb: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-300', glow: 'shadow-[0_0_15px_rgba(244,63,94,0.4)]' },
     emerald: { border: 'border-emerald-400', bg: 'bg-emerald-50/80 dark:bg-emerald-900/30', thumb: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-300', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.4)]' }
-  }[theme] || { border: 'border-indigo-400', bg: 'bg-indigo-50/80 dark:bg-indigo-900/30', thumb: 'bg-indigo-500', text: 'text-indigo-700 dark:text-indigo-300', glow: 'shadow-[0_0_15px_rgba(99,102,241,0.4)]' };
+  };
+  const colors = palette[theme as string] || palette.indigo;
 
   return (
     <div onClick={() => onChange(!checked)} className={`flex items-center gap-3 cursor-pointer p-3 rounded-2xl border transition-all duration-300 ${checked ? `${colors.border} ${colors.bg}${colors.glow}` : 'border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600 shadow-sm'}`}>

@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Plus, Search, X, CheckCircle, Clock, Banknote, FileSignature, 
+  Search, X, CheckCircle, Clock, Banknote, FileSignature, 
   Edit, Trash2, Image as ImageIcon, ArrowLeftRight, AlertTriangle, 
-  AlignLeft, Wallet, Layers, Check, RefreshCw, ArrowRightLeft, SplitSquareHorizontal,
-  Archive, History, TrendingDown, TrendingUp, Calculator, ChevronDown, Download
+  AlignLeft, Wallet, Layers, SplitSquareHorizontal,
+  Archive, History, ChevronDown, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -18,12 +18,6 @@ import GlassSelect from '../../../components/ui/GlassSelect';
 import NewTransactionModal from '../../projects/components/NewTransactionModal';
 import type { Transaction } from '../../../store/financeStore';
 
-const safeNum = (val: any): number => {
-  if (!val) return 0;
-  if (typeof val === 'number') return val;
-  const parsed = Number(String(val).replace(/\D/g, ''));
-  return isNaN(parsed) ? 0 : parsed;
-};
 
 const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR');
 

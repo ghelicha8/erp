@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Receipt, Trash2, X, Wallet, Camera, Printer, Tags, Info, Image as ImageIcon, CheckCircle, Edit, Search, PieChart, AlertTriangle, Layers, ChevronRight, ChevronLeft, FileSpreadsheet, Download, ShieldAlert, FileText, ExternalLink } from 'lucide-react';
+import { Receipt, Trash2, X, Wallet, Camera, Printer, Tags, Image as ImageIcon, CheckCircle, Edit, Search, PieChart, AlertTriangle, Layers, ChevronRight, ChevronLeft, FileSpreadsheet, Download, ShieldAlert, FileText, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useProjectStore } from '../../store/projectStore';
@@ -280,7 +280,7 @@ export default function PettyCashTab({ projectId }: PettyCashTabProps) {
           <tr><td colspan="6"></td></tr>
           <tr>
              <td colspan="2" style="font-weight: bold; padding: 10px; text-align: right;">جمع کل شارژ تنخواه: ${formatCurrency(totalFund)} ${currency}</td>
-             <td colspan="2" style="font-weight: bold; padding: 10px; text-align: right;">جمع هزینه‌های گزارش: ${formatCurrency(filteredRecords.reduce((acc, curr) => acc + Number(curr.amount || 0), 0))} ${currency}</td>
+             <td colspan="2" style="font-weight: bold; padding: 10px; text-align: right;">جمع هزینه‌های گزارش: ${formatCurrency(filteredRecords.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0))} ${currency}</td>
              <td colspan="2" style="font-weight: bold; padding: 10px; text-align: right; color: ${currentBalance < 0 ? '#ef4444' : '#10b981'};">مانده کل صندوق: ${formatCurrency(currentBalance)} ${currency}</td>
           </tr>
           <tr><td colspan="6"></td></tr>
@@ -333,7 +333,7 @@ export default function PettyCashTab({ projectId }: PettyCashTabProps) {
         </div>
         <div class="summary">
           <div>جمع کل شارژ تنخواه: ${formatCurrency(totalFund)} ${currency}</div>
-          <div>جمع هزینه‌های گزارش: ${formatCurrency(filteredRecords.reduce((acc, curr) => acc + Number(curr.amount || 0), 0))} ${currency}</div>
+          <div>جمع هزینه‌های گزارش: ${formatCurrency(filteredRecords.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0))} ${currency}</div>
           <div style="color: ${currentBalance < 0 ? '#ef4444' : '#10b981'}">مانده کل صندوق: ${formatCurrency(currentBalance)} ${currency}</div>
         </div>
         <table>

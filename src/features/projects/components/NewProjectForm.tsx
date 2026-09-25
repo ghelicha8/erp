@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 // تقویم شمسی (نیازمند نصب پکیج: npm i react-multi-date-picker)
 import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
@@ -21,11 +22,11 @@ const projectSchema = z.object({
   name: z.string().min(3, 'نام پروژه باید حداقل ۳ حرف باشد'),
   clientId: z.string().min(1, 'انتخاب یا ایجاد کارفرما الزامی است'),
   contractType: z.enum(['METRI', 'CONTRAT', 'PERCENTAGE', 'COST_ONLY', 'CUSTOM'] as const, {
-    required_error: 'لطفا نوع قرارداد را مشخص کنید',
+    error: 'لطفا نوع قرارداد را مشخص کنید',
   }),
   startDate: z.string().min(1, 'تاریخ شروع الزامی است'),
   profilePhoto: z.string().optional(),
-  photos: z.array(z.string()).max(10, 'حداکثر می‌توانید ۱۰ عکس آپلود کنید').default([]),
+  photos: z.array(z.string()).max(10, 'حداکثر می‌توانید ۱۰ عکس آپلود کنید').optional(),
 });
 
 // استخراج مستقیم تایپ از Zod
@@ -191,7 +192,7 @@ export default function NewProjectForm() {
       transition: { staggerChildren: 0.08 }
     }
   };
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
   };

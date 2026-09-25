@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BellRing, AlertTriangle, CheckCircle, Info, Archive, Plus, 
-  Search, CalendarClock, CreditCard, Package, ArrowLeft, Trash2, X, Clock,
-  Settings, Volume2, VolumeX
+  Search, CalendarClock, CreditCard, Package, ArrowLeft, Trash2, X, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 

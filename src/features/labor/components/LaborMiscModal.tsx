@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { 
   X, CheckCircle2, ChevronDown, Check, Search, 
   Coffee, Shirt, Bus, Package, Banknote, ShieldAlert,
-  Building2, UserCircle, Calculator, Info
+  Building2, UserCircle, Calculator, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';

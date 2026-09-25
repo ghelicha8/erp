@@ -16,6 +16,7 @@ export interface AppSettings {
   signatureUrl: string;
   
   // درصدهای پیش‌فرض قانونی
+  currency: 'TOMAN' | 'RIAL';
   defaultTaxRate: number;
   defaultRetentionRate: number;
   defaultInsuranceRate: number;
@@ -36,6 +37,7 @@ const defaultSettings: AppSettings = {
   website: '',
   logoUrl: '',
   signatureUrl: '',
+  currency: 'TOMAN',
   defaultTaxRate: 9, // ۹٪ مالیات
   defaultRetentionRate: 10, // ۱۰٪ حسن انجام کار
   defaultInsuranceRate: 5, // ۵٪ بیمه

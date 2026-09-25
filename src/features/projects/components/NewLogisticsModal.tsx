@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Route, Truck, Wrench, HardHat, Banknote, CheckCircle, Layers, Briefcase, Building2, Calculator, UserPlus, CalendarRange } from 'lucide-react';
+import { X, Route, Truck, Wrench, HardHat, CheckCircle, Layers, Briefcase, Building2, Calculator, UserPlus, CalendarRange } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
 
@@ -240,7 +240,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
   const selectedProject = useMemo(() => allProjects.find(p => p.id === formData.projectId), [allProjects, formData.projectId]);
   const phaseOptions = useMemo(() => [
     { value: 'GENERAL', label: 'هزینه‌های عمومی (بدون فاز)' },
-    ...(selectedProject?.phases?.map((p, idx) => ({ value: p.id || `phase-${idx}`, label: p.name || `فاز ${idx + 1}` })) || [])
+    ...(selectedProject?.phases?.map((p: any, idx: number) => ({ value: p.id || `phase-${idx}`, label: p.name || `فاز ${idx + 1}` })) || [])
   ], [selectedProject]);
 
   const clientOptions = useMemo(() => allClients.map((c, idx) => ({ value: c.id || `client-${idx}`, label: `${c.name || ''} ${c.lastName || ''}`.trim() || 'بدون نام' })), [allClients]);

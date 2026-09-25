@@ -1,32 +1,45 @@
-# React + TypeScript + Vite
+# پیمان — سیستم مدیریت پروژه و مالی (ERP)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+سامانهٔ تحت وب فارسی و راست‌به‌چپ برای مدیریت پروژه‌های ساختمانی/پیمانکاری:
+مدیریت کارفرما، پروژه و فازها، نیروی انسانی و کارکرد، خرید و انبار، لجستیک و
+ماشین‌آلات، فاکتورها، خزانه‌داری (نقد/چک/ترکیبی) و داشبوردهای تحلیلی.
 
-Currently, two official plugins are available:
+## شروع سریع
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev      # سرور توسعه
+npm run build    # کنترل تایپ (tsc) + بیلد نهایی در dist/
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+پیش‌نیاز: Node.js 20+‎.
+
+## معماری
+
+- `src/App.tsx` — نقطهٔ ورود رابط کاربری؛ روتینگ داخلی بر اساس `activeTab`
+  (بدون react-router؛ عمدی، برای آفلاین‌کار بودن و سادگی).
+- `src/store/` — استورهای Zustand (مالی، پروژه، کارفرما، نیرو، خرید، لجستیک،
+  فاکتور، تنظیمات) با persist در localStorage.
+- `src/features/` — ماژول‌های دامنه (پروژه‌ها، مالی، کارفرما، نیرو، لجستیک،
+  فاکتورها، داشبورد، هشدارها).
+- `src/core/engines/` — موتور ایمپورت اکسل/CSV و DataMapper.
+- `src/core/exporters/` — خروجی Excel / PDF / CSV / JSON.
+- `src/components/ui/` — کامپوننت‌های شیشه‌ای مشترک (GlassSelect،
+  GlassDatePicker و...).
+
+## قراردادهای مهم کد
+
+- تاریخ‌ها رشتهٔ شمسی با فرمت `jYYYY/jMM/jDD` هستند (moment-jalaali).
+- شناسهٔ `'FREE'` یعنی «آزاد / بدون پروژه» و `'GENERAL'` یعنی فاز عمومی؛
+  هرگز `null` یا `''` جایگزین نکنید مگر در ورودی‌های نمایشی.
+- `Transaction` مالی، سند واحد حقیقت است؛ تخصیص‌ها (`allocations`) به
+  موجودیت‌های دیگر لینک می‌شوند.
+- TypeScript در حالت `strict` است؛ `npm run build` باید بدون خطا بگذرد.
+- قبل از `tsc`، کش را پاک کنید:
+  `rm -f node_modules/.tmp/*.tsbuildinfo` (کش قدیمی شمارش اشتباه می‌دهد).
+
+## کارهای آیندهٔ پیشنهادی
+
+- شکستن چانک اصلی باندل (۴+ مگابایت) با `import()` داینامیک برای تب‌ها.
+- افزودن فونت فارسی (وزیرمتن) به‌صورت لوکال به‌جای فونت سیستم.
+- یکپارچه‌سازی ۴ مودال کارکرد نیرو (کپی‌های مشابه) در یک کامپوننت مشترک.
