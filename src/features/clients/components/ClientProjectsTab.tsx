@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Briefcase, Activity, CheckCircle, PauseCircle, ChevronDown, 
-  ArrowLeft, Layers, Banknote, Image as ImageIcon, FolderOpen, 
-  UploadCloud, X, LayoutGrid, FileText, Search
+  ArrowLeft, Layers, Banknote,
+  X, LayoutGrid, Search
 } from 'lucide-react';
 
 import { useProjectStore } from '../../projects/store/projectStore';
@@ -17,7 +17,8 @@ import { useLogisticsStore } from '../../../store/logisticsStore';
 import type { ProjectStatus, ContractType } from '../../projects/types/project.types';
 
 import ProjectDashboard from '../../projects/components/ProjectDashboard';
-import GlassSelect from '../../../components/ui/GlassSelect';
+
+import { NeonSearchWrapper, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const safeNum = (val: any): number => {
   if (val === undefined || val === null || val === '') return 0;
@@ -25,15 +26,6 @@ const safeNum = (val: any): number => {
   const parsed = Number(String(val).replace(/\D/g, ''));
   return isNaN(parsed) ? 0 : parsed;
 };
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] transition-all ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-blue-500 group-focus-within:to-indigo-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 const getStatusBadge = (status: ProjectStatus) => {
   switch (status) {
@@ -184,7 +176,7 @@ export default function ClientProjectsTab({ clientId }: { clientId: string }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-4 bg-white/30 dark:bg-slate-900/30 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-sm rounded-[2rem] px-6 py-4 z-[50] relative">
-            <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]">
+            <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[200px] h-[46px]">
               <Search className="w-5 h-5 text-slate-400 shrink-0" />
               <input 
                 placeholder="جستجو در نام پروژه‌ها..." 
@@ -199,10 +191,10 @@ export default function ClientProjectsTab({ clientId }: { clientId: string }) {
             
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto relative z-[100]">
               <div className="w-full sm:w-32 h-[46px]">
-                <GlassSelect options={[{ value: 'ALL', label: 'نمایش همه' }, { value: '10', label: 'نمایش ۱۰' }, { value: '20', label: 'نمایش ۲۰' }]} value={pageSize} onChange={setPageSize} placeholder="تعداد" />
+                <PortalSelect options={[{ value: 'ALL', label: 'نمایش همه' }, { value: '10', label: 'نمایش ۱۰' }, { value: '20', label: 'نمایش ۲۰' }]} value={pageSize} onChange={setPageSize} placeholder="تعداد" />
               </div>
               <div className="w-full sm:w-40 h-[46px]">
-                <GlassSelect 
+                <PortalSelect 
                   options={[
                     {value:'ALL', label:'همه وضعیت‌ها'},
                     {value:'IN_PROGRESS', label:'در حال کار'},
@@ -213,7 +205,7 @@ export default function ClientProjectsTab({ clientId }: { clientId: string }) {
                 />
               </div>
               <div className="w-full sm:w-44 h-[46px]">
-                <GlassSelect 
+                <PortalSelect 
                   options={[
                     {value:'ALL', label:'همه قراردادها'},
                     {value:'CONTRAT', label:'مقطوع (کنترات)'},

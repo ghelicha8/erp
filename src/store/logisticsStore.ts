@@ -35,6 +35,7 @@ export interface ToolProfile {
 export interface LogisticsLog {
   id: string;
   projectId: string | null; 
+  clientId?: string;
   phaseId?: string;
   type: 'TRANSPORT' | 'EQUIPMENT';
   source: 'INTERNAL' | 'EXTERNAL';
@@ -42,10 +43,12 @@ export interface LogisticsLog {
   provider: string; // ID راننده
   vehicleInfo: string; // ID ماشین
   date: string;
+  createdAt?: string;
   internalCost: number;
   billedCost: number;
   driverWage: number;
   // 💡 این دو فیلد اضافه شدند تا تعداد و قیمت واحد ذخیره بشه
+  unit?: string;
   qty?: number; 
   unitPrice?: number; 
 }
@@ -79,7 +82,7 @@ export const useLogisticsStore = create<LogisticsState>()(
       tools: [],
       
       addLog: (log) => set((state) => ({
-        logs: [{ ...log, id: crypto.randomUUID() }, ...state.logs]
+        logs: [{ ...log, id: crypto.randomUUID(), createdAt: new Date().toISOString() }, ...state.logs]
       })),
       updateLog: (id, data) => set((state) => ({
         logs: state.logs.map(l => l.id === id ? { ...l, ...data } : l)

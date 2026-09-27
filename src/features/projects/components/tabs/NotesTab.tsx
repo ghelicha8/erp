@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo,  useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Notebook, Search, ChevronDown, X, Tag, Calendar, 
+  Notebook, Search,  X, Tag, Calendar, 
   Edit, Trash2, Combine, AlignRight, AlignCenter, AlignLeft, 
   Database, Banknote, Star, FileSpreadsheet, Printer,
-  HardHat, ShoppingCart, Truck, FileText, Package, Eye, Layers, AlertCircle, Type, Box, CheckCircle
+  HardHat, ShoppingCart, Truck, FileText, Eye, Layers, AlertCircle, Type, Box, CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -15,6 +15,8 @@ import { jsPDF } from 'jspdf';
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import { useProjectStore } from '../../store/projectStore';
 import { useFinanceStore } from '../../../../store/financeStore';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
+import { NeonSearchWrapper, GlassInputWrapper, PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 interface NotesTabProps {
   projectId: string;
@@ -52,48 +54,6 @@ const safeNum = (val: any): number => {
 };
 const formatValue = (val: any) => val ? Number(String(val).replace(/\D/g, '')).toLocaleString('fa-IR') : '0';
 
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center">{children}</div>
-  </div>
-);
-
-const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/60 dark:border-slate-600/50 shadow-sm focus-within:border-indigo-500/60 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all duration-300 overflow-hidden group ${className}`}>
-    <div className="relative z-10 w-full h-full bg-transparent flex flex-col justify-start">{children}</div>
-  </div>
-);
-
-function GlassSelect({ options, value, onChange, placeholder }: any) {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const clickOutside = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false); };
-    document.addEventListener('mousedown', clickOutside);
-    return () => document.removeEventListener('mousedown', clickOutside);
-  }, []);
-  const selectedLabel = options.find((o: any) => o.value === value)?.label || placeholder;
-  return (
-    <div className="relative w-full" ref={ref}>
-      <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer w-full bg-white/40 dark:bg-slate-800/40 border border-white/60 dark:border-slate-600/50 rounded-xl px-4 py-3 outline-none backdrop-blur-md transition-all flex items-center justify-between shadow-sm focus:border-indigo-500/60 hover:bg-white/50 dark:hover:bg-slate-800/50">
-        <span className={`font-bold text-sm truncate ${value ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}`}>{selectedLabel}</span>
-        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180 text-indigo-500' : ''}`} />
-      </div>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 left-0 right-0 z-[99999] min-w-[200px] backdrop-blur-2xl bg-white/80 dark:bg-slate-800/90 border border-white/50 dark:border-slate-600 shadow-[0_15px_40px_rgba(0,0,0,0.2)] rounded-2xl max-h-56 overflow-y-auto modal-scrollbar">
-            {options.map((opt: any) => (
-              <div key={opt.value} onClick={() => { onChange(opt.value); setIsOpen(false); }} className={`px-4 py-3.5 cursor-pointer text-sm font-bold border-b border-white/30 dark:border-slate-700/50 last:border-0 transition-colors ${value === opt.value ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300' : 'hover:bg-white/60 dark:hover:bg-slate-700/60 text-slate-800 dark:text-slate-200'}`}>{opt.label}</div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 interface NoteBlock {
   id: string;
@@ -190,12 +150,9 @@ export default function NotesTab({ projectId }: NotesTabProps) {
     });
 
     if (isMergedView) {
-      filtered = filtered.sort((a, b) => a.tag.localeCompare(b.tag));
+      filtered = sortNewestFirst(filtered, 'prepend').sort((a, b) => a.tag.localeCompare(b.tag));
     } else {
-      filtered = filtered.sort((a, b) => {
-        if (a.isPinned === b.isPinned) return new Date(b.date).getTime() - new Date(a.date).getTime();
-        return a.isPinned ? -1 : 1;
-      });
+      filtered = sortNewestFirst(filtered, 'prepend').sort((a, b) => (a.isPinned === b.isPinned) ? 0 : a.isPinned ? -1 : 1);
     }
     return filtered;
   }, [notes, searchQuery, selectedTagFilter, isMergedView, pendingDeleteIds]);
@@ -275,7 +232,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
         const parsedBlocks = JSON.parse(note.content) as NoteBlock[];
         parsedBlocks.forEach(block => {
           if (block.type === 'text') {
-            blocksHtml += `<div class="text-block" style="text-align: ${note.textAlignment || 'right'}; margin: 15px 0; font-size: 14px;">${block.content.replace(/\n/g, '<br/>')}</div>`;
+            blocksHtml += `<div class="text-block" style="text-align: ${note.textAlignment || 'right'}; margin: 15px 0; font-size: 14px;">${(block.content ?? '').replace(/\n/g, '<br/>')}</div>`;
           } else if (block.type === 'table' && block.html) {
             blocksHtml += block.html; 
           }
@@ -323,10 +280,10 @@ export default function NotesTab({ projectId }: NotesTabProps) {
     const finalContentStr = JSON.stringify(blocks);
     let updatedNotes;
     if (noteToEdit) {
-      updatedNotes = notes.map(n => n.id === noteToEdit.id ? { ...n, title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment } : n);
+      updatedNotes = notes.map((n: any) => n.id === noteToEdit.id ? { ...n, title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment } : n);
       toast.success('سند با موفقیت ویرایش شد.');
     } else {
-      updatedNotes = [{ id: crypto.randomUUID(), title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment, isPinned: false }, ...notes];
+      updatedNotes = [{ id: crypto.randomUUID(), createdAt: new Date().toISOString(), title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment, isPinned: false }, ...notes];
       toast.success('سند جدید در سیستم ثبت شد.');
     }
     updateProject(projectId, { notes: updatedNotes });
@@ -334,7 +291,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
   };
 
   const togglePin = (id: string) => {
-    const updatedNotes = notes.map(n => n.id === id ? { ...n, isPinned: !n.isPinned } : n);
+    const updatedNotes = notes.map((n: any) => n.id === id ? { ...n, isPinned: !n.isPinned } : n);
     updateProject(projectId, { notes: updatedNotes });
   };
 
@@ -502,7 +459,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
             {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 rounded-full mr-3"><X className="w-3 h-3 text-slate-500" /></button>}
           </NeonSearchWrapper>
           
-          <div className="w-44 z-[100]"><GlassSelect options={TAG_OPTIONS} value={selectedTagFilter} onChange={setSelectedTagFilter} placeholder="همه تگ‌ها" /></div>
+          <div className="w-44 z-[100]"><PortalSelect options={TAG_OPTIONS} value={selectedTagFilter} onChange={setSelectedTagFilter} placeholder="همه تگ‌ها"  searchable /></div>
           <div className="h-8 w-px bg-slate-300/50 dark:bg-slate-700/50 hidden sm:block" />
 
           <button onClick={() => setIsMergedView(!isMergedView)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${isMergedView ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'bg-white/40 dark:bg-slate-800/40 border-white/60 dark:border-slate-600/50 text-slate-600 dark:text-slate-300 hover:bg-white/60'}`}>
@@ -770,7 +727,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 ml-1">تگ و رنگ سند</label>
-                    <GlassSelect options={MODAL_TAG_OPTIONS} value={formTag} onChange={setFormTag} placeholder="انتخاب دسته‌بندی" />
+                    <PortalSelect options={MODAL_TAG_OPTIONS} value={formTag} onChange={setFormTag} placeholder="انتخاب دسته‌بندی"  searchable />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 ml-1">تاریخ پیوست</label>

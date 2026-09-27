@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Project, ContractType } from '../types/project.types';
-import type { LaborRecord } from '../types/core.types';
+import type { ContractType } from '../types/project.types';
 
 export const rialToToman = (rialAmount: number | undefined): number => {
   if (!rialAmount) return 0;
@@ -131,7 +130,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addConsumeRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, consumptions: [...(p.consumptions || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, consumptions: [...(p.consumptions || []), { ...record, id: crypto.randomUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
         get().recalculateProjectFinancials(projectId);
       },
@@ -150,7 +149,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addPettyCashRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, pettyCash: [...(p.pettyCash || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, pettyCash: [...(p.pettyCash || []), { ...record, id: crypto.randomUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
         get().recalculateProjectFinancials(projectId);
       },
@@ -169,7 +168,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addArchiveRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, archive: [...(p.archive || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, archive: [...(p.archive || []), { ...record, id: crypto.randomUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
       },
       updateArchiveRecord: (projectId, recordId, updatedData) => {

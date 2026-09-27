@@ -1,30 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Wallet, ArrowUpRight, ArrowDownRight, CreditCard, 
-  Search, Plus, Receipt, Landmark, FileText, CheckCircle, 
-  AlertTriangle, X, RefreshCw, Banknote, Clock // 💡 کلمه Clock به آخر این لیست اضافه شد
+  Search, Plus, Receipt, Landmark, CheckCircle, 
+  AlertTriangle, X, Banknote, Clock // 💡 کلمه Clock به آخر این لیست اضافه شد
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ایمپورت استورها (مسیرها را بر اساس پوشه‌بندی خود تنظیم کنید)
 import { useFinanceStore } from '../../store/financeStore';
 import type { Transaction, ChequeStatus } from '../../store/financeStore';
+import { sortNewestFirst } from '../../core/utils/sortHelpers';
+import { NeonSearchWrapper } from '../../components/ui/SharedLaborUI';
 
-import { useClientStore } from '../../store/clientStore';
 
 // ============================================================================
 // کامپوننت پایه جستجوی نئونی (یکپارچه با کل سیستم)
 // ============================================================================
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 // ============================================================================
 // کامپوننت کارت چک صیادی (طراحی گرافیکی و سه‌بعدی)
@@ -38,6 +31,7 @@ const ChequeCard = ({ tx, onAction }: { tx: Transaction, onAction: (id: string, 
   const statusConfig = {
     PENDING: { color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'در انتظار وصول' },
     CASHED: { color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'پاس شده' },
+    CASH_SETTLED: { color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'تسویه نقدی' },
     BOUNCED: { color: 'text-rose-500', bg: 'bg-rose-500/10', label: 'برگشت خورده' },
     RETURNED: { color: 'text-slate-500', bg: 'bg-slate-500/10', label: 'عودت داده شده' },
     EXCHANGED: { color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'تبدیل به نقد' },
@@ -134,11 +128,11 @@ export default function FinanceCenter() {
   }, [transactions]);
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(tx => {
+    return sortNewestFirst(transactions.filter(tx => {
       if (activeTab === 'CHEQUES' && tx.type !== 'CHEQUE') return false;
       const matchSearch = tx.description?.includes(searchQuery) || tx.amount.toString().includes(searchQuery);
       return matchSearch;
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // سورت نزولی
+    }), 'append'); // سورت نزولی
   }, [transactions, activeTab, searchQuery]);
 
   return (

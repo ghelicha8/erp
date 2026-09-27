@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type ChequeStatus = 'PENDING' | 'CASHED' | 'BOUNCED' | 'RETURNED' | 'EXCHANGED';
-export type AllocationRecordType = 'NONE' | 'PURCHASE' | 'LABOR' | 'LOGISTICS';
+export type ChequeStatus = 'PENDING' | 'CASHED' | 'CASH_SETTLED' | 'BOUNCED' | 'RETURNED' | 'EXCHANGED';
+export type AllocationRecordType = 'NONE' | 'PURCHASE' | 'LABOR' | 'LOGISTICS' | 'INVOICE';
 
 // 💡 اینترفیس جدید برای پشتیبانی از تخصیص‌های چندگانه و وصل شدن به خریدهای مختلف
 export interface TransactionAllocation {
   id: string;
   amount: number;
-  allocationType: 'PROJECT' | 'FREELANCE';
+  allocationType: 'PROJECT' | 'FREELANCE' | 'WALLET' | 'INVOICE';
   projectId?: string;
   phaseId?: string;
   recordType?: AllocationRecordType;
@@ -29,11 +29,15 @@ export interface ChequeHistory {
 export interface Transaction {
   id: string;
   referenceId: string;
-  clientId?: string; 
+  clientId?: string;
+  projectId?: string;
+  phaseId?: string;
+  linkedPurchaseId?: string;
   allocations?: TransactionAllocation[]; // 💡 لیست تخصیص‌های جادویی
   isPurchaseSettlement?: boolean; 
   amount: number;
   date: string;
+  createdAt?: string;
   description?: string;
   direction: 'IN' | 'OUT';
   type: 'CASH' | 'CHEQUE';
@@ -45,6 +49,11 @@ export interface Transaction {
     serialNumber?: string;
     series?: string;
     bank?: string;
+    bankName?: string;
+    accountName?: string;
+    accountNumber?: string;
+    branch?: string;
+    receiver?: string;
     issueDate?: string;
     dueDate?: string;
     status: ChequeStatus; 
@@ -69,7 +78,7 @@ export const useFinanceStore = create<FinanceState>()(
       transactions: [],
       
       addTransaction: (tx) => set((state) => ({
-        transactions: [...state.transactions, { ...tx, id: crypto.randomUUID() }]
+        transactions: [...state.transactions, { ...tx, id: crypto.randomUUID(), createdAt: new Date().toISOString() }]
       })),
       
       updateTransaction: (id, data) => set((state) => ({

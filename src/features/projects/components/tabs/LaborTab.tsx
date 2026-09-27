@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HardHat, Search, X, Layers, Edit, Trash2, CheckCircle, CalendarDays, List, ChevronRight, ChevronLeft, Plus, User, ShieldCheck, Users, Eye, EyeOff, Copy } from 'lucide-react';
@@ -10,13 +10,13 @@ import { useLaborStore } from '../../../../store/laborStore';
 import { useBulkSelection } from '../../../../hooks/useBulkSelection';
 
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../../components/ui/GlassSelect';
 
 // 💡 ایمپورت پاپ‌آپ‌های یکپارچه از فایل مشترک
-import { FloatingUndoToast, BulkSelectionToast } from '../../../../components/ui/SharedLaborUI';
+import { FloatingUndoToast, BulkSelectionToast, NeonSearchWrapper, AnimatedCheckbox, PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 // 💡 آدرس‌دهی دقیق و اصلاح‌شده (۳ لایه برگشت به عقب)
 import UniversalLaborModal from '../../../labor/components/UniversalLaborModal';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
 
 interface LaborTabProps {
   projectId: string;
@@ -38,41 +38,6 @@ const useCurrency = () => {
 };
 
 // 💡 استفاده از چک‌باکس انیمیشنی داینامیک (نارنجی برای روزمزد، سبز برای مستمر)
-const AnimatedCheckbox = ({ checked, onChange, theme = 'amber' }: { checked: boolean, onChange: () => void, theme?: 'amber' | 'emerald' }) => {
-  const activeClass = theme === 'emerald' 
-    ? 'bg-gradient-to-tr from-emerald-500 to-teal-500 border-teal-400 shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-105'
-    : 'bg-gradient-to-tr from-amber-500 to-orange-500 border-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.4)] scale-105';
-    
-  const hoverClass = theme === 'emerald' ? 'hover:border-emerald-400' : 'hover:border-amber-400';
-
-  return (
-    <div 
-      onClick={(e) => { e.stopPropagation(); onChange(); }}
-      className={`w-6 h-6 mx-auto rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm ${
-        checked 
-          ? activeClass 
-          : `bg-white/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 ${hoverClass}`
-      }`}
-    >
-      <AnimatePresence>
-        {checked && (
-          <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
-            <CheckCircle className="w-4 h-4 text-white stroke-[3]" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 export default function LaborTab({ projectId }: LaborTabProps) {
   const allProjects = useProjectStore((state) => state.projects);
@@ -165,7 +130,7 @@ export default function LaborTab({ projectId }: LaborTabProps) {
   ];
 
   const filteredLaborRecords = useMemo(() => {
-    return projectLogs
+    return sortNewestFirst(projectLogs
       .filter((r: any) => {
         if (pendingDeleteIds.includes(r.id) || r.paymentType === 'PROJECT_MONTHLY') return false;
         const matchSearch = !searchQuery ? true : (r.workerName?.includes(searchQuery) || r.workType?.includes(searchQuery));
@@ -178,8 +143,7 @@ export default function LaborTab({ projectId }: LaborTabProps) {
           else matchPhase = r.phaseId === selectedPhaseFilter;
         }
         return matchSearch && matchFrom && matchTo && matchPhase;
-      })
-      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+      }), 'append');
   }, [projectLogs, searchQuery, dateFrom, dateTo, selectedPhaseFilter, pendingDeleteIds]);
 
   // 💡 جادوی یکپارچه‌سازی: خواندن قراردادهای هوشمند از پروفایل کارگران و ترکیب با لاگ‌های قدیمی
@@ -237,7 +201,6 @@ export default function LaborTab({ projectId }: LaborTabProps) {
   const calendarDays = useMemo(() => {
     moment.loadPersian({ usePersianDigits: false, dialect: 'persian-modern' });
     const startOfMonth = currentMonth.clone().startOf('jMonth');
-    const endOfMonth = currentMonth.clone().endOf('jMonth');
     const daysInMonth = moment.jDaysInMonth(currentMonth.jYear(), currentMonth.jMonth());
 
     let startDayOfWeek = startOfMonth.day() + 1; 
@@ -328,7 +291,7 @@ export default function LaborTab({ projectId }: LaborTabProps) {
               </NeonSearchWrapper>
               
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
-                <div className="w-full sm:w-36 h-[46px]"><GlassSelect options={phaseOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="فازها" /></div>
+                <div className="w-full sm:w-36 h-[46px]"><PortalSelect options={phaseOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="فازها"  searchable /></div>
                 <div className="w-full sm:w-32 h-[46px]"><GlassDatePicker placeholder="از تاریخ..." value={dateFrom} onChange={setDateFrom} /></div>
                 <div className="w-full sm:w-32 h-[46px]"><GlassDatePicker placeholder="تا تاریخ..." value={dateTo} onChange={setDateTo} /></div>
               </div>

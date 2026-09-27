@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -165,11 +165,11 @@ export default function LaborAnalyticsTab({ workerId }: { workerId: string }) {
     }
 
     filteredLogs.forEach(log => {
-      const d = log.date || log.startDate;
+      const d = log.date || '';
       if (!d) return;
       if (!grouped[d]) grouped[d] = { date: d, internal: 0, billed: 0, profit: 0 };
       
-      const internal = safeNum(log.internalCost) || safeNum(log.totalWage) || safeNum(log.wage) || safeNum(log.salary);
+      const internal = safeNum(log.internalCost);
       const billed = safeNum(log.billedCost) || internal;
 
       grouped[d].internal += internal;
@@ -368,7 +368,7 @@ export default function LaborAnalyticsTab({ workerId }: { workerId: string }) {
                     animationDuration={400}
                     animationEasing="ease-out"
                   >
-                    {projectBreakdown.map((entry, index) => (
+                    {projectBreakdown.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>

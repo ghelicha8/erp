@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, CheckCircle, ShoppingCart, Store, Edit, Trash2, Gem, Banknote, Truck } from 'lucide-react';
@@ -10,36 +10,10 @@ import { useLogisticsStore } from '../../../../store/logisticsStore';
 import { usePurchaseStore } from '../../../../store/purchaseStore';
 import { useBulkSelection } from '../../../../hooks/useBulkSelection';
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../../components/ui/GlassSelect';
+
+import { NeonSearchWrapper, AnimatedCheckbox, PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 // 💡 اضافه شدن چک‌باکس انیمیشنی و گرافیکی با تم سرخابی/صورتی (ویژه خریدها)
-const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
-  <div 
-    onClick={onChange}
-    className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm ${
-      checked 
-        ? 'bg-gradient-to-tr from-pink-500 to-rose-500 border-rose-400 shadow-[0_0_12px_rgba(236,72,153,0.4)] scale-105' 
-        : 'bg-white/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 hover:border-pink-400'
-    }`}
-  >
-    <AnimatePresence>
-      {checked && (
-        <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
-          <CheckCircle className="w-4 h-4 text-white stroke-[3]" />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </div>
-);
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 const getTodayDate = () => {
   return new Date().toLocaleDateString('fa-IR');
@@ -131,7 +105,7 @@ export default function PurchasesTab({ projectId }: { projectId: string }) {
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto relative z-[100]">
           <div className="w-full sm:w-36 h-[46px]">
-             <GlassSelect options={paginationOptions} value={pageSize} onChange={setPageSize} placeholder="نمایش..." />
+             <PortalSelect options={paginationOptions} value={pageSize} onChange={setPageSize} placeholder="نمایش..." />
           </div>
           <div className="w-full sm:w-36 h-[46px] relative">
             <GlassDatePicker placeholder="از تاریخ..." value={dateFrom} onChange={setDateFrom} />

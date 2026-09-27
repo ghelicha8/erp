@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, Truck, Wallet, Wrench, ShieldAlert, FileText, Settings, 
@@ -9,17 +9,19 @@ import moment from 'moment-jalaali';
 import { toast } from 'sonner';
 
 import { useLogisticsStore } from '../../../store/logisticsStore'; 
-import GlassSelect from '../../../components/ui/GlassSelect';
+
 import VehicleFormModal from './VehicleFormModal';
 
 // مسیر ایمپورت‌ها 
 import VehicleFinanceTab from './VehicleFinanceTab';
+import VehicleFreightTab from './VehicleFreightTab';
 
 // 🚨 مسیر فایل مودال که گفتید حل شده رو اینجا داریم 🚨
 import NewLogisticsModal from "../../projects/components/NewLogisticsModal";
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 
-const ExportBuilder = ({ vehicleId, context, onClose }: any) => null;
-const ImportBuilder = ({ vehicleId, context, onClose }: any) => null;
+const ExportBuilder = (_props: any) => null;
+const ImportBuilder = (_props: any) => null;
 
 const VEHICLE_TABS = [
   { id: 'finance', label: 'تاریخچه مالی', icon: Wallet, color: 'text-emerald-500', activeClass: 'text-emerald-600 dark:text-emerald-400' },
@@ -265,9 +267,9 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
           </div>
           
           <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full xl:w-auto relative z-[90]">
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="سال" /></div>
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={monthOptions} value={monthFilter} onChange={setMonthFilter} placeholder="ماه" /></div>
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={weekOptions} value={weekFilter} onChange={setWeekFilter} placeholder="هفته" /></div>
+            <div className="w-full md:w-[150px] h-[40px]"><PortalSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="سال" /></div>
+            <div className="w-full md:w-[150px] h-[40px]"><PortalSelect options={monthOptions} value={monthFilter} onChange={setMonthFilter} placeholder="ماه"  searchable /></div>
+            <div className="w-full md:w-[150px] h-[40px]"><PortalSelect options={weekOptions} value={weekFilter} onChange={setWeekFilter} placeholder="هفته" /></div>
           </div>
         </div>
         
@@ -346,6 +348,10 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
           {activeTab === 'finance' ? (
             <motion.div key="tab-finance" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
               <VehicleFinanceTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'freight' ? (
+            <motion.div key="tab-freight" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleFreightTab vehicleId={vehicleId} />
             </motion.div>
           ) : (
             <motion.div key={`placeholder-${activeTab}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="flex flex-col items-center justify-center w-full h-full text-slate-400 py-20">

@@ -1,156 +1,40 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState,  useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, Coffee, Shirt, Bus, Banknote, ShieldAlert, 
   Trash2, CalendarClock, Building2, UserCircle, Calculator, Info,
-  Search, ChevronDown, Check, Edit2, SlidersHorizontal, ListFilter,
-  CheckSquare, CheckCircle, X
+  Search,   Edit2, SlidersHorizontal, ListFilter,
+   X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import moment from 'moment-jalaali';
 import { useLaborStore } from '../../../store/laborStore';
 import { useProjectStore } from '../../projects/store/projectStore'; 
 import { useClientStore } from '../../../store/clientStore';
 
 import LaborMiscModal from './LaborMiscModal';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker'; // 💡 ایمپورت کامپوننت تقویم
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
+import { NeonSearchWrapper, PortalSelect, AnimatedCheckbox, GlassScrollStyles } from '../../../components/ui/SharedLaborUI';
 
 // ==========================================
 // 💡 استایل اسکرول شیشه‌ای
 // ==========================================
-const GlassScrollStyles = () => (
-  <style>{`
-    .glass-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .glass-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
-    .glass-scroll::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.3); border-radius: 10px; transition: background 0.3s ease; }
-    .glass-scroll::-webkit-scrollbar-thumb:hover { background: rgba(236, 72, 153, 0.8); }
-    .dark .glass-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-    .dark .glass-scroll::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.4); }
-  `}</style>
-);
 
 // ==========================================
 // 💡 کامپوننت چک‌باکس انیمیشنی
 // ==========================================
-const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
-  <div onClick={(e) => { e.stopPropagation(); onChange(); }} className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm shrink-0 ${checked ? 'bg-gradient-to-tr from-pink-500 to-rose-500 border-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.4)] scale-105' : 'bg-white/60 dark:bg-slate-800/60 border-slate-300 dark:border-slate-600 hover:border-pink-400'}`}>
-    <AnimatePresence>
-      {checked && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}><CheckCircle className="w-3 h-3 text-white stroke-[3]" /></motion.div>}
-    </AnimatePresence>
-  </div>
-);
 
 // ==========================================
 // 💡 سرچ‌باکس نئونی
 // ==========================================
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/20 dark:bg-slate-800/40 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(236,72,153,0.15)] transition-all border border-white/50 dark:border-slate-700/50 ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ec4899,#f43f5e,#8b5cf6,#06b6d4,#10b981,#ec4899,#f43f5e,#8b5cf6,#06b6d4,#10b981,#ec4899)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-pink-500 group-focus-within:to-rose-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 // ==========================================
 // 💡 کامپوننت سلکتِ انیمیشنی شیشه‌ای (رفع باگ بسته شدن هنگام اسکرول)
 // ==========================================
-const PortalSelect = ({ value, onChange, options, placeholder, icon: Icon, searchable = false, className = '' }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  const selected = options.find((o:any) => String(o.id) === String(value));
-
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
-    return options.filter((o:any) => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [options, searchTerm]);
-
-  const openDropdown = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 8, left: rect.left, width: rect.width });
-      setIsOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = (e: Event) => {
-      if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
-        return; 
-      }
-      setIsOpen(false);
-    };
-
-    if (isOpen) {
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('resize', handleScroll);
-    }
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleScroll);
-    };
-  }, [isOpen]);
-
-  return (
-    <>
-      <button type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} className={`h-[42px] bg-white/60 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200 dark:border-slate-700/60 rounded-xl px-3 flex justify-between items-center outline-none transition-all shadow-sm hover:border-pink-400 focus:ring-2 focus:ring-pink-500/30 ${className}`}>
-        <div className="flex items-center gap-2 truncate text-right flex-1">
-           {Icon && <Icon className="w-4 h-4 text-pink-500 shrink-0" />}
-           <span className="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200 pt-0.5">
-             {selected ? selected.label : placeholder}
-           </span>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-pink-500 shrink-0 ml-2 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && createPortal(
-        <>
-          <div className="fixed inset-0 z-[999999]" onClick={() => setIsOpen(false)} />
-          <motion.div 
-            ref={dropdownRef} 
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} 
-            style={{ top: coords.top, left: coords.left, width: coords.width }} 
-            className="fixed bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.3)] z-[1000000] overflow-hidden flex flex-col max-h-72 min-w-[200px]"
-          >
-            {searchable && (
-              <div className="p-2 border-b border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50">
-                <div className="relative group rounded-xl bg-white dark:bg-slate-900 overflow-hidden shadow-inner">
-                   <div className="absolute inset-0 rounded-xl pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', background: 'linear-gradient(90deg, #ec4899, #f43f5e)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', opacity: 0.5 }} />
-                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-pink-500 z-10" />
-                   <input type="text" autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="جستجو..." className="w-full bg-transparent border-none pr-9 pl-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 relative z-10" />
-                </div>
-              </div>
-            )}
-            <div className="overflow-y-auto glass-scroll p-1.5 flex-1">
-              {filteredOptions.length > 0 ? filteredOptions.map((opt: any) => {
-                const OptIcon = opt.icon || Check;
-                return (
-                  <button type="button" key={opt.id} onClick={() => { onChange(opt.id); setIsOpen(false); setSearchTerm(''); }} className={`w-full text-right px-4 py-2.5 text-xs font-black rounded-xl transition-all flex items-center justify-between group ${String(value) === String(opt.id) ? 'bg-pink-50 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-                    <div className="flex items-center gap-2">
-                      <OptIcon className={`w-4 h-4 ${String(value) === String(opt.id) ? 'text-pink-500' : 'text-slate-400 group-hover:text-pink-400'}`} />
-                      <span className="truncate pt-0.5">{opt.label}</span>
-                    </div>
-                    {String(value) === String(opt.id) && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
-                  </button>
-                )
-              }) : (
-                <div className="py-6 text-center text-xs font-bold text-slate-400">موردی یافت نشد!</div>
-              )}
-            </div>
-          </motion.div>
-        </>, document.body
-      )}
-    </>
-  );
-};
 
 export default function LaborMiscTab({ workerId }: { workerId: string }) {
-  const { workers, updateWorker } = useLaborStore();
+  const { workers } = useLaborStore();
   const { projects } = useProjectStore();
   const { clients } = useClientStore();
   
@@ -267,8 +151,7 @@ export default function LaborMiscTab({ workerId }: { workerId: string }) {
       result = result.filter(e => e.date <= dateTo);
     }
 
-    result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return result;
+    return sortNewestFirst(result, 'prepend');
   }, [activeMiscExpenses, searchTerm, categoryFilter, clientFilter, projectFilter, dateFrom, dateTo]);
 
   const displayedExpenses = displayLimit === 'ALL' ? filteredExpenses : filteredExpenses.slice(0, displayLimit as number);
@@ -409,7 +292,7 @@ export default function LaborMiscTab({ workerId }: { workerId: string }) {
 
                     return (
                       <motion.div key={exp.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} 
-                        onClick={() => toggleDocSelection(exp.id)}
+                        onClick={() => toggleSelection(exp.id)}
                         className={`group flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${isSelected ? 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] bg-pink-50 dark:bg-pink-900/20' : !isCalculated ? 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/50 hover:border-slate-300' : isDeducted ? 'bg-rose-50/50 dark:bg-rose-900/10 border-rose-100 dark:border-rose-800/30 hover:border-rose-300 dark:hover:border-rose-700' : 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30 hover:border-emerald-300 dark:hover:border-emerald-700'}`}>
                         
                         <div className="flex items-start lg:items-center gap-4">

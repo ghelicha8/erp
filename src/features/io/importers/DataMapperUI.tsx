@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
-import { Upload, Database, GitMerge, FileWarning, CheckCircle, Trash2, ArrowRightLeft } from 'lucide-react';
-import { SmartMergeEngine, ImportStrategy } from './SmartMergeEngine';
+import { Upload, Database, FileWarning, Trash2, ArrowRightLeft } from 'lucide-react';
+import { SmartMergeEngine, type ImportStrategy } from './SmartMergeEngine';
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 // فیلدهای استانداردی که دیتابیس ما نیاز دارد (بسته به ماژولی که کاربر انتخاب کرده)
 const DB_SCHEMAS: Record<string, { key: string, label: string, required?: boolean }[]> = {
@@ -121,27 +122,22 @@ export default function DataMapperUI({ onClose, onImportComplete }: { onClose: (
             
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-400">۱. مقصد ورود اطلاعات</label>
-              <select 
-                value={targetModule} 
-                onChange={e => setTargetModule(e.target.value as any)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 outline-none text-white font-bold"
-              >
-                <option value="CLIENTS">پروفایل مشتریان / کارفرمایان</option>
-                <option value="INVENTORY">انبار و کالاها</option>
-              </select>
+              <PortalSelect
+                options={[{ value: 'CLIENTS', label: 'پروفایل مشتریان / کارفرمایان' }, { value: 'INVENTORY', label: 'انبار و کالاها' }]}
+                value={targetModule}
+                onChange={(v: any) => setTargetModule(v)}
+                placeholder="انتخاب کنید..."
+              />
             </div>
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-400">۲. استراتژی ادغام</label>
-              <select 
-                value={strategy} 
-                onChange={e => setStrategy(e.target.value as ImportStrategy)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 outline-none text-white font-bold"
-              >
-                <option value="SMART_MERGE">ادغام هوشمند (فقط تکمیل فیلدهای خالی)</option>
-                <option value="OVERWRITE">جایگزینی کامل دیتای تکراری</option>
-                <option value="WIPE_INSERT">حذف کل قبلی‌ها و ورود جدید</option>
-              </select>
+              <PortalSelect
+                options={[{ value: 'SMART_MERGE', label: 'ادغام هوشمند (فقط تکمیل فیلدهای خالی)' }, { value: 'OVERWRITE', label: 'جایگزینی کامل دیتای تکراری' }, { value: 'WIPE_INSERT', label: 'حذف کل قبلی‌ها و ورود جدید' }]}
+                value={strategy}
+                onChange={(v: any) => setStrategy(v as ImportStrategy)}
+                placeholder="انتخاب کنید..."
+              />
             </div>
 
             <div className="space-y-2">
@@ -174,14 +170,13 @@ export default function DataMapperUI({ onClose, onImportComplete }: { onClose: (
                     <div className="text-slate-500"><ArrowRightLeft className="w-4 h-4" /></div>
                     
                     <div className="flex-1">
-                      <select 
+                      <PortalSelect
+                        options={[{ value: '', label: '-- متصل نشود --' }, ...fileHeaders.map(h => ({ value: h, label: h }))]}
                         value={mapping[field.key] || ''}
-                        onChange={e => setMapping(prev => ({ ...prev, [field.key]: e.target.value }))}
-                        className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 outline-none text-cyan-400 text-sm font-bold"
-                      >
-                        <option value="">-- متصل نشود --</option>
-                        {fileHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                      </select>
+                        onChange={(v: any) => setMapping(prev => ({ ...prev, [field.key]: v }))}
+                        placeholder="انتخاب ستون..."
+                        searchable
+                      />
                     </div>
                   </div>
                 ))}

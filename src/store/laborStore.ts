@@ -56,7 +56,8 @@ export interface LoanInstallment {
 export interface DocumentRecord {
   id: string;
   title: string;
-  fileUrl?: string; 
+  fileUrl?: string;
+  mimeType?: string;
   documentType: 'ID_CARD' | 'CONTRACT' | 'PROMISSORY_NOTE' | 'CERTIFICATE' | 'OTHER';
   uploadDate: string;
 }
@@ -139,6 +140,7 @@ export interface LaborLog {
   workerId: string;
   workerName: string; 
   date: string;
+  createdAt?: string;
 
   startTime?: string;
   endTime?: string;
@@ -414,6 +416,7 @@ export const useLaborStore = create<LaborState>()(
           ...log, 
           recordType: log.recordType || 'WAGE',
           id: crypto.randomUUID(), 
+          createdAt: new Date().toISOString(),
           ...financials 
         };
         
@@ -429,6 +432,7 @@ export const useLaborStore = create<LaborState>()(
             ...log,
             recordType: log.recordType || 'WAGE',
             id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
             ...financials
           };
         });

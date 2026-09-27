@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 // تقویم شمسی (نیازمند نصب پکیج: npm i react-multi-date-picker)
 import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
@@ -10,6 +11,7 @@ import persian_fa from 'react-date-object/locales/persian_fa';
 
 // ایمپورت استور و استفاده از import type برای رفع خطای verbatimModuleSyntax
 import { useProjectStore } from '../store/projectStore';
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 import type { ContractType } from '../types/project.types';
 
 // ============================================================================
@@ -21,11 +23,11 @@ const projectSchema = z.object({
   name: z.string().min(3, 'نام پروژه باید حداقل ۳ حرف باشد'),
   clientId: z.string().min(1, 'انتخاب یا ایجاد کارفرما الزامی است'),
   contractType: z.enum(['METRI', 'CONTRAT', 'PERCENTAGE', 'COST_ONLY', 'CUSTOM'] as const, {
-    required_error: 'لطفا نوع قرارداد را مشخص کنید',
+    error: 'لطفا نوع قرارداد را مشخص کنید',
   }),
   startDate: z.string().min(1, 'تاریخ شروع الزامی است'),
   profilePhoto: z.string().optional(),
-  photos: z.array(z.string()).max(10, 'حداکثر می‌توانید ۱۰ عکس آپلود کنید').default([]),
+  photos: z.array(z.string()).max(10, 'حداکثر می‌توانید ۱۰ عکس آپلود کنید').optional(),
 });
 
 // استخراج مستقیم تایپ از Zod
@@ -77,8 +79,6 @@ export default function NewProjectForm() {
     { id: 'c-2', name: 'شرکت عمران آلفا' },
   ]);
   const [clientSearch, setClientSearch] = useState('');
-  const [showClientsDropdown, setShowClientsDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -100,16 +100,6 @@ export default function NewProjectForm() {
   const selectedClientId = watch('clientId');
 
   // بستن دراپ‌داون در صورت کلیک بیرون از آن
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowClientsDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   // هندلر آپلود عکس پروفایل
   const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -191,14 +181,11 @@ export default function NewProjectForm() {
       transition: { staggerChildren: 0.08 }
     }
   };
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
   };
 
-  // فیلتر کردن لیست کارفرمایان
-  const filteredClients = mockClients.filter(c => c.name.includes(clientSearch));
-  const exactMatchExists = mockClients.some(c => c.name === clientSearch);
 
   return (
     <div dir="rtl" className="min-h-screen p-4 md:p-8 flex items-center justify-center font-sans text-gray-800 dark:text-gray-100">
@@ -239,16 +226,25 @@ export default function NewProjectForm() {
 
             <motion.div variants={itemVariants} className="space-y-1">
               <label className="text-sm font-semibold">نوع کارکرد (قرارداد) <span className="text-red-500">*</span></label>
-              <select
-                {...register('contractType')}
-                className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none"
-              >
-                <option value="CONTRAT">کنترات (مقطوع)</option>
-                <option value="METRI">متری</option>
-                <option value="PERCENTAGE">درصدی (پیمان مدیریت)</option>
-                <option value="COST_ONLY">فقط هزینه</option>
-                <option value="CUSTOM">سفارشی</option>
-              </select>
+              <Controller
+                name="contractType"
+                control={control}
+                render={({ field }) => (
+                  <PortalSelect
+                    options={[
+                      { value: 'CONTRAT', label: 'کنترات (مقطوع)' },
+                      { value: 'METRI', label: 'متری' },
+                      { value: 'PERCENTAGE', label: 'درصدی (پیمان مدیریت)' },
+                      { value: 'COST_ONLY', label: 'فقط هزینه' },
+                      { value: 'CUSTOM', label: 'سفارشی' },
+                    ]}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="انتخاب نوع قرارداد..."
+                    hasError={!!errors.contractType}
+                  />
+                )}
+              />
               {errors.contractType && <span className="text-xs text-red-500">{errors.contractType.message}</span>}
             </motion.div>
           </div>
@@ -257,63 +253,24 @@ export default function NewProjectForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Combobox هوشمند کارفرما */}
-            <motion.div variants={itemVariants} className="space-y-1 relative" ref={dropdownRef}>
+            <motion.div variants={itemVariants} className="space-y-1 relative">
               <label className="text-sm font-semibold">کارفرما / مشتری <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={clientSearch}
-                  onChange={(e) => {
-                    setClientSearch(e.target.value);
-                    setShowClientsDropdown(true);
-                    // ریست کردن آیدی انتخاب شده وقتی کاربر تایپ می‌کند
-                    if (selectedClientId) setValue('clientId', '');
-                  }}
-                  onFocus={() => setShowClientsDropdown(true)}
-                  placeholder="جستجو یا ایجاد مشتری..."
-                  className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                />
-                <AnimatePresence>
-                  {showClientsDropdown && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto"
-                    >
-                      {filteredClients.map(client => (
-                        <div 
-                          key={client.id}
-                          className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                          onClick={() => {
-                            setClientSearch(client.name);
-                            setValue('clientId', client.id, { shouldValidate: true });
-                            setShowClientsDropdown(false);
-                          }}
-                        >
-                          {client.name}
-                        </div>
-                      ))}
-                      
-                      {/* دکمه ایجاد مشتری جدید در صورت عدم وجود */}
-                      {clientSearch.length > 0 && !exactMatchExists && (
-                        <div 
-                          className="px-4 py-3 text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer font-medium border-t border-gray-100 dark:border-gray-700 flex items-center gap-2"
-                          onClick={() => {
-                            setValue('clientId', 'NEW_CLIENT', { shouldValidate: true });
-                            setShowClientsDropdown(false);
-                          }}
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          افزودن "{clientSearch}" به عنوان مشتری جدید
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <PortalSelect
+                options={mockClients.map(c => ({ id: c.id, label: c.name }))}
+                value={selectedClientId}
+                onChange={(id: any) => {
+                  const found = mockClients.find(c => c.id === id);
+                  setClientSearch(found ? found.name : '');
+                  setValue('clientId', id, { shouldValidate: true });
+                }}
+                onAddNew={(term: string) => {
+                  setClientSearch(term);
+                  setValue('clientId', 'NEW_CLIENT', { shouldValidate: true });
+                }}
+                placeholder={selectedClientId === 'NEW_CLIENT' && clientSearch ? clientSearch : 'جستجو یا ایجاد مشتری...'}
+                hasError={!!errors.clientId}
+                searchable
+              />
               {errors.clientId && <span className="text-xs text-red-500">{errors.clientId.message}</span>}
             </motion.div>
 

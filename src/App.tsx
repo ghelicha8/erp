@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Hammer, CheckCircle, AlertCircle } from 'lucide-react';
 import { Toaster } from 'sonner';
 
