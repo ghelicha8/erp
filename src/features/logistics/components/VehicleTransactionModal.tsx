@@ -7,19 +7,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, CheckCircle, Banknote, FileSignature, UploadCloud, Trash2, Image as ImageIcon,
   ClipboardPaste, AlignLeft, PieChart, ArrowDownRight, ArrowUpRight,
-  Truck, Wrench, Building2, Layers, Plus, SplitSquareHorizontal, Users,
+  Truck, Wrench, Building2, Layers, Users,
   Archive, RefreshCcw, AlertTriangle, Combine, Split, ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useFinanceStore } from '../../../store/financeStore';
-import type { ChequeStatus, ChequeHistory, TransactionAllocation } from '../../../store/financeStore';
+import type { ChequeStatus, ChequeHistory} from '../../../store/financeStore';
 import { useProjectStore } from '../../projects/store/projectStore'; 
 import { useClientStore } from '../../../store/clientStore';
 import { useLaborStore } from '../../../store/laborStore';
 
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../components/ui/GlassSelect';
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const formatAmount = (value: string) => value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 const parseAmount = (val?: string) => Number((val || '0').replace(/,/g, ''));
@@ -31,7 +31,7 @@ const transactionSchema = z.object({
   date: z.string().min(1, 'تاریخ الزامی است'),
   type: z.enum(['CASH', 'CHEQUE', 'COMBINED'] as const),
   description: z.string().optional(),
-  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').default([]),
+  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').optional(),
   textReceipt: z.string().optional(),
   issuer: z.string().optional(),
   sayyadId: z.string().optional(),
@@ -178,7 +178,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
   const { addTransaction, updateTransaction, changeChequeStatus, exchangeChequeForCash } = useFinanceStore();
   const allProjects = useProjectStore(state => state.projects) || [];
   const allClients = useClientStore(state => state.clients) || [];
-  const laborStoreData = useLaborStore(state => state.laborers || (state as any).logs || []);
+  const laborStoreData = useLaborStore(state => state.workers);
   const drivers = Array.isArray(laborStoreData) ? laborStoreData : [];
 
   const [txDirection, setTxDirection] = useState<'IN' | 'OUT'>('IN');
@@ -367,7 +367,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
 
     try {
       if (editData && specialMode === 'CASHING') {
-        exchangeChequeForCash(editData.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد', data.attachments);
+        exchangeChequeForCash(editData.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد', data.attachments || []);
         toast.success('تراکنش نقدی ثبت شد و چک قبلی بایگانی گردید.');
         onClose(); return;
       }
@@ -398,7 +398,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
       });
 
       const basePayload: any = { 
-        referenceId: vehicleId, allocations: finalAllocations, date: data.date, direction: txDirection, description: data.description, type: data.type, attachments: data.attachments, textReceipt: data.textReceipt 
+        referenceId: vehicleId, allocations: finalAllocations, date: data.date, direction: txDirection, description: data.description, type: data.type, attachments: data.attachments || [], textReceipt: data.textReceipt 
       };
 
       const finalHistory = [...(editData?.chequeDetails?.history || []), ...pendingHistory];
@@ -406,7 +406,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
 
       if (editData) {
         if (editData.type === 'CHEQUE' && data.status !== editData.chequeDetails?.status) {
-          changeChequeStatus(editData.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments);
+          changeChequeStatus(editData.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments || []);
         }
         updateTransaction(editData.id, { ...basePayload, amount: rawAmount, ...(data.type === 'CHEQUE' && { chequeDetails: chequeData }) });
         toast.success(specialMode === 'EXCHANGING' ? 'چک جایگزین در سیستم ثبت شد.' : 'تراکنش با موفقیت ویرایش شد.');
@@ -538,7 +538,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                 <div className="space-y-2 relative z-50">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">تاریخ عملیات</label>
                   <Controller control={control} name="date" render={({ field: { onChange, value } }) => (
-                    <GlassDatePicker value={value} onChange={onChange} hasError={!!errors.date} />
+                    <GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.date} />
                   )} />
                 </div>
               </div>
@@ -547,7 +547,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">تخصیص‌ها و جزئیات تسویه</h3>
                   <button type="button" onClick={handleAddAllocation} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-500 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 shadow-md transition-all active:scale-95">
-                    <Plus className="w-4 h-4"/> افزودن ردیف
+                    <motion.span animate={{ scale: [1, 1.25, 1] }} transition={{ repeat: Infinity, duration: 1.6 }} className="flex"><Layers className="w-4 h-4" /></motion.span> افزودن ردیف
                   </button>
                 </div>
 
@@ -582,11 +582,11 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 z-50 relative">
                                 <div className="z-[55] space-y-1.5">
                                   <label className="text-[10px] font-bold text-slate-500">کارفرما</label>
-                                  <GlassSelect options={[{value:'', label:'آزاد (بدون کارفرما)'}, ...allClients.map(c => ({value: c.id, label: getClientName(c)}))]} value={alloc.clientId || ''} onChange={(v) => updateAllocationRow(alloc.id, 'clientId', v)} placeholder="انتخاب کارفرما" />
+                                  <PortalSelect options={[{value:'', label:'آزاد (بدون کارفرما)'}, ...allClients.map(c => ({value: c.id, label: getClientName(c)}))]} value={alloc.clientId || ''} onChange={(v: any) => updateAllocationRow(alloc.id, 'clientId', v)} placeholder="انتخاب کارفرما" />
                                 </div>
                                 <div className="z-50 space-y-1.5">
                                   <label className="text-[10px] font-bold text-slate-500">پروژه (خودکار کارفرما را ست می‌کند)</label>
-                                  <GlassSelect options={[{value:'', label:'آزاد (بدون پروژه)'}, ...allProjects.filter(p => !alloc.clientId || p.clientId === alloc.clientId).map(p => ({value: p.id, label: p.name}))]} value={alloc.projectId || ''} onChange={(v) => updateAllocationRow(alloc.id, 'projectId', v)} placeholder="انتخاب پروژه" disabled={alloc.clientId && !allProjects.some(p => p.clientId === alloc.clientId)} />
+                                  <PortalSelect options={[{value:'', label:'آزاد (بدون پروژه)'}, ...allProjects.filter(p => !alloc.clientId || p.clientId === alloc.clientId).map(p => ({value: p.id, label: p.name}))]} value={alloc.projectId || ''} onChange={(v: any) => updateAllocationRow(alloc.id, 'projectId', v)} placeholder="انتخاب پروژه" disabled={!!alloc.clientId && !allProjects.some(p => p.clientId === alloc.clientId)} />
                                 </div>
                               </div>
                             </div>
@@ -596,12 +596,12 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                             <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 gap-4 z-50 relative mb-2 border-b border-slate-100 dark:border-slate-700 pb-4">
                               <div className="space-y-1.5 z-50 sm:col-span-2">
                                 <label className="text-[10px] font-bold text-rose-600">دسته‌بندی خرج‌کرد ماشین</label>
-                                <GlassSelect options={[{value:'REPAIR', label:'تعمیرات و قطعات'}, {value:'INSURANCE', label:'بیمه ماشین'}, {value:'WAGE', label:'پرداخت حقوق راننده'}, {value:'INCIDENTAL', label:'هزینه‌های جانبی'}]} value={alloc.type || 'REPAIR'} onChange={(v) => updateAllocationRow(alloc.id, 'type', v)} placeholder="نوع هزینه" />
+                                <PortalSelect options={[{value:'REPAIR', label:'تعمیرات و قطعات'}, {value:'INSURANCE', label:'بیمه ماشین'}, {value:'WAGE', label:'پرداخت حقوق راننده'}, {value:'INCIDENTAL', label:'هزینه‌های جانبی'}]} value={alloc.type || 'REPAIR'} onChange={(v: any) => updateAllocationRow(alloc.id, 'type', v)} placeholder="نوع هزینه" />
                               </div>
                               {alloc.type === 'WAGE' && (
                                 <div className="space-y-1.5 z-[45] sm:col-span-2">
                                   <label className="text-[10px] font-bold text-indigo-500">راننده دریافت‌کننده حقوق</label>
-                                  <GlassSelect options={drivers.map((d:any) => ({value: d.id, label: d.name || d.fullName || 'راننده'}))} value={alloc.driverId || ''} onChange={(v) => updateAllocationRow(alloc.id, 'driverId', v)} placeholder="انتخاب راننده" />
+                                  <PortalSelect options={drivers.map((d:any) => ({value: d.id, label: d.name || d.fullName || 'راننده'}))} value={alloc.driverId || ''} onChange={(v: any) => updateAllocationRow(alloc.id, 'driverId', v)} placeholder="انتخاب راننده"  searchable />
                                 </div>
                               )}
                             </div>
@@ -631,7 +631,7 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 z-[35] relative">
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 block mb-1">انتخاب راننده سرویس</label>
-                                    <GlassSelect options={drivers.map((d:any) => ({value: d.id, label: d.name || d.fullName || 'راننده'}))} value={alloc.driverId || ''} onChange={(v) => updateAllocationRow(alloc.id, 'driverId', v)} placeholder="راننده" />
+                                    <PortalSelect options={drivers.map((d:any) => ({value: d.id, label: d.name || d.fullName || 'راننده'}))} value={alloc.driverId || ''} onChange={(v: any) => updateAllocationRow(alloc.id, 'driverId', v)} placeholder="راننده"  searchable />
                                   </div>
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 block mb-1">مبلغ دستمزد سرویسی (تومان)</label>
@@ -671,15 +671,15 @@ export default function VehicleTransactionModal({ isOpen, onClose, vehicleId, ed
                         {specialMode === 'NORMAL' && (
                           <div className="space-y-2 relative md:col-span-2 z-[45]">
                             <label className="text-xs font-bold text-slate-600 flex justify-between">وضعیت چک {isStatusChanged && <span className="text-rose-500 animate-pulse">ذخیره در بایگانی!</span>}</label>
-                            <Controller control={control} name="status" render={({ field }) => (<GlassSelect options={chequeStatusOptions} value={field.value || 'PENDING'} onChange={field.onChange} placeholder="وضعیت..." />)} />
+                            <Controller control={control} name="status" render={({ field }) => (<PortalSelect options={chequeStatusOptions} value={field.value || 'PENDING'} onChange={field.onChange} placeholder="وضعیت..." />)} />
                           </div>
                         )}
                         <div className="space-y-2"><label className="text-xs font-bold text-slate-600">صادرکننده چک</label><input {...register('issuer')} className="w-full bg-white/60 border border-white/40 rounded-2xl px-4 py-3.5 outline-none" /></div>
                         <div className="space-y-2"><label className="text-xs font-bold text-slate-600">شناسه صیاد</label><input {...register('sayyadId')} className="w-full bg-white/60 border border-white/40 rounded-2xl px-4 py-3.5 outline-none tracking-widest font-mono text-left" dir="ltr" /></div>
                         <div className="space-y-2"><label className="text-xs font-bold text-slate-600">شماره سریال چک *</label><input {...register('serialNumber')} className={`w-full bg-white/60 border rounded-2xl px-4 py-3.5 outline-none font-mono text-left ${errors.serialNumber ? 'border-rose-500' : 'border-slate-200'}`} dir="ltr" /></div>
                         <div className="space-y-2"><label className="text-xs font-bold text-slate-600">سری چک</label><input {...register('series')} className="w-full bg-white/60 border border-white/40 rounded-2xl px-4 py-3.5 outline-none font-mono text-left" dir="ltr" /></div>
-                        <div className="space-y-2 relative z-[90]"><label className="text-xs font-bold text-slate-600">بانک *</label><Controller control={control} name="bank" render={({ field }) => (<GlassSelect options={bankOptions} value={field.value || ''} onChange={field.onChange} placeholder="انتخاب بانک" hasError={!!errors.bank} />)} /></div>
-                        <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-4 z-[80]"><label className="text-xs font-bold text-slate-600">تاریخ سررسید (وصول) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
+                        <div className="space-y-2 relative z-[90]"><label className="text-xs font-bold text-slate-600">بانک *</label><Controller control={control} name="bank" render={({ field }) => (<PortalSelect options={bankOptions} value={field.value || ''} onChange={field.onChange} placeholder="انتخاب بانک" hasError={!!errors.bank}  searchable />)} /></div>
+                        <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-4 z-[80]"><label className="text-xs font-bold text-slate-600">تاریخ سررسید (وصول) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
                       </div>
                     </div>
                   </motion.div>

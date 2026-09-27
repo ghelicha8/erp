@@ -4,7 +4,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, AlertCircle, Plus, CheckCircle, ChevronDown, Trash2, Building2, UploadCloud, Calculator, Percent, Ruler } from 'lucide-react';
+import {
+  X, Camera, AlertCircle, CheckCircle,
+  Trash2, Building2, UploadCloud, Calculator,
+  Percent, Ruler,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useProjectStore } from '../store/projectStore';
@@ -12,17 +16,18 @@ import { useClientStore } from '../../../store/clientStore';
 import type { ContractType, Project } from '../types/project.types';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import ClientFormModal from '../../clients/components/ClientFormModal';
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const projectSchema = z.object({
   name: z.string().min(3, 'نام پروژه باید حداقل ۳ حرف باشد'),
   clientId: z.string().min(1, 'انتخاب کارفرما از لیست الزامی است'),
-  contractType: z.enum(['METRI', 'CONTRAT', 'PERCENTAGE', 'CUSTOM'] as const, {
-    required_error: 'لطفاً نوع قرارداد را مشخص کنید',
+  contractType: z.enum(['METRI', 'CONTRAT', 'PERCENTAGE', 'COST_ONLY', 'CUSTOM'] as const, {
+    error: 'لطفاً نوع قرارداد را مشخص کنید',
   }),
   startDate: z.string().min(1, 'انتخاب تاریخ شروع الزامی است'),
   profilePhoto: z.string().optional(),
-  photos: z.array(z.string()).max(10, 'حداکثر می‌توانید ۱۰ عکس آپلود کنید').default([]),
-  phasePhotos: z.array(z.string()).max(5, 'حداکثر ۵ تصویر قرارداد').default([]),
+  photos: z.array(z.string()).max(10, 'حداکثر می‌توانید ۱۰ عکس آپلود کنید').optional(),
+  phasePhotos: z.array(z.string()).max(5, 'حداکثر ۵ تصویر قرارداد').optional(),
   area: z.string().optional(),
   unitPrice: z.string().optional(),
   fixedPrice: z.string().optional(),
@@ -35,6 +40,7 @@ const contractTypeOptions = [
   { value: 'CONTRAT', label: 'مقطوع (کنترات)' },
   { value: 'METRI', label: 'متری' },
   { value: 'PERCENTAGE', label: 'درصدی (پیمان مدیریت)' },
+  { value: 'COST_ONLY', label: 'فقط هزینه' },
   { value: 'CUSTOM', label: 'سفارشی / متفرقه' },
 ];
 
@@ -83,11 +89,6 @@ export default function NewProjectModal({ isOpen, onClose, editData, preSelected
   const updateProject = useProjectStore((state) => state.updateProject);
   const storeClients = useClientStore((state) => state.clients);
   
-  const [clientSearch, setClientSearch] = useState('');
-  const [showClientsDropdown, setShowClientsDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const contractDropdownRef = useRef<HTMLDivElement>(null);
-  const [showContractDropdown, setShowContractDropdown] = useState(false);
 
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const prevClientIds = useRef(new Set(storeClients.map(c => c.id)));
@@ -101,6 +102,7 @@ export default function NewProjectModal({ isOpen, onClose, editData, preSelected
   const photosValue = watch('photos') || [];
   const phasePhotosValue = watch('phasePhotos') || [];
   const currentContractType = watch('contractType'); 
+  const selectedClientId = watch('clientId');
 
   useEffect(() => {
     const currentIds = new Set(storeClients.map(c => c.id));
@@ -108,7 +110,6 @@ export default function NewProjectModal({ isOpen, onClose, editData, preSelected
       const newClient = storeClients.find(c => !prevClientIds.current.has(c.id));
       if (newClient && !preSelectedClientId) {
         setValue('clientId', newClient.id, { shouldValidate: true });
-        setClientSearch(getClientFullName(newClient));
         toast.success(`کارفرما "${getClientFullName(newClient)}" تنظیم شد.`);
       }
     }
@@ -118,10 +119,6 @@ export default function NewProjectModal({ isOpen, onClose, editData, preSelected
   useEffect(() => {
     if (isOpen) {
       if (editData) {
-        const client = storeClients.find(c => c.id === editData.clientId);
-        setClientSearch(client ? getClientFullName(client) : editData.clientId);
-        setShowContractDropdown(false);
-        
         // 💡 ردیاب هوشمند: پیدا کردن فاز فعال به جای هاردکد کردن فاز اول
         const targetPhaseIndex = editData.phases?.findIndex((p: any) => p.phaseStatus === 'IN_PROGRESS' || !p.isCompleted);
         const activeIdx = targetPhaseIndex !== undefined && targetPhaseIndex >= 0 ? targetPhaseIndex : 0;
@@ -144,27 +141,14 @@ export default function NewProjectModal({ isOpen, onClose, editData, preSelected
       } else if (preSelectedClientId) {
         const client = storeClients.find(c => c.id === preSelectedClientId);
         if (client) {
-          setClientSearch(getClientFullName(client)); 
           setValue('clientId', client.id, { shouldValidate: true });
         }
         reset({ name: '', startDate: '', profilePhoto: '', photos: [], phasePhotos: [], contractType: 'CONTRAT', area: '', unitPrice: '', fixedPrice: '', contractorPercentage: '', clientId: preSelectedClientId });
-        setShowContractDropdown(false);
       } else {
         reset({ name: '', clientId: '', startDate: '', profilePhoto: '', photos: [], phasePhotos: [], contractType: 'CONTRAT', area: '', unitPrice: '', fixedPrice: '', contractorPercentage: '' });
-        setClientSearch('');
-        setShowContractDropdown(false);
       }
     }
   }, [isOpen, reset, editData, storeClients, preSelectedClientId, setValue]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setShowClientsDropdown(false);
-      if (contractDropdownRef.current && !contractDropdownRef.current.contains(event.target as Node)) setShowContractDropdown(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -346,25 +330,10 @@ export default function NewProjectModal({ isOpen, onClose, editData, preSelected
                     {errors.name && <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 mt-1.5 text-rose-500 text-xs font-bold"><AlertCircle className="w-3.5 h-3.5" /><span>{errors.name.message}</span></motion.div>}
                   </div>
 
-                  <div className="space-y-2 relative" ref={contractDropdownRef}>
+                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">نوع قرارداد (فاز فعلی)</label>
-                    <div tabIndex={0} onClick={() => setShowContractDropdown(!showContractDropdown)} className={`cursor-pointer w-full flex items-center justify-between ${neonInputClass} ${errors.contractType ? 'border-rose-500/70 ring-1 ring-rose-500/50' : ''}`}>
-                      <span className="font-medium text-slate-700 dark:text-slate-200">{contractTypeOptions.find(o => o.value === watch('contractType'))?.label || 'انتخاب کنید...'}</span>
-                      <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${showContractDropdown ? 'rotate-180 text-violet-500' : ''}`} />
-                    </div>
+                    <PortalSelect options={contractTypeOptions} value={currentContractType} onChange={(v: any) => setValue('contractType', v as ContractType, { shouldValidate: true })} placeholder="انتخاب کنید..." hasError={!!errors.contractType} />
                     {errors.contractType && <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 mt-1.5 text-rose-500 text-xs font-bold"><AlertCircle className="w-3.5 h-3.5" /><span>{errors.contractType.message}</span></motion.div>}
-
-                    <AnimatePresence>
-                      {showContractDropdown && (
-                        <motion.div initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }} transition={{ type: 'spring', damping: 25, stiffness: 400 }} className="absolute z-[999] w-full mt-2 backdrop-blur-2xl bg-white/95 dark:bg-slate-800/95 border border-white/50 dark:border-slate-700/50 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-2xl max-h-56 overflow-y-auto modal-scrollbar">
-                          {contractTypeOptions.map(option => (
-                            <div key={option.value} className={`px-4 py-3.5 cursor-pointer font-bold border-b border-slate-100/50 dark:border-slate-700/50 last:border-0 transition-colors ${watch('contractType') === option.value ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'hover:bg-violet-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300'}`} onClick={() => { setValue('contractType', option.value as ContractType, { shouldValidate: true }); setShowContractDropdown(false); }}>
-                              {option.label}
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
 
@@ -434,35 +403,10 @@ export default function NewProjectModal({ isOpen, onClose, editData, preSelected
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative" style={{ zIndex: 999999 }}>
                   
-                  <div className="space-y-2 relative" ref={dropdownRef}>
+                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">مشتری / کارفرما</label>
-                    <input 
-                      type="text" 
-                      value={clientSearch} 
-                      onChange={(e) => { const val = e.target.value; setClientSearch(val); setValue('clientId', val, { shouldValidate: true }); setShowClientsDropdown(true); }} 
-                      onFocus={() => setShowClientsDropdown(true)} 
-                      placeholder="جستجو در لیست کارفرمایان..." 
-                      className={`${neonInputClass} ${errors.clientId ? 'border-rose-500/70 ring-1 ring-rose-500/50' : ''} ${preSelectedClientId ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-80' : ''}`} 
-                      disabled={!!preSelectedClientId} 
-                    />
+                    <PortalSelect options={storeClients.map(c => ({ id: c.id, label: getClientFullName(c) }))} value={selectedClientId} onChange={(id: any) => setValue('clientId', id, { shouldValidate: true })} onAddNew={() => setIsClientModalOpen(true)} placeholder="جستجو در لیست کارفرمایان..." hasError={!!errors.clientId} disabled={!!preSelectedClientId} searchable />
                     {errors.clientId && <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 mt-1.5 text-rose-500 text-xs font-bold"><AlertCircle className="w-3.5 h-3.5" /><span>{errors.clientId.message}</span></motion.div>}
-                    
-                    <AnimatePresence>
-                      {showClientsDropdown && !preSelectedClientId && (
-                        <motion.div initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }} transition={{ type: 'spring', damping: 25, stiffness: 400 }} className="absolute z-[9999] w-full mt-2 backdrop-blur-2xl bg-white/95 dark:bg-slate-800/95 border border-white/50 dark:border-slate-700/50 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] max-h-48 overflow-y-auto modal-scrollbar">
-                          {storeClients.filter(c => getClientFullName(c).toLowerCase().includes(clientSearch.toLowerCase())).map(c => (
-                            <div key={c.id} className="px-4 py-3.5 hover:bg-violet-50 dark:hover:bg-slate-700/50 cursor-pointer font-bold border-b border-slate-100/50 dark:border-slate-700/50 last:border-0 transition-colors" onClick={() => { setClientSearch(getClientFullName(c)); setValue('clientId', c.id, { shouldValidate: true }); setShowClientsDropdown(false); }}>
-                              {getClientFullName(c)}
-                            </div>
-                          ))}
-                          
-                          <div className="sticky bottom-0 px-4 py-3.5 bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-slate-700/50 cursor-pointer font-black border-t border-slate-200 dark:border-slate-600 transition-colors flex items-center justify-center gap-2 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]" 
-                               onClick={(e) => { e.stopPropagation(); setIsClientModalOpen(true); setShowClientsDropdown(false); }}>
-                            <Plus className="w-5 h-5" /><span>+ ثبت کارفرمای جدید</span>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
 
                   <div className="space-y-2 relative" style={{ zIndex: 999999 }}>
@@ -492,7 +436,7 @@ export default function NewProjectModal({ isOpen, onClose, editData, preSelected
                       {photosValue.length < 10 && (
                         <div className="relative shrink-0 h-40 w-32 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center bg-white/40 dark:bg-black/20 hover:bg-white/60 dark:hover:bg-black/40 transition-colors group cursor-pointer">
                           <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                          <Plus className="w-8 h-8 text-slate-400 group-hover:text-emerald-500 transition-colors mb-1 drop-shadow-md" />
+                          <motion.span animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2.2 }} className="flex"><Camera className="w-8 h-8 text-slate-400 group-hover:text-emerald-500 transition-colors mb-1 drop-shadow-md" /></motion.span>
                           <span className="text-[10px] font-black text-slate-400 group-hover:text-emerald-500">افزودن عکس</span>
                         </div>
                       )}

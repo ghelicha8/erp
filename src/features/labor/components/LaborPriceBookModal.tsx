@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion} from 'framer-motion';
 import { 
   X, Briefcase, Building2, CheckCircle2,
   HardHat, Pickaxe, Calculator, FileSignature, Clock, Percent, Activity,
-  Sun, Puzzle, Ruler, CalendarDays, Box, Truck, Target, CheckSquare
+  Sun, Puzzle, Ruler, CalendarDays, Box, Truck, Target, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 

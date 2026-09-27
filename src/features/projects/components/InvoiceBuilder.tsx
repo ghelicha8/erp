@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Plus, Trash2, CheckCircle, Save, X, Eye, EyeOff, 
-  Calculator, FileText, User, Layers, Database,
-  ToggleLeft, ToggleRight, Banknote, Percent,
-  Search, HardHat, Truck, Box, Store, Briefcase, CreditCard, Camera, ClipboardPaste, FileDown, Link as LinkIcon, ChevronDown, Paperclip, Building2, Calendar // 💡 آیکون Calendar اضافه شد
+import {
+  Trash2, Save, X, Eye,
+  EyeOff, Calculator, FileText, User,
+  Database, HardHat, Truck, Box,
+  Store, Briefcase, CreditCard, Camera,
+  ClipboardPaste, FileDown, Link as LinkIcon, ChevronDown,
+  Paperclip, Building2, Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,7 +16,7 @@ import domtoimage from 'dom-to-image-more';
 import jsPDF from 'jspdf';
 import Num2persian from 'num2persian';
 
-import { useInvoiceStore, type Invoice, type InvoiceItem } from '../../../store/invoiceStore';
+import { useInvoiceStore } from '../../../store/invoiceStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { useProjectStore } from '../../projects/store/projectStore'; 
 import { useClientStore } from '../../../store/clientStore';
@@ -533,22 +535,17 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
 
   const handleQuickCreateClient = () => {
     if (!newClientData.name) return toast.error('وارد کردن نام الزامی است.');
-    const newId = crypto.randomUUID();
     if (addClientDB) {
-      addClientDB({
-        id: newId,
+      const createdId = addClientDB({
         name: newClientData.name,
         lastName: newClientData.lastName,
         phone: newClientData.phone,
         type: newClientData.type,
-        status: 'ACTIVE',
-        creditScore: 100,
-        projects: [],
-        joinDate: new Date().toLocaleDateString('fa-IR')
+        walletBalance: 0,
       });
       setDraft((p:any) => ({
         ...p,
-        clientId: newId,
+        clientId: createdId,
         clientName: `${newClientData.name} ${newClientData.lastName}`.trim(),
         clientPhone: newClientData.phone,
         projectId: '' 
@@ -936,7 +933,7 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
                              onClick={() => handleAddItem(item.category)} 
                              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-bold transition-colors bg-indigo-50 border border-indigo-200 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/20"
                           >
-                             <Plus className="w-3.5 h-3.5"/> ردیف مشابه
+                             <motion.span animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.8 }} className="flex"><Copy className="w-3.5 h-3.5" /></motion.span> ردیف مشابه
                           </button>
                       </div>
 

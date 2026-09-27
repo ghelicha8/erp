@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Layers, Plus, CheckCircle, Calculator, Ruler, Target, 
-  Percent, Banknote, Calendar, PlayCircle, Edit3, X, Trash2,
-  Images, UploadCloud 
+import {
+  Layers, CheckCircle, Calculator, Ruler,
+  Target, Percent, Banknote, Calendar,
+  PlayCircle, Edit3, X, Trash2,
+  Images, UploadCloud, Flag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProjectStore } from '../../store/projectStore';
@@ -14,7 +15,7 @@ import { useLaborStore } from '../../../../store/laborStore';
 import { useLogisticsStore } from '../../../../store/logisticsStore';
 
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../../components/ui/GlassSelect';
+import { PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 interface PhaseManagementTabProps {
   projectId: string;
@@ -78,7 +79,7 @@ const GlassInputWrapper = ({ children, className = '', icon: Icon }: any) => (
   </div>
 );
 
-const PhaseCard = ({ phase, index, isLast, onUpdate, projectTotalExpenditure }: { phase: any, index: number, isLast: boolean, onUpdate: (id: string, data: any) => void, projectTotalExpenditure: number }) => {
+const PhaseCard = ({ phase, isLast, onUpdate, projectTotalExpenditure }: { phase: any, isLast: boolean, onUpdate: (id: string, data: any) => void, projectTotalExpenditure: number }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false); 
   
@@ -234,7 +235,7 @@ const PhaseCard = ({ phase, index, isLast, onUpdate, projectTotalExpenditure }: 
               
               <div className="space-y-1.5 w-full sm:w-1/2 relative z-[70]">
                 <label className="text-xs font-bold text-slate-500 ml-1">نوع قرارداد و محاسبه این فاز</label>
-                <GlassSelect 
+                <PortalSelect 
                   icon={Target}
                   options={[
                     {value: 'METRE', label: 'مساحتی / متراژ چندگانه'}, 
@@ -244,7 +245,7 @@ const PhaseCard = ({ phase, index, isLast, onUpdate, projectTotalExpenditure }: 
                   ]} 
                   value={contractType} 
                   onChange={setContractType} 
-                />
+                 placeholder="انتخاب کنید..." />
               </div>
 
               {contractType === 'METRE' && (
@@ -271,7 +272,7 @@ const PhaseCard = ({ phase, index, isLast, onUpdate, projectTotalExpenditure }: 
                       </div>
                     </div>
                   ))}
-                  <button onClick={addDimension} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 hover:text-indigo-700 px-2"><Plus className="w-3 h-3" /> افزودن ابعاد جدید</button>
+                  <button onClick={addDimension} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 hover:text-indigo-700 px-2"><motion.span animate={{ rotate: [-10, 10, -10] }} transition={{ repeat: Infinity, duration: 2 }} className="flex"><Ruler className="w-3 h-3" /></motion.span> افزودن ابعاد جدید</button>
                   
                   <div className="pt-4 border-t border-indigo-100 dark:border-indigo-800/50">
                     <label className="text-xs font-bold text-slate-500 ml-1">قیمت واحد ({currencySuffix})</label>
@@ -480,9 +481,8 @@ export default function PhaseManagementTab({ projectId }: PhaseManagementTabProp
             {phases.map((phase: any, index: number) => (
               <PhaseCard 
                 key={phase.id} 
-                phase={phase} 
-                index={index} 
-                isLast={index === phases.length - 1} 
+                phase={phase}
+                isLast={index === phases.length - 1}
                 onUpdate={handleUpdatePhase} 
                 projectTotalExpenditure={projectCostSum} 
               />
@@ -514,7 +514,7 @@ export default function PhaseManagementTab({ projectId }: PhaseManagementTabProp
 
                   <div className="space-y-1.5 relative z-[50]">
                     <label className="text-xs font-bold text-slate-500 ml-1">قالب قرارداد فاز جدید</label>
-                    <GlassSelect 
+                    <PortalSelect 
                       icon={Target}
                       options={[
                         {value: 'METRE', label: 'مساحتی / متراژ چندگانه'}, 
@@ -523,12 +523,12 @@ export default function PhaseManagementTab({ projectId }: PhaseManagementTabProp
                       ]} 
                       value={newPhaseType} 
                       onChange={setNewPhaseType} 
-                    />
+                     placeholder="انتخاب کنید..." />
                   </div>
                 </div>
 
                 <button onClick={handleStartNewPhase} className="w-full py-3.5 mt-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
-                  <Plus className="w-5 h-5" /> ساخت فاز و بستن فاز قبل
+                  <motion.span animate={{ x: [-2, 2, -2] }} transition={{ repeat: Infinity, duration: 1.6 }} className="flex"><Flag className="w-5 h-5" /></motion.span> ساخت فاز و بستن فاز قبل
                 </button>
 
               </motion.div>

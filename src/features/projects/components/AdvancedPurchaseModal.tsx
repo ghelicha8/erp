@@ -1,18 +1,23 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect,  useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, ShoppingCart, Store, PackageSearch, Truck, 
-  User, HardHat, ChevronRight, ChevronLeft, CheckCircle, 
-  Plus, Trash2, ArrowRight, ShieldCheck, Search, Banknote, 
-  ChevronDown, Lock, Wallet, Users, Layers, AlertCircle, CheckSquare, Briefcase
+import {
+  X, ShoppingCart, Store, PackageSearch,
+  Truck, User, HardHat, ChevronRight,
+  ChevronLeft, CheckCircle, Trash2, ArrowRight,
+  ShieldCheck, Banknote, Lock, Wallet,
+  Users, Layers, AlertCircle, CheckSquare,
+  Briefcase, Package,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useProjectStore } from '../store/projectStore';
 import { useInventoryStore } from '../../../store/inventoryStore';
 import { usePurchaseStore } from '../../../store/purchaseStore';
+import { useProcurementStore } from '../../../store/procurementStore';
+import { useLogisticsStore } from '../../../store/logisticsStore';
+import { useLaborStore } from '../../../store/laborStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const toEnglishDigits = (str: string) => {
   if (!str) return '';
@@ -32,103 +37,6 @@ const getTodayDate = () => {
   return toEnglishDigits(d).split('/').map(p => p.padStart(2, '0')).join('/');
 };
 
-function SearchableGlassSelect({ options, value, onChange, placeholder, icon: Icon, onAddNew, disabled }: any) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const triggerRef = useRef<HTMLDivElement>(null);
-
-  const openDropdown = () => {
-    if (disabled) return;
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX, width: Math.max(rect.width, 300) });
-      setIsOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    const handleScrollOrResize = () => setIsOpen(false);
-    if (isOpen) {
-      window.addEventListener('scroll', handleScrollOrResize, true);
-      window.addEventListener('resize', handleScrollOrResize);
-    }
-    return () => {
-      window.removeEventListener('scroll', handleScrollOrResize, true);
-      window.removeEventListener('resize', handleScrollOrResize);
-    };
-  }, [isOpen]);
-
-  const safeOptions = options || [];
-  const filteredOptions = safeOptions.filter((o: any) => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  const selectedLabel = safeOptions.find((o: any) => o.value === value)?.label || placeholder;
-  const isExactMatch = safeOptions.some((o: any) => o.label.toLowerCase() === searchTerm.toLowerCase());
-
-  return (
-    <>
-      <div 
-        ref={triggerRef} 
-        onClick={openDropdown} 
-        className={`w-full min-h-[46px] border rounded-2xl px-4 py-3 outline-none transition-all duration-300 flex items-center justify-between shadow-sm relative z-10
-          ${disabled ? 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 opacity-60 cursor-not-allowed' : 'bg-white/80 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 hover:border-indigo-400 cursor-pointer'}
-          ${isOpen ? 'ring-2 ring-indigo-500/20 border-indigo-500 dark:border-indigo-400' : ''}
-        `}
-      >
-        <div className="flex items-center gap-2 overflow-hidden w-full">
-          {Icon && <Icon className="w-4 h-4 text-slate-400 shrink-0" />}
-          <span className={`truncate text-sm font-bold ${value ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`}>
-            {selectedLabel}
-          </span>
-        </div>
-        {!disabled && <ChevronDown className={`w-4 h-4 transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180 text-indigo-500' : 'text-slate-400'}`} />}
-      </div>
-
-      {isOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0" style={{ zIndex: 2147483647 }} onClick={() => setIsOpen(false)}>
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }}
-            onClick={(e) => e.stopPropagation()}
-            style={{ position: 'absolute', top: coords.top + 8, left: coords.left, width: coords.width }}
-            className="backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden flex flex-col"
-          >
-            {onAddNew !== undefined && (
-              <div className="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80">
-                <div className="relative">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl pl-3 pr-9 py-2 text-sm font-bold outline-none focus:border-indigo-500 transition-colors shadow-inner" placeholder="جستجو..." />
-                </div>
-              </div>
-            )}
-            
-            <div className="max-h-[220px] overflow-y-auto modal-scrollbar p-1.5">
-              {filteredOptions.map((opt: any) => (
-                <div 
-                  key={opt.value} 
-                  onClick={() => { onChange(opt.value); setIsOpen(false); setSearchTerm(''); }} 
-                  className={`px-4 py-3 cursor-pointer text-sm font-bold rounded-xl transition-all duration-200 m-0.5
-                    ${value === opt.value ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}
-                  `}
-                >
-                  {opt.label}
-                  {opt.subLabel && <span className="block text-[10px] text-slate-400 mt-1">{opt.subLabel}</span>}
-                </div>
-              ))}
-              {filteredOptions.length === 0 && !searchTerm && (
-                <div className="p-4 text-center text-xs font-bold text-slate-400">موردی یافت نشد.</div>
-              )}
-              {searchTerm && !isExactMatch && onAddNew && (
-                <button onClick={() => { setIsOpen(false); onAddNew(searchTerm); setSearchTerm(''); }} className="w-[calc(100%-8px)] m-1 px-4 py-3 flex items-center justify-center gap-2 text-sm font-black text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-95 animate-pulse">
-                  <Plus className="w-4 h-4" /> افزودن: {searchTerm}
-                </button>
-              )}
-            </div>
-          </motion.div>
-        </div>,
-        document.body
-      )}
-    </>
-  );
-}
 
 export default function AdvancedPurchaseModal({ projectId: propProjectId }: { projectId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -141,8 +49,9 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
   
   const project = useMemo(() => allProjects.find(p => p.id === localProjectId), [allProjects, localProjectId]);
 
-  const addLogisticsRecord = useProjectStore(state => state.addLogisticsRecord);
-  const addLaborRecord = useProjectStore(state => state.addLaborRecord); 
+  const addLogisticsLog = useLogisticsStore(state => state.addLog);
+  const addLaborLog = useLaborStore(state => state.addLog);
+  const allWorkers = useLaborStore(state => state.workers); 
   const updateProject = useProjectStore(state => state.updateProject);
 
   const inventoryMaterials = useInventoryStore(state => state.materials) || [];
@@ -151,7 +60,8 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
   const addPurchase = usePurchaseStore(state => state.addPurchase);
   const deletePurchase = usePurchaseStore(state => state.deletePurchase);
 
-  const mockVendors = [{ value: 'v1', label: 'آهن آلات برادران' }, { value: 'v2', label: 'سیمان سپاهان' }];
+  const allVendors = useProcurementStore(s => s.vendors);
+  const vendorOptions = allVendors.map(v => ({ value: v.id, label: v.name }));
   const mockMarketMaterials = [{ value: 'm1', label: 'سیمان تیپ 2', units: ['پاکت', 'تن', 'فله'] }, { value: 'm2', label: 'میلگرد 16', units: ['شاخه', 'کیلوگرم', 'تن'] }];
   const mockMarketEquipments = [{ value: 'e1', label: 'اجاره موتور برق', units: ['روز', 'ساعت'] }, { value: 'e2', label: 'اجاره هیلتی', units: ['روز', 'ساعت'] }];
   
@@ -214,7 +124,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
         setSource(editData.source || 'MARKET');
         setPhaseId(editData.phaseId || 'GENERAL');
         
-        const existingVendor = mockVendors.find(v => v.label === editData.vendor) || mockVendors.find(v => v.value === editData.vendor);
+        const existingVendor = vendorOptions.find(v => v.label === editData.vendor) || vendorOptions.find(v => v.value === editData.vendor);
         setVendorName(existingVendor ? existingVendor.value : editData.vendor || '');
         
         setDate(editData.date || getTodayDate());
@@ -253,7 +163,11 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
         }
 
         setDate(getTodayDate());
-        setVendorName(''); 
+        setVendorName('');
+        if (editData && editData.preSelectedVendorName) {
+          const match = useProcurementStore.getState().vendors.find(v => v.name === editData.preSelectedVendorName);
+          setVendorName(match ? match.id : editData.preSelectedVendorName);
+        }
         setPhaseId('GENERAL');
         setItems([{ id: Date.now().toString(), name: '', qty: 1, unit: 'عدد', internalCost: 0, billedCost: 0, availableUnits: ['عدد'] }]);
         setNeedsTransport(false); setVehicleName(''); setDriverName(''); setTransportInternalCost(0); setTransportBilledCost(0); setDriverWage(0);
@@ -324,7 +238,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
     }
 
     try {
-      const finalVendor = source === 'INVENTORY' ? 'انبار مرکزی' : (mockVendors.find(v=>v.value===vendorName)?.label || vendorName);
+      const finalVendor = source === 'INVENTORY' ? 'انبار مرکزی' : (vendorOptions.find(v=>v.value===vendorName)?.label || vendorName);
       let newPurchaseIdForTransaction = '';
 
       if (editId) {
@@ -379,7 +293,8 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
         const vehicleList = transportSource === 'INTERNAL' ? mockInternalVehicles : mockExternalVehicles;
         const finalVehicleName = vehicleList.find(v=>v.value===vehicleName)?.label || vehicleName;
 
-        addLogisticsRecord(localProjectId, { 
+        addLogisticsLog({
+          projectId: localProjectId, 
           type: 'TRANSPORT', 
           source: transportSource, 
           phaseId: phaseId === 'GENERAL' ? undefined : phaseId,
@@ -393,15 +308,27 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
         });
         
         if (transportSource === 'INTERNAL' && driverWage > 0) {
-          addLaborRecord(localProjectId, { 
-            workerName: finalDriverName, 
-            workType: 'راننده لجستیک', 
-            date: date, 
-            wage: driverWage, 
-            presence: 'FULL_DAY', 
-            description: `حمل بار خرید از ${finalVendor}`,
-            isPaid: isDriverWagePaid 
-          } as any);
+          const matchedDriver = allWorkers.find(w => `${w.name} ${w.lastName || ''}`.trim() === finalDriverName || w.name === driverName);
+          if (matchedDriver) {
+            addLaborLog({
+              workerId: matchedDriver.id,
+              workerName: `${matchedDriver.name} ${matchedDriver.lastName || ''}`.trim(),
+              date,
+              projectId: localProjectId || 'FREE',
+              attendance: 'PRESENT',
+              paymentType: 'DAILY',
+              workerUnit: 'SERVICE',
+              workerQuantity: 1,
+              workerRate: driverWage,
+              billedUnit: 'SERVICE',
+              billedQuantity: 1,
+              billedRate: 0,
+              workType: 'راننده لجستیک',
+              appliedStandardWorkHours: 8,
+              advancePayment: isDriverWagePaid ? driverWage : 0,
+              description: `حمل بار خرید از ${finalVendor}`,
+            });
+          }
         }
       }
 
@@ -489,7 +416,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
                     {source === 'MARKET' ? (
                       <div className="space-y-2 relative">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400">جستجوی پروفایل فروشگاه / شخص *</label>
-                        <SearchableGlassSelect options={mockVendors} value={vendorName} onChange={setVendorName} placeholder="انتخاب پروفایل..." onAddNew={(val: string) => handleCreateProfile('vendor', val)} />
+                        <PortalSelect options={vendorOptions} value={vendorName} onChange={setVendorName} placeholder="انتخاب پروفایل..." onAddNew={(val: string) => handleCreateProfile('vendor', val)}  searchable />
                       </div>
                     ) : (
                       <div className="space-y-2 flex flex-col justify-center">
@@ -511,12 +438,12 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
                     {(!propProjectId || lockedClientId) && (
                       <div className="space-y-2 relative z-50">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1"><Briefcase className="w-4 h-4"/> پروژه مرتبط *</label>
-                        <SearchableGlassSelect options={projectOptions} value={localProjectId} onChange={(val: string) => { setLocalProjectId(val); setPhaseId('GENERAL'); }} placeholder="انتخاب پروژه..." />
+                        <PortalSelect options={projectOptions} value={localProjectId} onChange={(val: string) => { setLocalProjectId(val); setPhaseId('GENERAL'); }} placeholder="انتخاب پروژه..." />
                       </div>
                     )}
                     <div className={`space-y-2 relative ${(!propProjectId || lockedClientId) ? 'z-40' : 'z-50'}`}>
                       <label className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1"><Layers className="w-4 h-4"/> این خرید مربوط به کدام فاز است؟</label>
-                      <SearchableGlassSelect options={phaseOptions} value={phaseId} onChange={setPhaseId} placeholder="انتخاب فاز..." disabled={(!propProjectId || lockedClientId) && !localProjectId} />
+                      <PortalSelect options={phaseOptions} value={phaseId} onChange={setPhaseId} placeholder="انتخاب فاز..." disabled={(!propProjectId || lockedClientId) && !localProjectId} />
                     </div>
                   </div>
 
@@ -543,13 +470,13 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-4 relative z-50">
                       <div className="sm:col-span-6 space-y-2 relative">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400">انتخاب {purchaseType === 'MATERIAL' ? 'مصالح' : 'ابزار'} *</label>
-                        <SearchableGlassSelect 
+                        <PortalSelect 
                           options={source === 'INVENTORY' ? activeInventoryList : activeMarketList} 
                           value={item.name} 
                           onChange={(val: string) => handleItemSelect(index, val)} 
                           placeholder={source === 'INVENTORY' ? 'جستجو در انبار مرکزی...' : 'جستجو یا ثبت کالای جدید...'} 
                           onAddNew={source === 'MARKET' ? (val: string) => handleItemSelect(index, val) : null} 
-                        />
+                         searchable />
                       </div>
                       <div className="sm:col-span-3 space-y-2">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400">{purchaseType === 'EQUIPMENT' ? 'تایم (روز)' : 'تعداد'} *</label>
@@ -558,7 +485,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
                       
                       <div className="sm:col-span-3 space-y-2 relative">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400">واحد</label>
-                        <SearchableGlassSelect 
+                        <PortalSelect 
                           options={item.availableUnits?.map((u: string) => ({label: u, value: u})) || []} 
                           value={item.unit} 
                           disabled={source === 'INVENTORY'}
@@ -586,7 +513,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
                 ))}
                 
                 <button onClick={() => setItems([...items, { id: Date.now().toString(), name: '', qty: 1, unit: 'عدد', internalCost: 0, billedCost: 0, availableUnits: ['عدد'] }])} className="w-full py-4 border-2 border-dashed border-pink-300 dark:border-pink-500/30 text-pink-600 dark:text-pink-400 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-colors">
-                  <Plus className="w-5 h-5" /> افزودن ردیف کالا / خدمات جدید
+                  <motion.span animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.8 }} className="flex"><Package className="w-5 h-5" /></motion.span> افزودن ردیف کالا / خدمات جدید
                 </button>
               </motion.div>
             )}
@@ -617,11 +544,11 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 border border-slate-200 dark:border-slate-700 rounded-2xl bg-white/50 dark:bg-slate-900/50 relative z-50">
                         <div className="space-y-2 relative">
                           <label className="text-xs font-bold text-slate-600 dark:text-slate-400">پروفایل ماشین *</label>
-                          <SearchableGlassSelect options={transportSource === 'INTERNAL' ? mockInternalVehicles : mockExternalVehicles} value={vehicleName} onChange={setVehicleName} placeholder={transportSource === 'INTERNAL' ? 'انتخاب ماشین شرکت...' : 'جستجوی باربری/ماشین...'} onAddNew={(val: string) => handleCreateProfile('vehicle', val)} />
+                          <PortalSelect options={transportSource === 'INTERNAL' ? mockInternalVehicles : mockExternalVehicles} value={vehicleName} onChange={setVehicleName} placeholder={transportSource === 'INTERNAL' ? 'انتخاب ماشین شرکت...' : 'جستجوی باربری/ماشین...'} onAddNew={(val: string) => handleCreateProfile('vehicle', val)}  searchable />
                         </div>
                         <div className="space-y-2 relative z-40">
                           <label className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1"><HardHat className="w-3.5 h-3.5"/> پروفایل راننده (اختیاری)</label>
-                          <SearchableGlassSelect options={transportSource === 'INTERNAL' ? mockInternalDrivers : mockExternalDrivers} value={driverName} onChange={setDriverName} placeholder={transportSource === 'INTERNAL' ? 'انتخاب پرسنل...' : 'جستجوی راننده آزاد...'} onAddNew={(val: string) => handleCreateProfile('driver', val)} />
+                          <PortalSelect options={transportSource === 'INTERNAL' ? mockInternalDrivers : mockExternalDrivers} value={driverName} onChange={setDriverName} placeholder={transportSource === 'INTERNAL' ? 'انتخاب پرسنل...' : 'جستجوی راننده آزاد...'} onAddNew={(val: string) => handleCreateProfile('driver', val)}  searchable />
                         </div>
                       </div>
 

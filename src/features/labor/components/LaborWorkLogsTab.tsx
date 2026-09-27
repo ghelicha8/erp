@@ -1,12 +1,13 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CalendarDays, Activity, Eye, EyeOff, LayoutGrid, List as ListIcon, 
-  ChevronRight, ChevronLeft, Search, CheckCircle2, ShieldAlert,
-  Copy, Trash2, Building2, UserCircle, CheckCircle, X, Construction, 
-  TrendingUp, Banknote, ChevronDown, Check, Layers, Clock,
-  Edit, Plus // 💡 اضافه شدن آیکون‌های جا افتاده برای رفع ارور
+import {
+  CalendarDays, Activity, Eye, EyeOff,
+  LayoutGrid, List as ListIcon, ChevronRight, ChevronLeft,
+  Search, ShieldAlert, Copy, Trash2,
+  Building2, UserCircle, CheckCircle, X,
+  Construction, Clock, Edit,
+  CalendarCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
@@ -17,10 +18,11 @@ import { useClientStore } from '../../../store/clientStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 
 // 💡 ایمپورت پاپ‌آپ‌های یکپارچه از فایل مشترک
-import { FloatingUndoToast, BulkSelectionToast } from '../../../components/ui/SharedLaborUI';
+import { FloatingUndoToast, BulkSelectionToast, NeonSearchWrapper, PortalSelect, AnimatedCheckbox } from '../../../components/ui/SharedLaborUI';
 
 // 💡 فراخوانی مودال یکپارچه و مادر از همین پوشه
 import UniversalLaborModal from './UniversalLaborModal';
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
 
 // ==========================================
 // 💡 توابع کمکی
@@ -44,124 +46,14 @@ const formatTime = (start?: string, end?: string) => {
 // ==========================================
 // 💡 کامپوننت چک‌باکس انیمیشنی داینامیک 
 // ==========================================
-const AnimatedCheckbox = ({ checked, onChange, theme = 'amber' }: { checked: boolean, onChange: () => void, theme?: 'amber' | 'emerald' | 'indigo' }) => {
-  let activeClass = 'bg-gradient-to-tr from-indigo-500 to-purple-500 border-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105';
-  let hoverClass = 'hover:border-indigo-400';
-  
-  if (theme === 'emerald') {
-    activeClass = 'bg-gradient-to-tr from-emerald-500 to-teal-500 border-teal-400 shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-105';
-    hoverClass = 'hover:border-emerald-400';
-  } else if (theme === 'amber') {
-    activeClass = 'bg-gradient-to-tr from-amber-500 to-orange-500 border-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.4)] scale-105';
-    hoverClass = 'hover:border-amber-400';
-  }
-
-  return (
-    <div 
-      onClick={(e) => { e.stopPropagation(); onChange(); }}
-      className={`w-6 h-6 mx-auto rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm ${
-        checked ? activeClass : `bg-white/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 ${hoverClass}`
-      }`}
-    >
-      <AnimatePresence>
-        {checked && (
-          <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
-            <CheckCircle className="w-4 h-4 text-white stroke-[3]" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
 
 // ==========================================
 // 💡 Wrapper جستجوی نئونی
 // ==========================================
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/40 dark:bg-slate-800/30 border border-white/60 dark:border-slate-700 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 // ==========================================
 // 💡 PortalSelect (با سرچ‌باکس و حل مشکل اسکرول)
 // ==========================================
-const PortalSelect = ({ value, onChange, options, placeholder, className = '', searchable = false }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  
-  const selected = options.find((o:any) => o.id === value || o.value === value);
-
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
-    return options.filter((o:any) => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [options, searchTerm]);
-
-  const updatePosition = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 8, left: rect.left, width: rect.width });
-    }
-  };
-
-  const openDropdown = () => {
-    updatePosition();
-    setIsOpen(true);
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
-    }
-    return () => {
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
-    };
-  }, [isOpen]);
-
-  return (
-    <>
-      <button type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} className={`w-full h-full min-h-[48px] bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 flex justify-between items-center outline-none transition-all shadow-inner backdrop-blur-md focus:ring-2 focus:ring-indigo-500/30 ${className}`}>
-        <span className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">{selected ? selected.label : placeholder}</span>
-        <ChevronDown className={`w-4 h-4 text-indigo-500 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && createPortal(
-        <>
-          <div className="fixed inset-0 z-[999999]" onClick={() => setIsOpen(false)} />
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ top: coords.top, left: coords.left, width: coords.width }} className="fixed bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-[1000000] overflow-hidden flex flex-col max-h-72">
-            
-            {searchable && (
-              <div className="p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
-                <div className="relative">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="text" autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="جستجو..." className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg pr-9 pl-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 focus:border-indigo-500 focus:ring-1 ring-indigo-500/30" />
-                </div>
-              </div>
-            )}
-
-            <div className="overflow-y-auto glass-scroll p-1.5 flex-1">
-              {filteredOptions.length > 0 ? filteredOptions.map((opt: any) => (
-                <button type="button" key={opt.id || opt.value} onClick={() => { onChange(opt.id || opt.value); setIsOpen(false); setSearchTerm(''); }} className={`w-full text-right px-4 py-3 text-xs font-bold transition-colors flex items-center justify-between group rounded-xl ${(value === opt.id || value === opt.value) ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-                  <span className="truncate pl-2">{opt.label}</span>
-                  {(value === opt.id || value === opt.value) && <Check className="w-4 h-4 text-indigo-500 shrink-0" />}
-                </button>
-              )) : (
-                <div className="py-6 text-center text-xs font-bold text-slate-400">موردی یافت نشد!</div>
-              )}
-            </div>
-          </motion.div>
-        </>, document.body
-      )}
-    </>
-  );
-};
 
 // ==========================================
 // 💡 MAIN TAB COMPONENT
@@ -188,7 +80,7 @@ export default function LaborWorkLogsTab({ workerId }: LaborWorkLogsTabProps) {
 
   // استیت‌های تقویم و انتخاب
   const [currentMonth, setCurrentMonth] = useState(moment());
-  const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
+  const [selectedDateFilter] = useState<string | null>(null);
   
   // 💡 استیت جدید برای باز شدن دراور (منوی کناری) در تقویم
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -220,7 +112,7 @@ export default function LaborWorkLogsTab({ workerId }: LaborWorkLogsTabProps) {
     if (selectedProjectFilter !== 'ALL') result = result.filter(l => l.projectId === selectedProjectFilter);
     if (selectedClientFilter !== 'ALL') result = result.filter(l => l.clientId === selectedClientFilter);
 
-    return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sortNewestFirst(result, 'append');
   }, [workerLogs, selectedDateFilter, searchQuery, dateFrom, dateTo, selectedProjectFilter, selectedClientFilter]);
 
   const paginatedLogs = useMemo(() => filteredLogs.slice(0, displayLimit), [filteredLogs, displayLimit]);
@@ -769,7 +661,7 @@ export default function LaborWorkLogsTab({ workerId }: LaborWorkLogsTabProps) {
                     }} 
                     className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black rounded-2xl shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all"
                   >
-                    <Plus className="w-5 h-5"/> ثبت کارکرد جدید برای این روز
+                    <motion.span animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.8 }} className="flex"><CalendarCheck className="w-5 h-5" /></motion.span> ثبت کارکرد جدید برای این روز
                   </button>
                 </div>
 

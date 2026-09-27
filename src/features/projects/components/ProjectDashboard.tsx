@@ -1,15 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, Plus, TrendingUp, Wallet, CreditCard, 
-  AlertTriangle, Briefcase, HardHat, Banknote, 
+  ArrowRight, TrendingUp, Wallet, 
+  Briefcase, HardHat, Banknote, 
   Layers, Images, Edit3, Package, FileText, 
-  ShoppingCart, Truck, Notebook, Filter, Calculator,
-  Eye, EyeOff, Gem, TrendingDown, ChevronUp, ChevronDown, PieChart, X,
-  FileDown, FileUp, CheckSquare, Square, FileSpreadsheet, Printer, ShieldAlert,
+  ShoppingCart, Truck, Notebook, Calculator,
+  TrendingDown, PieChart, X,
+  FileDown, FileUp,
   Receipt, Archive 
 } from 'lucide-react';
-import { toast } from 'sonner';
 
 import { useProjectStore } from '../store/projectStore';
 import { useFinanceStore } from '../../../store/financeStore';
@@ -39,14 +38,13 @@ import AdvancedPurchaseModal from './AdvancedPurchaseModal';
 // 💡 مودال لجستیک اینجا اضافه شد
 import NewLogisticsModal from './NewLogisticsModal';
 
-import GlassSelect from '../../../components/ui/GlassSelect'; 
-import GlassDatePicker from '../../../components/ui/GlassDatePicker';
+ 
 import InvoiceBuilder from './InvoiceBuilder'; 
 
 // 💡 آدرس‌ها به پوشه shared تنظیم شد
 import ImportBuilder from '../../../components/shared/ImportBuilder';
 import ExportBuilder from '../../../components/shared/ExportBuilder';
-
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 interface ProjectDashboardProps {
   projectId: string;
@@ -350,7 +348,7 @@ export default function ProjectDashboard({ projectId, onBack }: ProjectDashboard
             <TrendingUp className="w-5 h-5 text-indigo-500" /> داشبورد وضعیت مالی پروژه
           </h2>
           <div className="w-[180px] h-[42px] relative z-[90]">
-            <GlassSelect options={phaseOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="تمامی فازها" />
+            <PortalSelect options={phaseOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="تمامی فازها"  searchable />
           </div>
         </div>
 

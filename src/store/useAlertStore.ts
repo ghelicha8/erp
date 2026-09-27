@@ -19,6 +19,7 @@ export interface Alert {
   title: string;
   description: string;
   date: string;
+  createdAt?: string;
   isRead: boolean;
   isArchived: boolean;
   actionText?: string;
@@ -61,6 +62,7 @@ export const useAlertStore = create<AlertState>()(
         alerts: [{
           ...alertData,
           id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
           isRead: false,
           isArchived: false,
         }, ...state.alerts]
@@ -187,7 +189,7 @@ export const useAlertStore = create<AlertState>()(
         // اضافه کردن هشدارهای جدید
         if (newAutoAlerts.length > 0) {
           set((state) => ({
-            alerts: [...newAutoAlerts, ...state.alerts]
+            alerts: [...newAutoAlerts.map(a => ({ ...a, createdAt: new Date().toISOString() })), ...state.alerts]
           }));
         }
       }

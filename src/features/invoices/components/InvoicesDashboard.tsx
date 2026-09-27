@@ -1,11 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, Copy, Trash2, Edit, FileText, 
-  Image as ImageIcon, CheckCircle, AlertTriangle, 
+import {
+  Search, Copy, Trash2, Edit,
+  FileText, Image as ImageIcon, CheckCircle, AlertTriangle,
   ChevronRight, ChevronLeft, X, Check,
-  FileDown, MessageSquareWarning, CalendarDays, ShieldAlert, Printer, Eye, Plus
+  FileDown, CalendarDays, ShieldAlert, Eye,
+  Receipt,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -13,15 +14,15 @@ import { toast } from 'sonner';
 import domtoimage from 'dom-to-image-more';
 import jsPDF from 'jspdf';
 
-import { useInvoiceStore, type InvoiceStatus } from '../../../store/invoiceStore';
+import { useInvoiceStore } from '../../../store/invoiceStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 
-import GlassSelect from '../../../components/ui/GlassSelect';
 // 💡 دقت کن مسیر InvoiceBuilder رو بر اساس پوشه‌بندی خودت تنظیم کن (احتمالا همینه)
 import InvoiceBuilder from '../../projects/components/InvoiceBuilder';
 import A4InvoiceTemplate from '../../../components/ui/A4InvoiceTemplate';
+import { NeonSearchWrapper, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 // چک‌باکس انیمیشنی
 const GlassCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
@@ -31,31 +32,6 @@ const GlassCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () =
     </motion.div>
   </div>
 );
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#a855f7,#d946ef,#f59e0b,#ff00aa,#8b5cf6,#a855f7,#d946ef,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-fuchsia-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
-
-const InvoiceStatusBadge = ({ status }: { status: InvoiceStatus }) => {
-  const config = {
-    DRAFT: { label: 'پیش‌نویس', color: 'text-slate-500', bg: 'bg-slate-500/15', border: 'border-slate-500/40' },
-    PROFORMA: { label: 'پیش‌فاکتور', color: 'text-amber-500', bg: 'bg-amber-500/15', border: 'border-amber-500/40' },
-    SUBMITTED: { label: 'ارسال شده', color: 'text-blue-500', bg: 'bg-blue-500/15', border: 'border-blue-500/40' },
-    OVERDUE: { label: 'سررسید گذشته', color: 'text-rose-500', bg: 'bg-rose-500/15', border: 'border-rose-500/40' },
-    PAID: { label: 'تسویه کامل', color: 'text-emerald-500', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40' },
-  };
-  const current = config[status] || config.DRAFT;
-  return (
-    <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-xl border ${current.border} ${current.bg} ${current.color} text-xs font-bold shadow-sm whitespace-nowrap`}>
-      {current.label}
-    </span>
-  );
-};
 
 // 🚀 موتور تولید و دانلود مستقیم PDF
 const exportDirectPDF = async (elementId: string, fileName: string) => {
@@ -274,7 +250,7 @@ export default function InvoicesDashboard() {
          </div>
          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button onClick={() => { setEditInvoiceId(undefined); setIsBuilderOpen(true); }} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white px-5 py-3 rounded-xl text-sm font-black shadow-lg transition-all active:scale-95">
-              <Plus className="w-5 h-5"/> صدور فاکتور جدید
+              <motion.span animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.6 }} className="flex"><Receipt className="w-5 h-5" /></motion.span> صدور فاکتور جدید
             </button>
             <button onClick={() => exportDirectPDF('ledger-print-area', `گزارش_جامع_فاکتورها`)} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-5 py-3 rounded-xl text-sm font-black shadow-sm transition-all">
               <FileDown className="w-5 h-5"/> دانلود دفتر کل
@@ -329,7 +305,7 @@ export default function InvoicesDashboard() {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 bg-white/30 dark:bg-slate-900/30 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-sm rounded-[2rem] px-6 py-4 z-[50] relative">
-        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]">
+        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[200px] h-[46px]">
           <Search className="w-5 h-5 text-slate-400 shrink-0" />
           <input 
             placeholder="جستجو با شماره یا نام چاپی..." 
@@ -344,10 +320,10 @@ export default function InvoicesDashboard() {
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto relative z-[100]">
           <div className="w-full sm:w-32 h-[46px]">
-            <GlassSelect options={paginationOptions} value={pageSize} onChange={setPageSize} placeholder="تعداد نمایش" />
+            <PortalSelect options={paginationOptions} value={pageSize} onChange={setPageSize} placeholder="تعداد نمایش" />
           </div>
           <div className="w-full sm:w-56 h-[46px]">
-            <GlassSelect 
+            <PortalSelect 
               options={[
                 {value:'ALL', label:'همه وضعیت‌ها'},
                 {value:'OFFICIAL', label:'فاکتور رسمی (دارایی)'},

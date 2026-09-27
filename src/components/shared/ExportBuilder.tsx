@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileDown, X, Layers, Wallet, Users, ShoppingCart, Truck, 
-  Filter, Merge, FileSpreadsheet, FileText, Activity, Bookmark, 
+  Filter, FileSpreadsheet, FileText, Activity, 
   ListChecks, Check, Loader2, Settings2, PenTool, Edit3, Palette, ArrowUpDown, Calculator, EyeOff, Wand2, ArrowLeftRight, FolderGit2, ChevronDown, CalendarClock, Coffee
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,11 +17,11 @@ import { useLogisticsStore } from '../../store/logisticsStore';
 import { useLaborStore } from '../../store/laborStore';
 import { useClientStore } from '../../store/clientStore'; 
 
-import GlassSelect from '../ui/GlassSelect';
 import GlassDatePicker from '../ui/GlassDatePicker';
 
 import { exportToExcelAdvanced } from '../../core/exporters/ExcelExporter';
 import { exportToPdfAdvanced } from '../../core/exporters/PdfExporter';
+import { PortalSelect, GlowSwitch } from '../ui/SharedLaborUI';
 
 export interface ExportBuilderProps { 
   projectId?: string; 
@@ -364,19 +364,19 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
 
     // 💡 تفکیک هوشمند برای بخش نیروی کار (LABOR CONTEXT)
     if (derivedContext === 'LABOR') {
-      const laborLogsForWorker = allLaborLogs.filter(l => String(l.workerId) === String(workerId) && isMatch(l.projectId) && isDateMatch(l.date||l.startDate) && isPhaseMatch(l.phaseId||'GENERAL'));
+      const laborLogsForWorker = allLaborLogs.filter(l => String(l.workerId) === String(workerId) && isMatch(l.projectId) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL'));
 
       if (selectedModules.includes('LABOR_WORK_LOGS')) {
         laborLogsForWorker.filter(l => l.paymentType !== 'MONTHLY' && l.paymentType !== 'PROJECT_MONTHLY' && l.recordType !== 'PERK').forEach(l => {
           const { amount, profit } = calcCosts(l);
-          raw.push({ _id: `lab_w_${l.id}`, _index: globalIndex++, _module: 'LABOR_WORK_LOGS', module: 'تاریخچه کارکرد', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: l.workType || 'کارکرد روزانه', phase: getPhaseName(l.phaseId), amount, profit, receiptDetails: l.description || '-' });
+          raw.push({ _id: `lab_w_${l.id}`, _index: globalIndex++, _module: 'LABOR_WORK_LOGS', module: 'تاریخچه کارکرد', projectName: getProjectName(l.projectId), date: l.date, title: l.workType || 'کارکرد روزانه', phase: getPhaseName(l.phaseId), amount, profit, receiptDetails: l.description || '-' });
         });
       }
 
       if (selectedModules.includes('LABOR_MONTHLY')) {
         laborLogsForWorker.filter(l => l.paymentType === 'MONTHLY' || l.paymentType === 'PROJECT_MONTHLY').forEach(l => {
           const { amount, profit } = calcCosts(l);
-          raw.push({ _id: `lab_m_${l.id}`, _index: globalIndex++, _module: 'LABOR_MONTHLY', module: 'قرارداد ماهانه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: l.workType || 'حقوق ماهانه', phase: getPhaseName(l.phaseId), amount, profit, receiptDetails: l.description || '-' });
+          raw.push({ _id: `lab_m_${l.id}`, _index: globalIndex++, _module: 'LABOR_MONTHLY', module: 'قرارداد ماهانه', projectName: getProjectName(l.projectId), date: l.date, title: l.workType || 'حقوق ماهانه', phase: getPhaseName(l.phaseId), amount, profit, receiptDetails: l.description || '-' });
         });
       }
 
@@ -384,18 +384,18 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
         laborLogsForWorker.forEach(l => {
           if (l.recordType === 'PERK') {
             const { amount, profit } = calcCosts(l);
-            raw.push({ _id: `lab_misc_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: l.perkTitle || l.workType || 'هزینه متفرقه', amount, profit, receiptDetails: l.description || '-' });
+            raw.push({ _id: `lab_misc_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date, title: l.perkTitle || l.workType || 'هزینه متفرقه', amount, profit, receiptDetails: l.description || '-' });
           }
-          if (l.bonus && l.bonus > 0) raw.push({ _id: `lab_bns_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: 'پاداش / اضافه‌کار', amount: l.bonus, profit: 0, receiptDetails: '-' });
-          if (l.foodDeduction && l.foodDeduction > 0) raw.push({ _id: `lab_food_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: 'کسر غذا', amount: -l.foodDeduction, profit: 0, receiptDetails: '-' });
-          if (l.penaltyDeduction && l.penaltyDeduction > 0) raw.push({ _id: `lab_pen_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: 'جریمه / کسر کار', amount: -l.penaltyDeduction, profit: 0, receiptDetails: '-' });
+          if (l.bonus && l.bonus > 0) raw.push({ _id: `lab_bns_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date, title: 'پاداش / اضافه‌کار', amount: l.bonus, profit: 0, receiptDetails: '-' });
+          if (l.foodDeduction && l.foodDeduction > 0) raw.push({ _id: `lab_food_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date, title: 'کسر غذا', amount: -l.foodDeduction, profit: 0, receiptDetails: '-' });
+          if (l.penaltyDeduction && l.penaltyDeduction > 0) raw.push({ _id: `lab_pen_${l.id}`, _index: globalIndex++, _module: 'LABOR_MISC', module: 'متفرقه', projectName: getProjectName(l.projectId), date: l.date, title: 'جریمه / کسر کار', amount: -l.penaltyDeduction, profit: 0, receiptDetails: '-' });
         });
       }
 
       if (selectedModules.includes('LABOR_FINANCE')) {
         laborLogsForWorker.forEach(l => {
           if (l.advancePayment && l.advancePayment > 0) {
-            raw.push({ _id: `lab_adv_${l.id}`, _index: globalIndex++, _module: 'LABOR_FINANCE', module: 'تاریخچه پرداختی‌ها', date: l.date||l.startDate, title: 'مساعده ثبت شده در کارکرد', amount: l.advancePayment, receiptDetails: l.description || '-' });
+            raw.push({ _id: `lab_adv_${l.id}`, _index: globalIndex++, _module: 'LABOR_FINANCE', module: 'تاریخچه پرداختی‌ها', date: l.date, title: 'مساعده ثبت شده در کارکرد', amount: l.advancePayment, receiptDetails: l.description || '-' });
           }
         });
         
@@ -424,7 +424,7 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
       }
 
       if (selectedModules.includes('LABOR')) {
-        allLaborLogs.filter(l => isMatch(l.projectId) && isDateMatch(l.date||l.startDate) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
+        allLaborLogs.filter(l => isMatch(l.projectId) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
           const { amount, profit } = calcCosts(l);
           const advance = safeNum(l.advancePayment);
           const { paid, detailsStr } = getLinkedPayments(l.id);
@@ -434,12 +434,12 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
           if (settlementFilter === 'UNPAID' && remain <= 0) return;
           const finalDetails = advance > 0 ? `مساعده/پرداختی: ${advance.toLocaleString('fa-IR')} ${detailsStr !== '-' ? ' | ' + detailsStr : ''}` : detailsStr;
           
-          raw.push({ _id: `lab_${l.id}`, _index: globalIndex++, _module: 'LABOR', module: 'نیروی کار', projectName: getProjectName(l.projectId), date: l.date||l.startDate, title: l.workType || 'آزاد', vendor: l.workerName || '-', phase: getPhaseName(l.phaseId), amount, paidAmount: totalPaid, remain, paymentDetails: finalDetails, profit, dueDate: '-', receiptDetails: l.description || '-' });
+          raw.push({ _id: `lab_${l.id}`, _index: globalIndex++, _module: 'LABOR', module: 'نیروی کار', projectName: getProjectName(l.projectId), date: l.date, title: l.workType || 'آزاد', vendor: l.workerName || '-', phase: getPhaseName(l.phaseId), amount, paidAmount: totalPaid, remain, paymentDetails: finalDetails, profit, dueDate: '-', receiptDetails: l.description || '-' });
         });
       }
 
       if (selectedModules.includes('LOGISTICS')) {
-        allLogs.filter(l => isMatch(l.projectId) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
+        allLogs.filter(l => isMatch(l.projectId || undefined) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
           const { amount, profit } = calcCosts(l);
           const { paid, detailsStr } = getLinkedPayments(l.id);
           const remain = amount - paid;
@@ -765,22 +765,8 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
                   <input type="text" value={customReportDate} onChange={e => setCustomReportDate(e.target.value)} dir="ltr" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-500 transition-all text-center" />
                 </div>
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-3">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative">
-                      <input type="checkbox" checked={highlightCheques} onChange={e => setHighlightCheques(e.target.checked)} className="sr-only" />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${highlightCheques ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                      <div className={`absolute top-1 bg-white w-4 h-4 rounded-full transition-transform ${highlightCheques ? 'left-1' : 'right-1'}`}></div>
-                    </div>
-                    <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1"><Palette className="w-3.5 h-3.5"/> رنگ‌بندی هشداری چک‌ها در اکسل</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative">
-                      <input type="checkbox" checked={includeSignature} onChange={e => setIncludeSignature(e.target.checked)} className="sr-only" />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${includeSignature ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                      <div className={`absolute top-1 bg-white w-4 h-4 rounded-full transition-transform ${includeSignature ? 'left-1' : 'right-1'}`}></div>
-                    </div>
-                    <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1"><PenTool className="w-3.5 h-3.5"/> درج جایگاه امضا در انتهای PDF</span>
-                  </label>
+                  <GlowSwitch checked={highlightCheques} onChange={setHighlightCheques} theme="emerald" label={<span className="flex items-center gap-1"><Palette className="w-3.5 h-3.5"/> رنگ‌بندی هشداری چک‌ها در اکسل</span>} />
+                  <GlowSwitch checked={includeSignature} onChange={setIncludeSignature} theme="indigo" label={<span className="flex items-center gap-1"><PenTool className="w-3.5 h-3.5"/> درج جایگاه امضا در انتهای PDF</span>} />
                 </div>
               </div>
 
@@ -813,14 +799,14 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
                 <div className="space-y-1"><label className="text-[11px] font-bold text-slate-500">از تاریخ</label><GlassDatePicker value={startDate} onChange={setStartDate} /></div>
                 <div className="space-y-1"><label className="text-[11px] font-bold text-slate-500">تا تاریخ</label><GlassDatePicker value={endDate} onChange={setEndDate} /></div>
                 
-                {(derivedContext === 'PROJECT' || derivedContext === 'GLOBAL') && <div className="space-y-1"><label className="text-[11px] font-bold text-slate-500">فاز اجرایی</label><GlassSelect options={phaseOptions} value={phaseFilter} onChange={setPhaseFilter} placeholder="تمامی فازها" /></div>}
+                {(derivedContext === 'PROJECT' || derivedContext === 'GLOBAL') && <div className="space-y-1"><label className="text-[11px] font-bold text-slate-500">فاز اجرایی</label><PortalSelect options={phaseOptions} value={phaseFilter} onChange={setPhaseFilter} placeholder="تمامی فازها"  searchable /></div>}
                 
-                <div className="space-y-1"><label className="text-[11px] font-bold text-slate-500">فیلتر تراکنش/چک</label><GlassSelect options={[{ value: 'ALL', label: 'همه تراکنش‌ها' }, { value: 'CASHED', label: 'فقط نقد/پاس‌شده' }, { value: 'PENDING', label: 'چک‌های در جریان' }]} value={txStatusFilter} onChange={setTxStatusFilter} placeholder="همه" disabled={!selectedModules.includes('FINANCE') && !selectedModules.includes('LABOR_FINANCE')} /></div>
-                <div className="space-y-1"><label className="text-[11px] font-bold text-slate-500">وضعیت تسویه (هزینه‌ها)</label><GlassSelect options={[{ value: 'ALL', label: 'همه فاکتورها' }, { value: 'PAID', label: 'کامل تسویه شده' }, { value: 'UNPAID', label: 'مانده‌دار (بدهکاریم)' }]} value={settlementFilter} onChange={setSettlementFilter} placeholder="همه" disabled={!selectedModules.some(m => ['PURCHASES', 'LABOR', 'LOGISTICS'].includes(m))} /></div>
+                <div className="space-y-1"><label className="text-[11px] font-bold text-slate-500">فیلتر تراکنش/چک</label><PortalSelect options={[{ value: 'ALL', label: 'همه تراکنش‌ها' }, { value: 'CASHED', label: 'فقط نقد/پاس‌شده' }, { value: 'PENDING', label: 'چک‌های در جریان' }]} value={txStatusFilter} onChange={setTxStatusFilter} placeholder="همه" disabled={!selectedModules.includes('FINANCE') && !selectedModules.includes('LABOR_FINANCE')} /></div>
+                <div className="space-y-1"><label className="text-[11px] font-bold text-slate-500">وضعیت تسویه (هزینه‌ها)</label><PortalSelect options={[{ value: 'ALL', label: 'همه فاکتورها' }, { value: 'PAID', label: 'کامل تسویه شده' }, { value: 'UNPAID', label: 'مانده‌دار (بدهکاریم)' }]} value={settlementFilter} onChange={setSettlementFilter} placeholder="همه" disabled={!selectedModules.some(m => ['PURCHASES', 'LABOR', 'LOGISTICS'].includes(m))} /></div>
                 
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1"><ArrowUpDown className="w-3.5 h-3.5"/> مرتب‌سازی ردیف‌ها</label>
-                  <GlassSelect options={[{ value: 'DATE_DESC', label: 'جدیدترین تاریخ بالا' }, { value: 'DATE_ASC', label: 'قدیمی‌ترین تاریخ بالا' }, { value: 'CREATED_DESC', label: 'آخرین ثبت سیستم بالا' }, { value: 'CREATED_ASC', label: 'قدیمی‌ترین ثبت سیستم بالا' }]} value={sortConfig} onChange={(val:any) => setSortConfig(val)} placeholder="مرتب سازی" />
+                  <PortalSelect options={[{ value: 'DATE_DESC', label: 'جدیدترین تاریخ بالا' }, { value: 'DATE_ASC', label: 'قدیمی‌ترین تاریخ بالا' }, { value: 'CREATED_DESC', label: 'آخرین ثبت سیستم بالا' }, { value: 'CREATED_ASC', label: 'قدیمی‌ترین ثبت سیستم بالا' }]} value={sortConfig} onChange={(val:any) => setSortConfig(val)} placeholder="مرتب سازی" />
                 </div>
               </div>
 
@@ -833,41 +819,11 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative">
-                      <input type="checkbox" checked={maskLaborNames} onChange={e => setMaskLaborNames(e.target.checked)} className="sr-only" />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${maskLaborNames ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                      <div className={`absolute top-1 bg-white w-4 h-4 rounded-full transition-transform ${maskLaborNames ? 'left-1' : 'right-1'}`}></div>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">مخفی کردن نام کارگران</span>
-                      <span className="text-[9px] text-slate-500">جایگزینی نام با تخصص در چاپ</span>
-                    </div>
-                  </label>
+                  <GlowSwitch checked={maskLaborNames} onChange={setMaskLaborNames} theme="indigo" label="مخفی کردن نام کارگران" sublabel="جایگزینی نام با تخصص در چاپ" />
                   
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative">
-                      <input type="checkbox" checked={maskVendorNames} onChange={e => setMaskVendorNames(e.target.checked)} className="sr-only" />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${maskVendorNames ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                      <div className={`absolute top-1 bg-white w-4 h-4 rounded-full transition-transform ${maskVendorNames ? 'left-1' : 'right-1'}`}></div>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">مخفی کردن نام فروشندگان</span>
-                      <span className="text-[9px] text-slate-500">جایگزینی با «تامین‌کننده/راننده»</span>
-                    </div>
-                  </label>
+                  <GlowSwitch checked={maskVendorNames} onChange={setMaskVendorNames} theme="indigo" label="مخفی کردن نام فروشندگان" sublabel="جایگزینی با «تامین‌کننده/راننده»" />
 
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative">
-                      <input type="checkbox" checked={smartRedundancy} onChange={e => setSmartRedundancy(e.target.checked)} className="sr-only" />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${smartRedundancy ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                      <div className={`absolute top-1 bg-white w-4 h-4 rounded-full transition-transform ${smartRedundancy ? 'left-1' : 'right-1'}`}></div>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">حذف تکرار (نام و تخصص)</span>
-                      <span className="text-[9px] text-slate-500">اگر نام و تخصص یکی بود ادغام می‌شود</span>
-                    </div>
-                  </label>
+                  <GlowSwitch checked={smartRedundancy} onChange={setSmartRedundancy} theme="indigo" label="حذف تکرار (نام و تخصص)" sublabel="اگر نام و تخصص یکی بود ادغام می‌شود" />
                 </div>
               </div>
 
@@ -926,7 +882,7 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
 
                 <div className="space-y-1 pt-4 border-t border-slate-100 dark:border-slate-700">
                   <label className="text-[11px] font-bold text-slate-500">مبنای قیمت جداول بالا (برای هزینه‌ها)</label>
-                  <GlassSelect options={[{ value: 'BILLED', label: 'فاکتور کارفرما (با سود)' }, { value: 'INTERNAL', label: 'قیمت پای‌کار (واقعی)' }]} value={priceStrategy} onChange={(val:any) => setPriceStrategy(val)} placeholder="مبنا" />
+                  <PortalSelect options={[{ value: 'BILLED', label: 'فاکتور کارفرما (با سود)' }, { value: 'INTERNAL', label: 'قیمت پای‌کار (واقعی)' }]} value={priceStrategy} onChange={(val:any) => setPriceStrategy(val)} placeholder="مبنا" />
                 </div>
               </div>
               

@@ -1,26 +1,21 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BellRing, AlertTriangle, CheckCircle, Info, Archive, Plus, 
-  Search, CalendarClock, CreditCard, Package, ArrowLeft, Trash2, X, Clock,
-  Settings, Volume2, VolumeX
+import {
+  BellRing, AlertTriangle, CheckCircle, Info,
+  Archive, Search, CalendarClock, CreditCard,
+  Package, ArrowLeft, Trash2, X,
+  Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import GlassDatePicker from '../../components/ui/GlassDatePicker';
+import { sortNewestFirst } from '../../core/utils/sortHelpers';
+import { NeonSearchWrapper } from '../../components/ui/SharedLaborUI';
 
 // ============================================================================
 // کامپوننت‌های پایه و استاندارد (الزام UI سیستم)
 // ============================================================================
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 // ============================================================================
 // 💎 ساعت کرونوگراف هوشمند (حل مشکل چپ‌چین اعداد و رنگ خط‌چین‌ها)
@@ -291,12 +286,12 @@ export default function AlertsCenter() {
   };
 
   const filteredAlerts = useMemo(() => {
-    return alerts.filter(a => {
+    return sortNewestFirst(alerts.filter(a => {
       if (pendingActionIds.includes(a.id)) return false;
       const matchTab = activeTab === 'ACTIVE' ? !a.isRead : a.isRead;
       const matchSearch = a.title.includes(searchQuery) || a.description.includes(searchQuery);
       return matchTab && matchSearch;
-    });
+    }), 'prepend');
   }, [alerts, activeTab, searchQuery, pendingActionIds]);
 
   const activeCount = alerts.filter(a => !a.isRead && !pendingActionIds.includes(a.id)).length;
@@ -335,7 +330,7 @@ export default function AlertsCenter() {
           </NeonSearchWrapper>
 
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }} onClick={() => setIsReminderModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white rounded-xl font-black shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all">
-            <Plus className="w-5 h-5"/> یادآور جدید
+            <motion.span animate={{ rotate: [-12, 12, -12] }} transition={{ repeat: Infinity, duration: 1.6 }} className="flex"><BellRing className="w-5 h-5" /></motion.span> یادآور جدید
           </motion.button>
         </div>
       </div>

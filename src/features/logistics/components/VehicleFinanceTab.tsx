@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Search, X, Wallet, Layers, TrendingDown, TrendingUp,
+  Search, X, Wallet, Layers,
   Truck, Wrench, ShieldAlert, Users, Edit, Trash2, Banknote, FileSignature
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useFinanceStore } from '../../../store/financeStore';
-import { useLogisticsStore } from '../../../store/logisticsStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../components/ui/GlassSelect';
-import { NeonSearchWrapper } from '../../../components/ui/SharedLaborUI';
+
+import { NeonSearchWrapper, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 import VehicleTransactionModal from './VehicleTransactionModal';
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
 
 export default function VehicleFinanceTab({ vehicleId }: { vehicleId: string }) {
-  const vehicle = useLogisticsStore(state => state.vehicles.find(v => v.id === vehicleId)) || { id: vehicleId, name: 'خودرو' };
   
   const { transactions, deleteTransaction } = useFinanceStore();
   
@@ -58,7 +57,7 @@ export default function VehicleFinanceTab({ vehicleId }: { vehicleId: string }) 
     if (dateFrom) txs = txs.filter(t => t.date >= dateFrom);
     if (dateTo) txs = txs.filter(t => t.date <= dateTo);
 
-    return txs.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+    return sortNewestFirst(txs, 'append');
   }, [transactions, vehicleId, searchQuery, typeFilter, dateFrom, dateTo]);
 
   const stats = useMemo(() => {
@@ -104,7 +103,7 @@ export default function VehicleFinanceTab({ vehicleId }: { vehicleId: string }) 
         </NeonSearchWrapper>
         
         <div className="w-[140px] shrink-0 h-[46px]">
-          <GlassSelect 
+          <PortalSelect 
             options={[
               { value: 'ALL', label: 'همه موارد' }, 
               { value: 'IN', label: 'فقط درآمد (کرایه)' }, 

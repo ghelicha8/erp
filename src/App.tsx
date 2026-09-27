@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Hammer, CheckCircle, AlertCircle } from 'lucide-react';
 import { Toaster } from 'sonner';
 
@@ -16,6 +16,9 @@ import LaborDashboard from './features/labor/components/LaborDashboard';
 
 // 💡 ایمپورت داشبورد لجستیک
 import LogisticsCenter from './features/logistics/LogisticsCenter';
+
+// 💡 ایمپورت مرکز خرید و تدارکات
+import ProcurementCenter from './features/procurement/ProcurementCenter';
 
 // ایمپورت استورها
 import { useAlertStore } from './store/useAlertStore'; 
@@ -79,6 +82,22 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('erp_active_menu', activeMenu);
   }, [activeMenu]);
+
+  // 💡 رفع گیر کردن تولتیپ (title) دکمه‌ها بعد از کلیک: حذف و بازگردانی لحظه‌ای
+  useEffect(() => {
+    const dismissStuckTitle = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement)?.closest?.('[title]') as HTMLElement | null;
+      if (el) {
+        const tip = el.getAttribute('title');
+        if (tip) {
+          el.removeAttribute('title');
+          window.setTimeout(() => { if (document.contains(el)) el.setAttribute('title', tip); }, 250);
+        }
+      }
+    };
+    document.addEventListener('click', dismissStuckTitle, true);
+    return () => document.removeEventListener('click', dismissStuckTitle, true);
+  }, []);
 
   useEffect(() => {
     scanSystemAlerts();
@@ -150,6 +169,9 @@ export default function App() {
     }
     if (activeMenu.includes('خودرو') || activeMenu.includes('ابزار') || activeMenu.includes('لجستیک') || activeMenu === 'logistics' || currentPageTitle.includes('خودرو')) {
       return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><LogisticsCenter /></div>;
+    }
+    if (activeMenu.includes('تداروک') || activeMenu.includes('خرید') || activeMenu === 'procurement' || currentPageTitle.includes('تداروک')) {
+      return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><ProcurementCenter /></div>;
     }
     
     return <UnderConstruction title={currentPageTitle} />;

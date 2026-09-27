@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo,  useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Users, Search, Star, Phone, Wallet, TrendingDown, 
-  LayoutGrid, List as ListIcon, ShieldAlert, Plus, ChevronDown, Check, X, Trash2
+import {
+  Users, Search, Star, Phone,
+  Wallet, TrendingDown, LayoutGrid, List as ListIcon,
+  ShieldAlert, X, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,18 +15,11 @@ import ClientFormModal from './components/ClientFormModal';
 
 // 💡 ایمپورت کامپوننت پروفایل
 import ClientProfile from './ClientProfile';
+import { NeonSearchWrapper, PortalSelect } from '../../components/ui/SharedLaborUI';
 
 // ============================================================================
 // کامپوننت نئونی جستجو
 // ============================================================================
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 // ============================================================================
 // کامپوننت کارت گرافیکی کارفرما
@@ -146,24 +140,12 @@ export default function ClientCenter() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   const [undoItems, setUndoItems] = useState<{ id: string, items: string[], expireAt: number }[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -259,8 +241,8 @@ export default function ClientCenter() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-4 w-full">
-                <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[52px]">
+              <div className="flex flex-wrap items-center justify-end gap-4 w-full">
+                <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[200px] h-[52px]">
                   <Search className="w-5 h-5 text-slate-400 shrink-0" />
                   <input 
                     placeholder="جستجو نام یا شماره..." 
@@ -278,38 +260,8 @@ export default function ClientCenter() {
                   )}
                 </NeonSearchWrapper>
 
-                <div className="relative shrink-0" ref={dropdownRef}>
-                  <button 
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="h-[52px] bg-white/40 dark:bg-slate-800/50 rounded-2xl border border-white/60 dark:border-slate-600/50 shadow-[0_8px_16px_rgba(0,0,0,0.03)] backdrop-blur-2xl flex items-center justify-between gap-3 px-5 min-w-[240px] text-sm font-black text-slate-700 dark:text-slate-200 transition-all hover:bg-white/80 dark:hover:bg-slate-700/80 hover:border-indigo-300/50 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] focus:ring-2 focus:ring-indigo-500/50"
-                  >
-                    <span className="truncate">{sortBy.label}</span>
-                    <ChevronDown className={`w-4 h-4 text-indigo-500 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  <AnimatePresence>
-                    {isDropdownOpen && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2, type: "spring", stiffness: 300, damping: 25 }}
-                        className="absolute top-[calc(100%+8px)] w-full bg-white/90 dark:bg-slate-800/95 backdrop-blur-3xl border border-white/80 dark:border-slate-600/50 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[100] flex flex-col py-2"
-                      >
-                        {SORT_OPTIONS.map((option) => (
-                          <button
-                            key={option.id}
-                            onClick={() => { setSortBy(option); setIsDropdownOpen(false); }}
-                            className={`flex items-center justify-between px-5 py-3.5 text-sm font-bold transition-all relative overflow-hidden group ${sortBy.id === option.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}
-                          >
-                            <div className={`absolute inset-0 transition-opacity ${sortBy.id === option.id ? 'bg-indigo-50 dark:bg-indigo-500/10 opacity-100' : 'bg-slate-100 dark:bg-slate-700/50 opacity-0 group-hover:opacity-100'}`} />
-                            <span className="relative z-10">{option.label}</span>
-                            {sortBy.id === option.id && <Check className="w-4 h-4 relative z-10 drop-shadow-sm" />}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                <div className="shrink-0 min-w-[240px] h-[52px]">
+                  <PortalSelect options={SORT_OPTIONS} value={sortBy.id} onChange={(id: any) => setSortBy(SORT_OPTIONS.find(o => o.id === id)!)} placeholder="مرتب‌سازی" className="!rounded-2xl" />
                 </div>
 
                 <div className="flex bg-slate-200/50 dark:bg-slate-800/80 p-1.5 rounded-2xl shadow-inner border border-white/50 dark:border-slate-700/50 shrink-0 h-[52px] z-20">
@@ -328,7 +280,7 @@ export default function ClientCenter() {
                   className="h-[52px] px-7 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(16,185,129,0.4)] border-t-2 border-emerald-300/50 transition-all shrink-0 w-full md:w-auto relative overflow-hidden group z-20"
                 >
                   <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shine" />
-                  <Plus className="w-5 h-5 relative z-10"/> <span className="relative z-10">شخص جدید</span>
+                  <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 1.8 }} className="relative z-10 flex"><Users className="w-5 h-5" /></motion.span> <span className="relative z-10">شخص جدید</span>
                 </motion.button>
               </div>
             </div>
