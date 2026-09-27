@@ -1,12 +1,11 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, Phone, Wallet, Layers, Activity, 
   BookOpen, ShieldAlert, Edit2, CalendarDays, CheckCircle2, 
-  ChevronDown, Check, Briefcase, CalendarClock, Coffee, PieChart, 
+    Briefcase, CalendarClock, Coffee, PieChart, 
   FileDown, FileUp, ChevronUp, HandCoins, CalendarPlus, FileSignature, 
-  PackagePlus, ScrollText, UserCog, Download, Building2, UserCircle, Globe, Search
+  PackagePlus, ScrollText, UserCog, Download, Building2, UserCircle, Globe
 } from 'lucide-react';
 import moment from 'moment-jalaali';
 
@@ -36,6 +35,7 @@ import LaborAnalyticsTab from './LaborAnalyticsTab';
 // 💡 ایمپورت فایل‌های مادرِ ایمپورت و اکسپورت با مسیر اصلاح شده به پوشه shared
 import ExportBuilder from '../../../components/shared/ExportBuilder';
 import ImportBuilder from '../../../components/shared/ImportBuilder';
+import { GlassScrollStyles, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const safeNum = (val: any): number => {
   if (!val) return 0;
@@ -44,14 +44,6 @@ const safeNum = (val: any): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
-const GlassScrollStyles = () => (
-  <style>{`
-    .glass-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
-    .glass-scroll::-webkit-scrollbar-track { background: transparent; }
-    .glass-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 10px; }
-    .glass-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
-  `}</style>
-);
 
 const AnimatedTooltip = ({ children, content }: { children: React.ReactNode, content: string }) => {
   return (
@@ -65,111 +57,6 @@ const AnimatedTooltip = ({ children, content }: { children: React.ReactNode, con
   );
 };
 
-const GlassSelect = ({ value, onChange, options, placeholder, icon: Icon, className = '', searchable = false }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-
-  const selectedOption = options.find((o:any) => o.id === value);
-  const selectedLabel = selectedOption?.label || placeholder;
-  const SelectedItemIcon = selectedOption?.icon;
-
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
-    return options.filter((o:any) => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [options, searchTerm]);
-
-  const updatePosition = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 6, left: rect.left, width: rect.width });
-    }
-  };
-
-  const openDropdown = () => { updatePosition(); setIsOpen(true); };
-
-  useEffect(() => {
-    if (isOpen) { window.addEventListener('scroll', updatePosition, true); window.addEventListener('resize', updatePosition); }
-    return () => { window.removeEventListener('scroll', updatePosition, true); window.removeEventListener('resize', updatePosition); };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (btnRef.current && !btnRef.current.contains(event.target as Node)) {
-        const portalEl = document.getElementById('portal-dropdown-profile');
-        if (portalEl && !portalEl.contains(event.target as Node)) {
-          setIsOpen(false);
-          setSearchTerm(''); 
-        }
-      }
-    };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: -5, transition: { staggerChildren: 0.02, staggerDirection: -1 } },
-    visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.02, delayChildren: 0.05 } }
-  };
-  const itemVariants = { hidden: { opacity: 0, x: -5 }, visible: { opacity: 1, x: 0 } };
-
-  return (
-    <>
-      <button 
-        ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} 
-        className={`relative bg-white/40 dark:bg-slate-800/40 rounded-full border border-white/60 dark:border-slate-600/40 shadow-sm backdrop-blur-md flex items-center justify-between gap-3 px-4 h-10 text-xs font-black text-slate-700 dark:text-slate-200 transition-all hover:bg-white/70 dark:hover:bg-slate-700/60 hover:shadow-md hover:border-indigo-300/50 ${className}`}
-      >
-        <div className="flex items-center gap-2 overflow-hidden">
-          {SelectedItemIcon ? <SelectedItemIcon className="w-4 h-4 text-indigo-500 shrink-0" /> : (Icon && <Icon className="w-4 h-4 text-indigo-500 shrink-0" />)}
-          <span className="truncate pt-0.5">{selectedLabel}</span>
-        </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-indigo-500 opacity-70 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && createPortal(
-        <div id="portal-dropdown-profile" style={{ top: coords.top, left: coords.left, width: coords.width, minWidth: '240px', position: 'fixed', zIndex: 999999 }}>
-          <motion.div 
-            variants={containerVariants} initial="hidden" animate="visible" exit="hidden"
-            className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col"
-          >
-            {searchable && (
-              <div className="p-2 border-b border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50">
-                <div className="relative">
-                  <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input 
-                    type="text" autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="جستجو..."
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pr-8 pl-3 py-2 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-1 ring-indigo-500/20 text-slate-700 dark:text-slate-200 transition-all shadow-inner"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="max-h-56 overflow-y-auto glass-scroll p-1.5">
-              {filteredOptions.length > 0 ? filteredOptions.map((option: any) => {
-                 const OptIcon = option.icon;
-                 return (
-                  <motion.button 
-                    variants={itemVariants} key={option.id} onClick={() => { onChange(option.id); setIsOpen(false); setSearchTerm(''); }} 
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all group ${value === option.id ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:pl-4'}`}
-                  >
-                    <div className="flex items-center gap-2.5 truncate">
-                      {OptIcon && <OptIcon className={`w-3.5 h-3.5 shrink-0 ${value === option.id ? 'text-indigo-500' : 'text-slate-400 group-hover:text-indigo-400'}`} />}
-                      <span className="truncate pt-0.5">{option.label}</span>
-                    </div>
-                    {value === option.id && <Check className="w-3.5 h-3.5 text-indigo-500 drop-shadow-sm shrink-0" />}
-                  </motion.button>
-                 );
-              }) : (
-                <div className="py-4 text-center text-xs font-bold text-slate-400">موردی یافت نشد!</div>
-              )}
-            </div>
-          </motion.div>
-        </div>, document.body
-      )}
-    </>
-  );
-};
 
 const PROFILE_TABS = [
   { id: 'finance', label: 'تاریخچه پرداختی‌ها', icon: Wallet, color: 'text-emerald-500', activeClass: 'text-emerald-600 dark:text-emerald-400', btnText: 'ثبت پرداختی / مساعده', btnIcon: HandCoins, btnColor: 'from-emerald-500 to-teal-500', borderColor: 'border-emerald-400/50' },
@@ -231,7 +118,7 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
     const filteredLogs = (logs || []).filter(l => {
         if (l.workerId !== workerId) return false;
         
-        if (yearFilter !== 'ALL' && !(l.date || l.startDate || '').startsWith(yearFilter)) return false;
+        if (yearFilter !== 'ALL' && !(l.date || '').startsWith(yearFilter)) return false;
         
         if (projectFilter !== 'ALL') {
             if (projectFilter === 'FREE' && l.projectId && l.projectId !== 'FREE') return false;
@@ -253,7 +140,7 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
     let totalPaid = 0;   
     
     filteredLogs.forEach(log => {
-      totalEarned += (safeNum(log.internalCost) || safeNum(log.totalWage) || safeNum(log.totalPrice) || 0);
+      totalEarned += (safeNum(log.internalCost) || 0);
       totalPaid += safeNum(log.advancePayment) || 0;
       totalPaid += safeNum(log.loanDeduction) || 0;
     });
@@ -382,9 +269,9 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
             <h3 className="text-sm font-black text-slate-700 dark:text-slate-200 drop-shadow-sm">داشبورد مالی و کارکرد {worker.name}</h3>
           </div>
           <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto z-[90]">
-            <GlassSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="سال مالی" icon={CalendarDays} className="w-full lg:w-auto min-w-[130px]" />
-            <GlassSelect options={projectOptions} value={projectFilter} onChange={setProjectFilter} placeholder="فیلتر پروژه‌ها" icon={Layers} searchable={true} className="w-full lg:w-auto min-w-[180px]" />
-            <GlassSelect options={clientOptions} value={clientFilter} onChange={setClientFilter} placeholder="فیلتر کارفرما" icon={UserCog} searchable={true} className="w-full lg:w-auto min-w-[180px]" />
+            <PortalSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="سال مالی" icon={CalendarDays} className="w-full lg:w-auto min-w-[130px]" />
+            <PortalSelect options={projectOptions} value={projectFilter} onChange={setProjectFilter} placeholder="فیلتر پروژه‌ها" icon={Layers} searchable={true} className="w-full lg:w-auto min-w-[180px]" />
+            <PortalSelect options={clientOptions} value={clientFilter} onChange={setClientFilter} placeholder="فیلتر کارفرما" icon={UserCog} searchable={true} className="w-full lg:w-auto min-w-[180px]" />
           </div>
         </div>
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Route, Truck, Wrench, HardHat, Banknote, CheckCircle, Layers, Briefcase, Building2, Calculator, UserPlus, CalendarRange } from 'lucide-react';
+import { X, Route, Truck, Wrench, HardHat, CheckCircle, Layers, Briefcase, Building2, Calculator, UserPlus, CalendarRange } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
 
@@ -11,10 +11,9 @@ import { useLogisticsStore } from '../../../store/logisticsStore';
 import { useLaborStore } from '../../../store/laborStore';
 
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../components/ui/GlassSelect';
 
 import LaborFormModal from '../../labor/components/LaborFormModal';
-import { LuxuryTimePicker } from '../../../components/ui/SharedLaborUI';
+import { LuxuryTimePicker, GlassInputWrapper, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const formatNumber = (num: number | string | undefined) => {
   if (num === undefined || num === null || num === '') return '';
@@ -34,12 +33,6 @@ const getTodayDate = () => {
     return pIdx >= 0 ? pIdx : c;
   }).join('').split('/').map(p => p.padStart(2, '0')).join('/');
 };
-
-const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl bg-white/60 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm focus-within:border-indigo-500/60 transition-all duration-300 overflow-hidden flex items-center ${className}`}>
-    {children}
-  </div>
-);
 
 interface NewLogisticsModalProps {
   projectId?: string; 
@@ -64,6 +57,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
   const [modalType, setModalType] = useState<'TRANSPORT' | 'EQUIPMENT'>('TRANSPORT');
   const [modalSource, setModalSource] = useState<'INTERNAL' | 'EXTERNAL'>('EXTERNAL');
   const [editId, setEditId] = useState<string | null>(null);
+  const [vendorLinkId, setVendorLinkId] = useState<string | undefined>(undefined);
   
   const [lockedClient, setLockedClient] = useState(false);
   const [lockedProject, setLockedProject] = useState(false);
@@ -166,6 +160,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
 
       if (isEdit) {
         setEditId(record.id);
+        setVendorLinkId(record.vendorId || undefined);
         
         // 💡 تشخیص رکوردهای قدیمی برای جلوگیری از صفر شدن اطلاعات موقع ویرایش
         const isLegacy = !record.qty && !record.unitPrice && record.unit !== 'CONTRACT';
@@ -214,6 +209,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
         });
       } else {
         setEditId(null);
+        setVendorLinkId(record.vendorId || undefined);
         setUnit(currentType === 'EQUIPMENT' ? 'DAILY' : 'SERVICE');
         setQty('1');
         setUnitPrice('');
@@ -222,7 +218,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
         setDriverFixedWage('');
         setDriverWageType('UNIT');
         setFormData({ 
-          title: '', clientId: initClient, projectId: initProject, phaseId: 'GENERAL', date: getTodayDate(), provider: '', 
+          title: '', clientId: initClient, projectId: initProject, phaseId: 'GENERAL', date: getTodayDate(), provider: record.vendorName || record.provider || '', 
           vehicleInfo: record.vehicleInfo || '', 
           internalCost: '', billedCost: '', driverWage: '' 
         });
@@ -240,7 +236,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
   const selectedProject = useMemo(() => allProjects.find(p => p.id === formData.projectId), [allProjects, formData.projectId]);
   const phaseOptions = useMemo(() => [
     { value: 'GENERAL', label: 'هزینه‌های عمومی (بدون فاز)' },
-    ...(selectedProject?.phases?.map((p, idx) => ({ value: p.id || `phase-${idx}`, label: p.name || `فاز ${idx + 1}` })) || [])
+    ...(selectedProject?.phases?.map((p: any, idx: number) => ({ value: p.id || `phase-${idx}`, label: p.name || `فاز ${idx + 1}` })) || [])
   ], [selectedProject]);
 
   const clientOptions = useMemo(() => allClients.map((c, idx) => ({ value: c.id || `client-${idx}`, label: `${c.name || ''} ${c.lastName || ''}`.trim() || 'بدون نام' })), [allClients]);
@@ -345,6 +341,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
             title: `${formData.title} (${dayStr})`,
             provider: formData.provider || (modalSource === 'INTERNAL' ? 'ناوگان داخلی' : 'ناشناس'),
             vehicleInfo: formData.vehicleInfo || '',
+            vendorId: vendorLinkId || undefined,
             date: dayStr,
             internalCost: dayInternal,
             billedCost: Math.round(dayBilled),
@@ -371,6 +368,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
       title: formData.title,
       provider: formData.provider || (modalSource === 'INTERNAL' ? 'ناوگان داخلی' : 'ناشناس'),
       vehicleInfo: formData.vehicleInfo || '',
+      vendorId: vendorLinkId || undefined,
       date: formData.date,
       internalCost: internal,
       billedCost: billed,
@@ -447,15 +445,15 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/30 rounded-2xl">
               <div className={`space-y-2 relative z-[75] transition-all duration-300 ${lockedClient ? 'opacity-60 pointer-events-none grayscale-[30%]' : ''}`}>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1"><Building2 className="w-3.5 h-3.5"/> کارفرما</label>
-                <GlassSelect options={[{value: 'NO_CLIENT', label: 'بدون کارفرما (آزاد)'}, ...clientOptions]} value={formData.clientId || 'NO_CLIENT'} onChange={(val: string) => setFormData(prev => ({...prev, clientId: val === 'NO_CLIENT' ? '' : val, projectId: '', phaseId: 'GENERAL'}))} placeholder="انتخاب کارفرما..." hasSearch />
+                <PortalSelect options={[{value: 'NO_CLIENT', label: 'بدون کارفرما (آزاد)'}, ...clientOptions]} value={formData.clientId || 'NO_CLIENT'} onChange={(val: string) => setFormData(prev => ({...prev, clientId: val === 'NO_CLIENT' ? '' : val, projectId: '', phaseId: 'GENERAL'}))} placeholder="انتخاب کارفرما..." searchable />
               </div>
               <div className={`space-y-2 relative z-[70] transition-all duration-300 ${lockedProject ? 'opacity-60 pointer-events-none grayscale-[30%]' : ''}`}>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1"><Briefcase className="w-3.5 h-3.5"/> پروژه مربوطه *</label>
-                <GlassSelect options={projectOptions} value={formData.projectId} onChange={(val: string) => { const proj = allProjects.find(p => p.id === val); setFormData(prev => ({...prev, projectId: val, clientId: proj ? proj.clientId : prev.clientId, phaseId: 'GENERAL'})); }} placeholder="انتخاب پروژه..." hasSearch />
+                <PortalSelect options={projectOptions} value={formData.projectId} onChange={(val: string) => { const proj = allProjects.find(p => p.id === val); setFormData(prev => ({...prev, projectId: val, clientId: proj ? proj.clientId : prev.clientId, phaseId: 'GENERAL'})); }} placeholder="انتخاب پروژه..." searchable />
               </div>
               <div className="space-y-2 relative z-[65]">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1"><Layers className="w-3.5 h-3.5"/> ارتباط با فاز پروژه</label>
-                <GlassSelect options={phaseOptions} value={formData.phaseId} onChange={(val: string) => setFormData(prev => ({...prev, phaseId: val}))} placeholder="هزینه عمومی پروژه" disabled={!formData.projectId} hasSearch />
+                <PortalSelect options={phaseOptions} value={formData.phaseId} onChange={(val: string) => setFormData(prev => ({...prev, phaseId: val}))} placeholder="هزینه عمومی پروژه" disabled={!formData.projectId} searchable />
               </div>
             </div>
 
@@ -472,7 +470,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
                   {modalType === 'TRANSPORT' ? <Truck className="w-3.5 h-3.5" /> : <Wrench className="w-3.5 h-3.5" />} {modalSource === 'INTERNAL' ? (modalType === 'TRANSPORT' ? 'انتخاب خودرو از ناوگان' : 'انتخاب ابزار از انبار') : 'نام ماشین/ابزار (خارجی)'}
                 </label>
                 {modalSource === 'INTERNAL' ? (
-                  <GlassSelect disabled={lockedVehicle} options={modalType === 'TRANSPORT' ? internalVehicleOptions : internalToolOptions} value={formData.vehicleInfo} onChange={(val: string) => setFormData(prev => ({...prev, vehicleInfo: val}))} placeholder="انتخاب کنید..." />
+                  <PortalSelect disabled={lockedVehicle} options={modalType === 'TRANSPORT' ? internalVehicleOptions : internalToolOptions} value={formData.vehicleInfo} onChange={(val: string) => setFormData(prev => ({...prev, vehicleInfo: val}))} placeholder="انتخاب کنید..."  searchable />
                 ) : (
                   <GlassInputWrapper className="h-[46px] px-4">
                     <input readOnly={lockedVehicle} value={formData.vehicleInfo} onChange={e => setFormData(prev => ({...prev, vehicleInfo: e.target.value}))} className="w-full bg-transparent border-none outline-none font-bold text-sm text-slate-900 dark:text-white" placeholder="تایپ کنید..." />
@@ -482,7 +480,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
               
               <div className="space-y-2 relative z-[45]">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1"><HardHat className="w-3.5 h-3.5"/> انتخاب راننده / اپراتور</label>
-                <GlassSelect options={driverOptions} value={formData.provider} onChange={handleDriverChange} placeholder="جستجو یا انتخاب راننده..." hasSearch />
+                <PortalSelect options={driverOptions} value={formData.provider} onChange={handleDriverChange} placeholder="جستجو یا انتخاب راننده..." searchable />
               </div>
             </div>
           </div>
@@ -493,7 +491,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
             <div className="p-4 bg-white/60 dark:bg-slate-900/60 rounded-xl border border-amber-200/50 dark:border-amber-800/30 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 overflow-visible relative z-[90]">
               <div className="space-y-1.5 relative z-[100]">
                 <label className="text-[10px] font-bold text-slate-500">واحد محاسبه</label>
-                <GlassSelect options={activeUnits} value={unit} onChange={(v: string) => {setUnit(v); setQty('1');}} placeholder="انتخاب واحد" />
+                <PortalSelect options={activeUnits} value={unit} onChange={(v: string) => {setUnit(v); setQty('1');}} placeholder="انتخاب واحد"  searchable />
               </div>
               
               {unit === 'CONTRACT' ? (
@@ -579,7 +577,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
                 <div className="col-span-full border-t border-amber-200/50 dark:border-amber-700/50 pt-3 mt-1 grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <div className="space-y-1.5 relative z-40 sm:col-span-2 md:col-span-1">
                     <label className="text-[10px] font-bold text-slate-500">نحوه محاسبه دستمزد</label>
-                    <GlassSelect options={[
+                    <PortalSelect options={[
                       {value: 'UNIT', label: 'براساس تعداد (سرویسی)'}, 
                       {value: 'FIXED', label: 'مبلغ کل مقطوع'},
                       {value: 'NONE', label: 'بدون دستمزد (روزمزد / محاسبه‌شده)'}

@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Truck, Search, X, Layers, Edit, Trash2, CheckCircle,
+  Truck, Search, X, Edit, Trash2, CheckCircle,
   HardHat, Banknote, Wrench, Route, Briefcase
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,7 +14,8 @@ import { useBulkSelection } from '../../../../hooks/useBulkSelection';
 import { useLaborStore } from '../../../../store/laborStore';
 
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../../components/ui/GlassSelect';
+
+import { NeonSearchWrapper, GlassInputWrapper, PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 interface ClientLogisticsTabProps {
   clientId: string;
@@ -29,30 +30,6 @@ const parseNumber = (str: string) => {
   if (!str) return 0;
   return Number(str.replace(/,/g, '')) || 0;
 };
-
-const getTodayDate = () => {
-  const d = new Date().toLocaleDateString('fa-IR');
-  const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-  return d.split('').map(c => {
-    let pIdx = persianNumbers.indexOf(c);
-    return pIdx >= 0 ? pIdx : c;
-  }).join('').split('/').map(p => p.padStart(2, '0')).join('/');
-};
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center">{children}</div>
-  </div>
-);
-
-const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl bg-white/60 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm focus-within:border-indigo-500/60 transition-all duration-300 overflow-hidden flex items-center ${className}`}>
-    {children}
-  </div>
-);
 
 export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps) {
   const allProjects = useProjectStore((state) => state.projects);
@@ -81,7 +58,7 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'TRANSPORT' | 'EQUIPMENT'>('TRANSPORT');
   const [modalSource, setModalSource] = useState<'INTERNAL' | 'EXTERNAL'>('EXTERNAL');
-  const [editId, setEditId] = useState<string | null>(null);
+  const [editId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: '', projectId: '', phaseId: 'GENERAL', date: '', provider: '', vehicleInfo: '', internalCost: '', billedCost: '', driverWage: ''
@@ -270,7 +247,7 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
       </div>
 
       <div className="flex flex-wrap items-center gap-4 bg-white/10 dark:bg-slate-900/10 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-[2rem] px-6 py-4 z-[90] relative">
-        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]">
+        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[200px] h-[46px]">
           <Search className="w-5 h-5 text-slate-400 shrink-0 ml-3" />
           <input placeholder="جستجوی عنوان بار، ماشین یا راننده..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold transition-colors placeholder:text-slate-500" />
           {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
@@ -280,7 +257,7 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto relative z-[100]">
           <div className="w-full sm:w-44 h-[46px]">
-            <GlassSelect options={projectOptions} value={selectedProjectFilter} onChange={setSelectedProjectFilter} placeholder="همه پروژه‌ها" />
+            <PortalSelect options={projectOptions} value={selectedProjectFilter} onChange={setSelectedProjectFilter} placeholder="همه پروژه‌ها"  searchable />
           </div>
           <div className="w-full sm:w-44 h-[46px] relative">
             <GlassDatePicker placeholder="از تاریخ..." value={dateFrom} onChange={setDateFrom} />
@@ -431,7 +408,7 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2 relative z-[70]">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300">پروژه مربوطه *</label>
-                      <GlassSelect options={clientProjects.map(p => ({value: p.id, label: p.name}))} value={formData.projectId} onChange={(val: string) => setFormData({...formData, projectId: val})} placeholder="انتخاب پروژه..." />
+                      <PortalSelect options={clientProjects.map(p => ({value: p.id, label: p.name}))} value={formData.projectId} onChange={(val: string) => setFormData({...formData, projectId: val})} placeholder="انتخاب پروژه..."  searchable />
                     </div>
                     <div className="space-y-2 relative z-[65]">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300">تاریخ عملیات *</label>
@@ -449,11 +426,11 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-[50]">
                     <div className="space-y-2 relative z-[50]">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300">انتخاب وسیله نقلیه / دستگاه</label>
-                      <GlassSelect options={modalType === 'TRANSPORT' ? mockVehicles : mockEquipments} value={formData.vehicleInfo} onChange={(val: string) => setFormData({...formData, vehicleInfo: val})} placeholder="جستجو یا تایپ..." hasSearch onAddNew={(v: string) => setFormData({...formData, vehicleInfo: v})} />
+                      <PortalSelect options={modalType === 'TRANSPORT' ? mockVehicles : mockEquipments} value={formData.vehicleInfo} onChange={(val: string) => setFormData({...formData, vehicleInfo: val})} placeholder="جستجو یا تایپ..." searchable onAddNew={(v: string) => setFormData({...formData, vehicleInfo: v})} />
                     </div>
                     <div className="space-y-2 relative z-[45]">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300">نام راننده / اپراتور</label>
-                      <GlassSelect options={mockDrivers} value={formData.provider} onChange={(val: string) => setFormData({...formData, provider: val})} placeholder="جستجو یا تایپ..." hasSearch onAddNew={(v: string) => setFormData({...formData, provider: v})} />
+                      <PortalSelect options={mockDrivers} value={formData.provider} onChange={(val: string) => setFormData({...formData, provider: val})} placeholder="جستجو یا تایپ..." searchable onAddNew={(v: string) => setFormData({...formData, provider: v})} />
                     </div>
                   </div>
                 </div>

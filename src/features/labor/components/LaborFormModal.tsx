@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion} from 'framer-motion';
 import { 
   X, User, Phone, Briefcase, HardHat, 
   CreditCard, ShieldAlert, Camera, UploadCloud, 
@@ -49,6 +49,7 @@ export default function LaborFormModal({ isOpen, onClose, editWorkerId }: any) {
     nationality: existingWorker?.nationality || 'IRANIAN',
     insuranceCode: existingWorker?.insuranceCode || '', 
     specialtyIds: existingWorker?.specialtyIds || ([] as string[]),
+    crewLeaderId: existingWorker?.crewLeaderId || null,
     priceBook: existingWorker?.priceBook || ([] as PriceBookEntry[]),
     
     // 💡 این فیلدها در بک‌گراند مقدار پیش‌فرض می‌گیرند تا ساختار دیتابیس حفظ شود

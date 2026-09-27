@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Banknote, FileSignature, UploadCloud, AlignLeft, 
-  CalendarDays, Wallet, Plus, Trash2, Check, ChevronDown, 
+  CalendarDays, Wallet, Plus, Trash2,   
   CheckCircle2, SplitSquareHorizontal, Image as ImageIcon, 
   PieChart, Wand2, ClipboardPaste, Building2, UserCircle, 
   Briefcase, Activity, Share2 
@@ -20,6 +20,7 @@ import { useLaborStore } from '../../../store/laborStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
+import { PortalSelect, AnimatedCheckbox, GlassScrollStyles } from '../../../components/ui/SharedLaborUI';
 
 // ==========================================
 // 💡 الگوریتم مترجم هوشمند اعداد (رفع باگ پاک شدن و ناعدد)
@@ -43,17 +44,6 @@ const formatAmount = (val: string | number) => {
 // ==========================================
 // 💡 استایل‌های سراسری برای اسکرول‌بار شیشه‌ای
 // ==========================================
-const GlassScrollStyles = () => (
-  <style>{`
-    .glass-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .glass-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
-    .glass-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 10px; transition: background 0.3s ease; }
-    .glass-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
-    .dark .glass-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-    .dark .glass-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); }
-    .dark .glass-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.9); }
-  `}</style>
-);
 
 // ==========================================
 // 💡 کامپوننت تولتیپ گرافیکی 
@@ -80,7 +70,7 @@ const transactionSchema = z.object({
   date: z.string().min(1, 'تاریخ الزامی است'),
   type: z.enum(['CASH', 'CHEQUE', 'COMBINED'] as const),
   description: z.string().optional(),
-  attachments: z.array(z.string()).default([]),
+  attachments: z.array(z.string()).optional(),
   textReceipt: z.string().optional(),
   issuer: z.string().optional(),
   sayyadId: z.string().optional(),
@@ -125,82 +115,10 @@ const chequeStatusOptions = [
 // ==========================================
 // 💡 PortalSelect (لیست کشویی شیشه‌ای)
 // ==========================================
-const PortalSelect = ({ value, onChange, options, placeholder, icon: Icon, hasError }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const selected = options.find((o:any) => o.id === value);
-
-  const openDropdown = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 8, left: rect.left, width: rect.width });
-      setIsOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = () => setIsOpen(false);
-    if (isOpen) {
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('resize', handleScroll);
-    }
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleScroll);
-    };
-  }, [isOpen]);
-
-  return (
-    <>
-      <button 
-        type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} 
-        className={`w-full bg-white/60 dark:bg-slate-900/60 border rounded-2xl px-4 py-3 text-sm font-black text-slate-700 dark:text-slate-200 flex justify-between items-center outline-none transition-all shadow-inner backdrop-blur-md ${hasError ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/30'}`}
-      >
-        <div className="flex items-center gap-2 truncate">
-          {Icon && <Icon className="w-4 h-4 text-indigo-500 shrink-0"/>}
-          <span className="truncate">{selected ? selected.label : placeholder}</span>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-indigo-500 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && createPortal(
-        <>
-          <div className="fixed inset-0 z-[999999]" onClick={() => setIsOpen(false)} />
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} 
-            style={{ top: coords.top, left: coords.left, width: coords.width }}
-            className="fixed bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-[1000000] overflow-hidden max-h-60 overflow-y-auto glass-scroll py-2"
-          >
-            {options.map((opt: any) => (
-              <button type="button" key={opt.id} onClick={() => { onChange(opt.id); setIsOpen(false); }} className={`w-full text-right px-4 py-3 text-sm font-bold transition-colors flex items-center justify-between group ${value === opt.id ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>
-                <span className="truncate pl-2">{opt.label}</span>
-                {value === opt.id && <Check className="w-4 h-4 text-indigo-500 shrink-0" />}
-              </button>
-            ))}
-          </motion.div>
-        </>,
-        document.body
-      )}
-    </>
-  );
-};
 
 // ==========================================
 // 💡 کامپوننت چک‌باکس انیمیشنی لاکچری 
 // ==========================================
-const AnimatedCheckbox = ({ checked, onChange, label, subLabel, icon: Icon, colorClass="indigo" }: any) => (
-  <label className={`flex items-center gap-4 cursor-pointer group p-4 rounded-2xl border bg-white/40 dark:bg-slate-800/40 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all shadow-sm ${checked ? `border-${colorClass}-300 dark:border-${colorClass}-700/50` : 'border-slate-200 dark:border-slate-700'}`}>
-    <div className={`w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center transition-colors ${checked ? `bg-${colorClass}-500 border-${colorClass}-500 shadow-[0_0_12px_rgba(99,102,241,0.5)]` : 'bg-transparent border-slate-300 dark:border-slate-600'}`}>
-      <AnimatePresence>{checked && <motion.div initial={{scale:0}} animate={{scale:1}} exit={{scale:0}}><Check className="w-4 h-4 text-white" /></motion.div>}</AnimatePresence>
-    </div>
-    <div className="flex flex-col flex-1">
-      <span className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-2">{Icon && <Icon className={`w-4 h-4 text-${colorClass}-500`}/>} {label}</span>
-      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{subLabel}</span>
-    </div>
-    <input type="checkbox" className="hidden" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-  </label>
-);
 
 // ==========================================
 // 💡 MAIN MODAL COMPONENT
@@ -341,7 +259,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
       clientId: transactionClientId, 
       projectId: transactionProjectId, 
       allocations: finalAllocations.length > 0 ? finalAllocations : undefined, 
-      date: data.date, direction: 'OUT', attachments: data.attachments, textReceipt: data.textReceipt 
+      date: data.date, direction: 'OUT', attachments: data.attachments || [], textReceipt: data.textReceipt 
     };
 
     const newIdBase = crypto.randomUUID(); 
@@ -401,7 +319,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
                 <motion.div key="single" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2 relative z-[100]">
                     <label className="text-sm font-black text-slate-700 dark:text-slate-200 flex items-center gap-1"><CalendarDays className="w-4 h-4 text-indigo-500"/> تاریخ عملیات</label>
-                    <Controller control={control} name="date" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} hasError={!!errors.date} />)} />
+                    <Controller control={control} name="date" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.date} />)} />
                   </div>
                   <div className="space-y-2 relative">
                     <label className="text-sm font-black text-slate-700 dark:text-slate-200 flex items-center justify-between gap-1 w-full">
@@ -457,7 +375,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
                   </div>
                   <div className="space-y-2 pt-2 relative z-50">
                     <label className="text-sm font-black text-slate-700 dark:text-slate-200">تاریخ عملیات ترکیبی</label>
-                    <Controller control={control} name="date" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} />)} />
+                    <Controller control={control} name="date" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} />)} />
                   </div>
                 </motion.div>
               )}
@@ -483,7 +401,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
               ) : (
                 <div className="space-y-4">
                   <AnimatePresence>
-                    {allocations.map((alloc, idx) => (
+                    {allocations.map((alloc, _idx) => (
                       <motion.div key={alloc.id} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative group overflow-visible">
                         <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden md:block">
                           <button type="button" onClick={() => removeAllocationRow(alloc.id)} className="w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Trash2 className="w-4 h-4"/></button>
@@ -584,7 +502,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
                       <div className="space-y-2"><label className="text-sm font-black text-slate-700 dark:text-slate-300">شماره سریال چک *</label><input {...register('serialNumber')} className={`w-full bg-white/80 dark:bg-slate-900/80 border rounded-2xl px-4 py-3.5 outline-none font-mono text-left text-slate-800 dark:text-white shadow-inner font-black ${errors.serialNumber ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-slate-200 dark:border-slate-700 focus:ring-2 ring-cyan-500/30'}`} dir="ltr" /></div>
                       <div className="space-y-2"><label className="text-sm font-black text-slate-700 dark:text-slate-300">سری چک (اختیاری)</label><input {...register('series')} className="w-full bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 outline-none font-mono text-left focus:ring-2 ring-cyan-500/30 text-slate-800 dark:text-white shadow-inner font-bold" dir="ltr" /></div>
                       <div className="space-y-2 relative z-[90]"><label className="text-sm font-black text-slate-700 dark:text-slate-300">بانک صادرکننده *</label><Controller control={control} name="bank" render={({ field }) => (<PortalSelect options={bankOptions} value={field.value || ''} onChange={field.onChange} placeholder="انتخاب بانک" hasError={!!errors.bank} />)} /></div>
-                      <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-5 z-[80]"><label className="text-sm font-black text-slate-700 dark:text-slate-300">تاریخ وصول (سررسید) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
+                      <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-5 z-[80]"><label className="text-sm font-black text-slate-700 dark:text-slate-300">تاریخ وصول (سررسید) *</label><Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (<GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.dueDate} />)} /></div>
                     </div>
                   </div>
                 </motion.div>

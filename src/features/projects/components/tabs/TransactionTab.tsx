@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -13,39 +13,14 @@ import { useFinanceStore } from '../../../../store/financeStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useBulkSelection } from '../../../../hooks/useBulkSelection';
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../../components/ui/GlassSelect';
+
 import type { Transaction } from '../../../../store/financeStore';
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
+import { NeonSearchWrapper, AnimatedCheckbox, PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 // 💡 استفاده از چک‌باکس گرافیکی و انیمیشنی برای یکپارچگی با کل سیستم (تم بنفش/نیلی برای مالی)
-const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
-  <div 
-    onClick={onChange}
-    className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm ${
-      checked 
-        ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 border-purple-400 shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105' 
-        : 'bg-white/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
-    }`}
-  >
-    <AnimatePresence>
-      {checked && (
-        <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
-          <CheckCircle className="w-4 h-4 text-white stroke-[3]" />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </div>
-);
 
 const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR');
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 const ChequeStatusBadge = ({ trx }: { trx: Transaction }) => {
   const status = trx.chequeDetails?.status || 'PENDING';
@@ -133,7 +108,7 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
   }, [archiveUndo, deleteChequeHistory]);
 
   const filteredTransactions = useMemo(() => {
-    return allTransactions
+    return sortNewestFirst(allTransactions
       .filter(t => {
         if (t.referenceId !== projectId) return false;
         if (pendingDeleteIds.includes(t.id)) return false;
@@ -142,8 +117,7 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
         const matchTo = dateTo ? t.date <= dateTo : true;
         const matchPhase = selectedPhaseFilter === 'ALL' ? true : t.phaseId === selectedPhaseFilter;
         return matchSearch && matchFrom && matchTo && matchPhase;
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+      }), 'append');
   }, [allTransactions, projectId, searchQuery, dateFrom, dateTo, selectedPhaseFilter, pendingDeleteIds]);
 
   const paginatedTransactions = useMemo(() => {
@@ -189,10 +163,10 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
         
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 flex-[1_1_auto] relative z-[10000] overflow-visible">
           <div className="w-[calc(50%-0.5rem)] sm:w-[110px] shrink-0 h-[46px] relative z-[10004]">
-            <GlassSelect options={paginationOptions} value={pageSize} onChange={setPageSize} placeholder="تعداد" />
+            <PortalSelect options={paginationOptions} value={pageSize} onChange={setPageSize} placeholder="تعداد" />
           </div>
           <div className="w-[calc(50%-0.5rem)] sm:w-[130px] shrink-0 h-[46px] relative z-[10003]">
-            <GlassSelect options={phaseOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="فازها" />
+            <PortalSelect options={phaseOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="فازها"  searchable />
           </div>
           <div className="w-[calc(50%-0.5rem)] sm:w-[176px] shrink-0 h-[46px] relative z-[10002]">
             <GlassDatePicker placeholder="از تاریخ..." value={dateFrom} onChange={setDateFrom} />

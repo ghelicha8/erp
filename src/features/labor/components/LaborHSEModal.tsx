@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,13 +7,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, ShieldAlert, HeartPulse, FileBadge, PhoneCall, 
   CheckCircle2, Globe, Syringe, FileWarning, Fingerprint, CalendarDays,
-  UploadCloud, FileText, Trash2, ChevronDown, Check, Search
+  UploadCloud, FileText, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
 
 import { useLaborStore } from '../../../store/laborStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
+import { PortalSelect, GlassScrollStyles } from '../../../components/ui/SharedLaborUI';
 
 const hseSchema = z.object({
   nationalId: z.string().optional(),
@@ -28,91 +29,6 @@ const hseSchema = z.object({
 
 type HseFormValues = z.infer<typeof hseSchema>;
 
-const GlassScrollStyles = () => (
-  <style>{`
-    .glass-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .glass-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
-    .glass-scroll::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 10px; transition: background 0.3s ease; }
-    .glass-scroll::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.8); }
-    .dark .glass-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-    .dark .glass-scroll::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); }
-  `}</style>
-);
-
-const PortalSelect = ({ value, onChange, options, placeholder, icon: Icon, searchable = false, className = '' }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  
-  const selected = options.find((o:any) => o.id === value);
-
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
-    return options.filter((o:any) => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [options, searchTerm]);
-
-  const openDropdown = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 8, left: rect.left, width: rect.width });
-      setIsOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = () => setIsOpen(false);
-    if (isOpen) {
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('resize', handleScroll);
-    }
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleScroll);
-    };
-  }, [isOpen]);
-
-  return (
-    <>
-      <button type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} className={`w-full h-[48px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 flex justify-between items-center outline-none transition-all shadow-inner hover:border-amber-400 focus:ring-2 focus:ring-amber-500/30 ${className}`}>
-        <div className="flex items-center gap-2 truncate text-right flex-1">
-           {Icon && <Icon className="w-4 h-4 text-amber-500 shrink-0" />}
-           <span className="truncate text-sm font-bold text-slate-800 dark:text-slate-200 pt-0.5">
-             {selected ? selected.label : placeholder}
-           </span>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-amber-500 shrink-0 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && createPortal(
-        <>
-          <div className="fixed inset-0 z-[999999]" onClick={() => setIsOpen(false)} />
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ top: coords.top, left: coords.left, width: coords.width }} className="fixed bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.3)] z-[1000000] overflow-hidden flex flex-col max-h-72 min-w-[200px]">
-            {searchable && (
-              <div className="p-2 border-b border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50">
-                <div className="relative group rounded-xl bg-white dark:bg-slate-900 overflow-hidden shadow-inner">
-                   <div className="absolute inset-0 rounded-xl pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', background: 'linear-gradient(90deg, #f59e0b, #f97316)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', opacity: 0.5 }} />
-                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 z-10" />
-                   <input type="text" autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="جستجو..." className="w-full bg-transparent border-none pr-9 pl-3 py-2.5 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 relative z-10" />
-                </div>
-              </div>
-            )}
-            <div className="overflow-y-auto glass-scroll p-1.5 flex-1">
-              {filteredOptions.length > 0 ? filteredOptions.map((opt: any) => (
-                <button type="button" key={opt.id} onClick={() => { onChange(opt.id); setIsOpen(false); setSearchTerm(''); }} className={`w-full text-right px-4 py-3 text-xs font-black rounded-xl transition-all flex items-center justify-between group ${value === opt.id ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-                  <span className="truncate pl-2">{opt.label}</span>
-                  {value === opt.id && <Check className="w-4 h-4 text-amber-500 shrink-0" />}
-                </button>
-              )) : (
-                <div className="py-6 text-center text-xs font-bold text-slate-400">موردی یافت نشد!</div>
-              )}
-            </div>
-          </motion.div>
-        </>, document.body
-      )}
-    </>
-  );
-};
 
 // 💡 سازنده اختصاصی آیدی برای جلوگیری از خطای ریکت
 const generateSecureId = () => `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -293,7 +209,7 @@ export default function LaborHSEModal({ isOpen, onClose, workerId }: LaborHSEMod
                    <label className="text-[11px] font-black text-slate-600 dark:text-slate-400 flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5 text-amber-500"/> تاریخ انقضای پروانه کار / ویزا</label>
                    <div className="h-[48px] relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-inner group focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all [&_input]:bg-transparent [&_input]:border-none [&_input]:shadow-none text-slate-800 dark:text-slate-200 [&_input]:text-slate-800 dark:[&_input]:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500">
                      <Controller control={control} name="workPermitExpiry" render={({ field: { onChange, value } }) => (
-                       <GlassDatePicker value={value} onChange={onChange} />
+                       <GlassDatePicker value={value || ''} onChange={onChange} />
                      )} />
                    </div>
                  </div>
