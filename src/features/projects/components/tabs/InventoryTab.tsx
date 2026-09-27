@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { 
   Package, AlertTriangle, PlusCircle, MinusCircle, 
-  X, CheckCircle, ChevronDown,
-  History, BarChart2, Calendar, Edit, Trash2, Search,
+  X, CheckCircle,
+  History, BarChart2, Trash2, Search,
   PieChart, Activity, RefreshCcw, ShieldAlert
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,11 +16,12 @@ import {
 } from 'recharts';
 
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../../components/ui/GlassSelect';
+
 import { useProjectStore } from '../../store/projectStore';
 
 // 💡 اضافه کردن استور خرید برای محاسبه دقیق موجودی انبار از طریق فاکتورهای جدید
 import { usePurchaseStore } from '../../../../store/purchaseStore';
+import { NeonSearchWrapper, GlassInputWrapper, PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 interface InventoryTabProps {
   projectId: string;
@@ -54,25 +55,10 @@ const parseAmount = (val?: string) => Number((val || '0').replace(/,/g, ''));
 
 const AnimatedNumber = ({ value, format = true }: { value: number, format?: boolean }) => {
   const count = useMotionValue(0);
-  const displayValue = useTransform(count, (latest) => format ? Math.round(latest).toLocaleString() : Math.round(latest));
+  const displayValue = useTransform(count, (latest): string => format ? Math.round(latest).toLocaleString() : String(Math.round(latest)));
   useEffect(() => { const controls = animate(0, value, { duration: 1.5, ease: "easeOut", onUpdate: (v) => count.set(v) }); return controls.stop; }, [value, count]);
   return <motion.span>{displayValue}</motion.span>;
 };
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
-
-const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl bg-white/60 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm focus-within:border-indigo-500/60 transition-all duration-300 overflow-hidden flex items-center ${className}`}>
-    {children}
-  </div>
-);
 
 const NeedleFuelGauge = ({ current, max }: { current: number, max: number }) => {
   const percentage = Math.min(Math.max((current / max) * 100, 0), 100);
@@ -418,10 +404,10 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
               <div className="w-full xl:w-px h-px xl:h-8 bg-slate-300 dark:bg-slate-700 hidden xl:block" />
               
               <div className="w-full sm:w-56 relative z-[100] h-[46px]">
-                <GlassSelect 
+                <PortalSelect 
                   options={[{value: 'ALL', label: 'همه تراکنش‌ها'}, {value: 'ADD', label: 'فقط افزایش'}, {value: 'CONSUME', label: 'فقط مصرف و خروج'}]}
                   value={historyFilterType} onChange={setHistoryFilterType}
-                />
+                 placeholder="انتخاب کنید..." />
               </div>
             </div>
 
@@ -484,7 +470,7 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
             
             <div className="flex flex-wrap items-center gap-4 bg-white/10 dark:bg-slate-900/10 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-[2rem] px-6 py-4 z-[90] relative">
               <div className="w-full sm:w-64 relative z-[100] h-[46px]">
-                <GlassSelect options={MATERIAL_OPTIONS} value={aMaterial} onChange={setAMaterial} placeholder="انتخاب مصالح..." />
+                <PortalSelect options={MATERIAL_OPTIONS} value={aMaterial} onChange={setAMaterial} placeholder="انتخاب مصالح..."  searchable />
               </div>
               <div className="w-full sm:w-44 h-[46px] relative">
                 <GlassDatePicker placeholder="از تاریخ..." value={aDateFrom} onChange={setADateFrom} />
@@ -512,7 +498,7 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
                       <YAxis stroke="#94a3b8" fontSize={10} />
                       <RechartsTooltip content={<CustomChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.1)' }} />
                       <Bar dataKey="current" name="موجودی فعلی" fill="url(#barGradient)" radius={[6, 6, 0, 0]} barSize={40} animationDuration={1500}>
-                        {barChartData.map((entry, index) => (<Cell key={`cell-${index}`} />))}
+                        {barChartData.map((_entry, index) => (<Cell key={`cell-${index}`} />))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -624,15 +610,15 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
                 <div className="space-y-5 relative z-50">
                   <div className="space-y-2 relative z-[70]">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300">علت خروج از انبار چیست؟</label>
-                    <GlassSelect 
+                    <PortalSelect 
                       options={[
                         { value: 'USE', label: 'مصرف عادی در همین کارگاه' },
                         { value: 'WASTE', label: 'اعلام خرابی / ضایعات / سرقت' },
                         { value: 'TRANSFER', label: 'انتقال و قرض به پروژه‌ای دیگر' }
                       ]} 
                       value={consumeReason} 
-                      onChange={setConsumeReason} 
-                    />
+                      onChange={(v: any) => setConsumeReason(v as 'USE' | 'WASTE' | 'TRANSFER')} 
+                     placeholder="انتخاب کنید..." />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -647,7 +633,7 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300">مقدار خروجی</label>
                       <GlassInputWrapper className="pl-0 h-[46px]">
                         <div className="w-1/2 h-full border-l border-slate-200 dark:border-slate-700 relative z-[60]">
-                          <GlassSelect options={actionModal.item?.availableUnits.map((u:any) => ({value: u, label: u})) || []} value={selectedUnit} onChange={setSelectedUnit} />
+                          <PortalSelect options={actionModal.item?.availableUnits.map((u:any) => ({value: u, label: u})) || []} value={selectedUnit} onChange={setSelectedUnit}  searchable  placeholder="انتخاب کنید..." />
                         </div>
                         <input type="number" value={actionAmount} onChange={e => setActionAmount(e.target.value)} className="w-1/2 h-full bg-transparent px-3 outline-none font-black text-lg text-center text-slate-900 dark:text-white relative z-10" dir="ltr" placeholder="0" autoFocus />
                       </GlassInputWrapper>
@@ -659,7 +645,7 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
                         <div className="space-y-2 relative z-[45]">
                           <label className="text-xs font-bold text-indigo-600 dark:text-indigo-400">انتخاب پروژه مقصد *</label>
-                          <GlassSelect options={otherProjects} value={destProject} onChange={setDestProject} placeholder="جستجوی پروژه‌ها..." />
+                          <PortalSelect options={otherProjects} value={destProject} onChange={setDestProject} placeholder="جستجوی پروژه‌ها..."  searchable />
                         </div>
                       </motion.div>
                     )}

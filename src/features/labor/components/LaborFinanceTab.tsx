@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, X, CheckCircle, Clock, Banknote, FileSignature, 
   Edit, Trash2, Image as ImageIcon, ArrowLeftRight, AlertTriangle, 
-  Wallet, Layers, Check, ChevronDown, Download, Activity,
-  Archive, History, ArrowUpRight, ArrowDownRight, Filter
+  Layers,   Download,
+  Archive, ArrowUpRight, ArrowDownRight, Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
-import moment from 'moment-jalaali';
 
 import { useFinanceStore } from '../../../store/financeStore';
 import { useProjectStore } from '../../projects/store/projectStore';
@@ -17,87 +16,9 @@ import { useLaborStore } from '../../../store/laborStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import NewTransactionModal from '../../projects/components/NewTransactionModal'; 
 import type { Transaction } from '../../../store/financeStore';
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
+import { NeonSearchWrapper, AnimatedCheckbox, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
-const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR');
-
-const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
-  <div onClick={(e) => { e.stopPropagation(); onChange(); }} className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm shrink-0 ${checked ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 border-purple-400 shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105' : 'bg-white/60 dark:bg-slate-800/60 border-slate-300 dark:border-slate-600 hover:border-indigo-400'}`}>
-    <AnimatePresence>
-      {checked && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}><CheckCircle className="w-3 h-3 text-white stroke-[3]" /></motion.div>}
-    </AnimatePresence>
-  </div>
-);
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/20 dark:bg-slate-800/40 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all border border-white/50 dark:border-slate-700/50 ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
-
-const GlassSelect = ({ value, onChange, options, placeholder, icon: Icon, className = '' }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  
-  const selectedOption = options.find((o:any) => o.id === value);
-  const selectedLabel = selectedOption?.label || placeholder;
-
-  const updatePosition = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 6, left: rect.left, width: rect.width });
-    }
-  };
-
-  const openDropdown = () => { updatePosition(); setIsOpen(true); };
-
-  useEffect(() => {
-    if (isOpen) { window.addEventListener('scroll', updatePosition, true); window.addEventListener('resize', updatePosition); }
-    return () => { window.removeEventListener('scroll', updatePosition, true); window.removeEventListener('resize', updatePosition); };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (btnRef.current && !btnRef.current.contains(event.target as Node)) {
-        const portalEl = document.getElementById('portal-dropdown-finance');
-        if (portalEl && !portalEl.contains(event.target as Node)) setIsOpen(false);
-      }
-    };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const containerVariants = { hidden: { opacity: 0, y: -5, transition: { staggerChildren: 0.03, staggerDirection: -1 } }, visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.03, delayChildren: 0.05 } } };
-  const itemVariants = { hidden: { opacity: 0, x: -5 }, visible: { opacity: 1, x: 0 } };
-
-  return (
-    <>
-      <button ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} className={`relative bg-white/40 dark:bg-slate-800/40 rounded-xl border border-white/60 dark:border-slate-700/50 shadow-sm backdrop-blur-md flex items-center justify-between gap-3 px-4 h-[42px] text-xs font-black text-slate-700 dark:text-slate-200 transition-all hover:bg-white/70 dark:hover:bg-slate-700/60 hover:shadow-md hover:border-indigo-300/50 ${className}`}>
-        <div className="flex items-center gap-2 overflow-hidden">
-          {Icon && <Icon className="w-3.5 h-3.5 text-indigo-500 shrink-0" />}
-          <span className="truncate pt-0.5">{selectedLabel}</span>
-        </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-indigo-500 opacity-70 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && createPortal(
-        <div id="portal-dropdown-finance" style={{ top: coords.top, left: coords.left, width: coords.width, minWidth: '180px', position: 'fixed', zIndex: 999999 }}>
-          <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="hidden" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.5)] overflow-hidden max-h-60 overflow-y-auto glass-scroll p-1.5">
-            {options.map((option: any) => (
-              <motion.button variants={itemVariants} key={option.id} onClick={() => { onChange(option.id); setIsOpen(false); }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all group ${value === option.id ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80'}`}>
-                <span className="truncate pt-0.5 pr-2 text-right w-full">{option.label}</span>
-                {value === option.id && <Check className="w-3.5 h-3.5 text-indigo-500 drop-shadow-sm shrink-0" />}
-              </motion.button>
-            ))}
-          </motion.div>
-        </div>, document.body
-      )}
-    </>
-  );
-};
 
 const ChequeStatusBadge = ({ status }: { status: string }) => {
   const statusConfig: Record<string, any> = {
@@ -129,15 +50,14 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
   const [dateTo, setDateTo] = useState('');
   const [selectedProjectFilter, setSelectedProjectFilter] = useState<string>('ALL');
   const [txTypeFilter, setTxTypeFilter] = useState<string>('ALL'); 
-  const [pageSize, setPageSize] = useState<string>('ALL');
+  const [pageSize] = useState<string>('ALL');
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
   const [undoItems, setUndoItems] = useState<{ id: string, items: { id: string, source: 'FINANCE' | 'LABOR' }[], expireAt: number }[]>([]);
   
-  const [selectedReceiptTx, setSelectedReceiptTx] = useState<any | null>(null);
-  const [selectedArchiveTx, setSelectedArchiveTx] = useState<Transaction | null>(null);
-  const [expandedArchiveId, setExpandedArchiveId] = useState<string | null>(null);
+  const [, setSelectedReceiptTx] = useState<any | null>(null);
+  const [, setSelectedArchiveTx] = useState<Transaction | null>(null);
   const [archiveUndo, setArchiveUndo] = useState<{ txId: string, historyId: string, expireAt: number } | null>(null);
   
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
@@ -208,7 +128,7 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
     logs.forEach(log => {
       if (log.workerId !== workerId || pendingDeleteIds.includes(log.id)) return;
       const pId = log.projectId || 'FREE';
-      const logDate = log.date || log.startDate || '';
+      const logDate = log.date || '';
 
       if (log.advancePayment > 0) records.push({ id: `adv_${log.id}`, realId: log.id, source: 'LABOR', date: logDate, description: log.description ? `مساعده: ${log.description}` : 'مساعده کارکرد روزانه', amount: log.advancePayment, direction: 'OUT', type: 'CASH', projectId: pId });
       if (log.bonus && log.bonus > 0) records.push({ id: `bon_${log.id}`, realId: log.id, source: 'LABOR', date: logDate, description: log.description ? `پاداش: ${log.description}` : 'پاداش و تشویقی', amount: log.bonus, direction: 'OUT', type: 'CASH', projectId: pId });
@@ -236,7 +156,7 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
     if (dateFrom) result = result.filter(r => r.date >= dateFrom);
     if (dateTo) result = result.filter(r => r.date <= dateTo);
     
-    result.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+    result = sortNewestFirst(result, 'append');
     if (pageSize !== 'ALL') result = result.slice(0, parseInt(pageSize));
     
     return result;
@@ -246,15 +166,6 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
   const toggleSelection = (id: string) => setSelectedIds(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
   const handleSelectAll = () => isAllSelected ? setSelectedIds([]) : setSelectedIds(visibleRecords.map(t => t.id));
   
-  const triggerDeleteGroup = () => {
-    const itemsToDelete = selectedIds.map(id => {
-      const rec = unifiedRecords.find(r => r.id === id);
-      return { id: rec.realId || rec.id, source: rec.source };
-    });
-    setUndoItems(prev => [...prev, { id: Date.now().toString(), items: itemsToDelete, expireAt: Date.now() + 5000 }]);
-    setPendingDeleteIds(prev => [...prev, ...itemsToDelete.map(i => i.id)]);
-    setSelectedIds([]); 
-  };
 
   const triggerSingleDelete = (record: any) => {
     const targetId = record.realId || record.id;
@@ -283,10 +194,10 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
         
         <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto flex-[2_1_auto] relative z-[10000]">
           <div className="w-[calc(50%-0.25rem)] sm:w-[150px] shrink-0 h-[42px] relative z-[10005]">
-            <GlassSelect options={typeFilterOptions} value={txTypeFilter} onChange={setTxTypeFilter} placeholder="نوع پرداخت" icon={Filter} />
+            <PortalSelect options={typeFilterOptions} value={txTypeFilter} onChange={setTxTypeFilter} placeholder="نوع پرداخت" icon={Filter} />
           </div>
           <div className="w-[calc(50%-0.25rem)] sm:w-[140px] shrink-0 h-[42px] relative z-[10004]">
-            <GlassSelect options={projectFilterOptions} value={selectedProjectFilter} onChange={setSelectedProjectFilter} placeholder="پروژه‌ها" icon={Layers} />
+            <PortalSelect options={projectFilterOptions} value={selectedProjectFilter} onChange={setSelectedProjectFilter} placeholder="پروژه‌ها" icon={Layers}  searchable />
           </div>
           <div className="w-[calc(50%-0.25rem)] sm:w-[120px] shrink-0 h-[42px] relative z-[10002]">
             <GlassDatePicker placeholder="از تاریخ..." value={dateFrom} onChange={setDateFrom} />

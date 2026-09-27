@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,23 +6,24 @@ import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, CalendarDays, Activity, Briefcase, Building2, UserCircle, 
-  CheckCircle2, Plus, Trash2, ChevronDown, Check, Search,
-  Mic, CloudRain, Sun, Snowflake, Wind, ShieldAlert, HardHat, 
-  Pickaxe, Clock, Calculator, SquareActivity, PlayCircle, Layers, 
-  RotateCcw, Zap, CheckCircle, Users, Banknote, ShieldCheck, Copy, Edit,
-  UserPlus, Hash, Ruler, Tag, FileSignature, Wallet
+  CheckCircle2, Trash2,   
+  CloudRain, Sun, Snowflake, Wind, HardHat, 
+  Pickaxe, Clock, SquareActivity, Layers, 
+  Zap,
+  UserPlus, Hash, Ruler, Tag, FileSignature
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
 
 import { useLaborStore } from '../../../store/laborStore';
-import type { WeatherCondition, WorkUnit, LaborRecordType, AttendanceStatus, WorkerProfile } from '../../../store/laborStore';
+import type { WeatherCondition, WorkUnit, LaborRecordType, AttendanceStatus, WorkerProfile, PaymentType } from '../../../store/laborStore';
 
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 
 import LaborFormModal from '../../labor/components/LaborFormModal';
+import { PortalSelect, GlowSwitch, LuxuryTimePicker, GlassScrollStyles } from '../../../components/ui/SharedLaborUI';
 
 // ==========================================
 // 💡 الگوریتم مترجم هوشمند اعداد
@@ -46,13 +47,14 @@ const shiftSchema = z.object({
   endTime: z.string().optional(),
   specialtyId: z.string().optional(),
   workType: z.string().min(1, 'شرح کار الزامی است'),
-  projectId: z.string().default('FREE'),
-  phaseId: z.string().default('GENERAL'),
+  clientId: z.string().optional(),
+  projectId: z.string().optional(),
+  phaseId: z.string().optional(),
   billedUnit: z.string(),
   billedQuantity: z.string().min(1),
   billedRate: z.string().min(1),
-  isCoveredByClientMonthly: z.boolean().default(false),
-  isBilledAsFullDay: z.boolean().default(false),
+  isCoveredByClientMonthly: z.boolean().optional(),
+  isBilledAsFullDay: z.boolean().optional(),
 });
 
 const logSchema = z.object({
@@ -60,7 +62,7 @@ const logSchema = z.object({
   workerUnit: z.string(),
   workerQuantity: z.string().min(1),
   workerRate: z.string().min(1),
-  isCoveredByUsMonthly: z.boolean().default(false),
+  isCoveredByUsMonthly: z.boolean().optional(),
   
   shifts: z.array(shiftSchema).min(1, 'حداقل یک شیفت باید ثبت شود'),
 
@@ -76,228 +78,7 @@ type LogFormValues = z.infer<typeof logSchema>;
 // ==========================================
 // 💡 کامپوننت‌ها و استایل‌های پایه
 // ==========================================
-const GlassScrollStyles = () => (
-  <style>{`
-    .glass-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .glass-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
-    .glass-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 10px; transition: background 0.3s ease; }
-    .glass-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
-    .dark .glass-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-    .dark .glass-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); }
-  `}</style>
-);
 
-const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 shadow-sm focus-within:border-indigo-500/60 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all duration-300 overflow-hidden group ${className}`}>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center">{children}</div>
-  </div>
-);
-
-const GlowSwitch = ({ checked, onChange, label, sublabel, theme = 'indigo' }: any) => {
-  const isIndigo = theme === 'indigo';
-  return (
-    <div onClick={() => onChange(!checked)} className={`flex items-center gap-3 cursor-pointer p-3 rounded-2xl border transition-all duration-300 shadow-sm ${checked ? (isIndigo ? 'border-indigo-400 bg-indigo-50/80 dark:bg-indigo-900/30' : 'border-blue-400 bg-blue-50/80 dark:bg-blue-900/30') : 'border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600'}`}>
-      <div className={`relative w-11 h-6 rounded-full transition-colors duration-300 shadow-inner shrink-0 ${checked ? (isIndigo ? 'bg-indigo-500' : 'bg-blue-500') : 'bg-slate-300 dark:bg-slate-600'}`}>
-         <motion.div animate={{ x: checked ? -20 : 0 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full shadow-md" />
-      </div>
-      <div className="flex flex-col">
-        <span className={`text-[11px] font-black transition-colors ${checked ? (isIndigo ? 'text-indigo-700 dark:text-indigo-300' : 'text-blue-700 dark:text-blue-300') : 'text-slate-700 dark:text-slate-300'}`}>{label}</span>
-        {sublabel && <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">{sublabel}</span>}
-      </div>
-    </div>
-  );
-};
-
-const LuxuryTimePicker = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder: string }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState<'hours' | 'minutes'>('hours');
-  const [isPM, setIsPM] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  const openClock = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 10, left: rect.left + rect.width / 2 });
-      setMode('hours');
-      setIsOpen(true);
-    }
-  };
-
-  const handleHourSelect = (h: number) => {
-    const formattedHour = isPM ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h);
-    const mStr = value ? value.split(':')[1] : '00';
-    onChange(`${String(formattedHour).padStart(2, '0')}:${mStr}`);
-    setMode('minutes');
-  };
-
-  const handleMinuteSelect = (m: number) => {
-    const hStr = value ? value.split(':')[0] : '08';
-    onChange(`${hStr}:${String(m).padStart(2, '0')}`);
-    setIsOpen(false);
-  };
-
-  const currentH = value ? parseInt(value.split(':')[0], 10) : 8;
-  const currentM = value ? parseInt(value.split(':')[1], 10) : 0;
-  const displayH = currentH % 12 || 12;
-
-  return (
-    <>
-      <button type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openClock()} className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 h-[48px] text-xs font-black text-slate-700 dark:text-slate-200 flex justify-between items-center outline-none transition-all shadow-inner hover:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30">
-        <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
-          <Clock className="w-4 h-4 shrink-0" />
-          <span dir="ltr">{value || placeholder}</span>
-        </div>
-        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
-      </button>
-
-      {isOpen && mounted && typeof document !== 'undefined' && document.body ? createPortal(
-        <>
-          <div className="fixed inset-0 z-[999999]" onClick={() => setIsOpen(false)} />
-          <motion.div initial={{ opacity: 0, scale: 0.9, y: -20, x: '-50%' }} animate={{ opacity: 1, scale: 1, y: 0, x: '-50%' }} exit={{ opacity: 0, scale: 0.9, y: -20, x: '-50%' }} style={{ top: coords.top, left: coords.left }} className="fixed bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border border-slate-200 dark:border-slate-700 rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.3)] z-[1000000] p-6 flex flex-col items-center gap-4">
-            <div className="flex items-center gap-2 mb-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl shadow-inner">
-               <button type="button" onClick={() => setIsPM(false)} className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${!isPM ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:bg-white dark:hover:bg-slate-700'}`}>AM (صبح)</button>
-               <button type="button" onClick={() => setIsPM(true)} className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${isPM ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:bg-white dark:hover:bg-slate-700'}`}>PM (عصر)</button>
-            </div>
-            <div className="relative w-56 h-56 rounded-full bg-slate-50 dark:bg-slate-800 border-[6px] border-slate-200 dark:border-slate-700 shadow-inner flex items-center justify-center">
-               <div className="absolute w-3 h-3 bg-indigo-500 rounded-full z-20 shadow-md" />
-               <div className="absolute w-1 h-20 bg-indigo-500 rounded-full origin-bottom z-10" style={{ bottom: '50%', transform: `rotate(${mode === 'hours' ? displayH * 30 : currentM * 6}deg)`, transformOrigin: 'bottom center' }} />
-               {[...Array(12)].map((_, i) => {
-                 const num = mode === 'hours' ? (i === 0 ? 12 : i) : i * 5;
-                 const angle = (i * 30 - 90) * (Math.PI / 180);
-                 const x = 50 + 38 * Math.cos(angle);
-                 const y = 50 + 38 * Math.sin(angle);
-                 const isSelected = mode === 'hours' ? displayH === num : currentM === num;
-                 return (
-                   <button key={i} type="button" onClick={() => mode === 'hours' ? handleHourSelect(num) : handleMinuteSelect(num)} style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }} className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all z-20 ${isSelected ? 'bg-indigo-500 text-white shadow-lg scale-110' : 'text-slate-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:scale-110'}`}>
-                     {String(num).padStart(2, '0')}
-                   </button>
-                 );
-               })}
-            </div>
-          </motion.div>
-        </>, document.body
-      ) : null}
-    </>
-  );
-};
-
-const PortalSelect = ({ value, onChange, options, placeholder, icon: Icon, searchable = false, className = '', disabled = false }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-  
-  const selected = options.find((o:any) => o.id === value || o.value === value);
-
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
-    return options.filter((o:any) => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [options, searchTerm]);
-
-  const openDropdown = () => {
-    if (disabled) return;
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 8, left: rect.left, width: rect.width });
-      setIsOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = (e: Event) => {
-      if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) return; 
-      setIsOpen(false);
-    };
-    if (isOpen) {
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('resize', handleScroll);
-    }
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleScroll);
-    };
-  }, [isOpen]);
-
-  return (
-    <>
-      <button type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} disabled={disabled} className={`w-full h-[48px] bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/60 rounded-2xl px-4 flex justify-between items-center outline-none transition-all shadow-inner hover:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30 ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-800/80 border-slate-300' : ''} ${className}`}>
-        <div className="flex items-center gap-2 truncate text-right flex-1">
-           {Icon && <Icon className="w-4 h-4 text-indigo-500 shrink-0" />}
-           <span className="truncate text-xs font-bold text-slate-700 dark:text-slate-200 pt-0.5">
-             {selected ? selected.label : placeholder}
-           </span>
-        </div>
-        {!disabled && <ChevronDown className={`w-4 h-4 text-indigo-500 shrink-0 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
-      </button>
-
-      {/* 💡 گارد امنیتی DOM برای جلوگیری از ارور Portal */}
-      {isOpen && mounted && typeof document !== 'undefined' && document.body ? createPortal(
-        <>
-          <div className="fixed inset-0 z-[999999]" onClick={() => setIsOpen(false)} />
-          <motion.div ref={dropdownRef} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ top: coords.top, left: coords.left, width: coords.width }} className="fixed bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.3)] z-[1000000] overflow-hidden flex flex-col max-h-72 min-w-[240px]">
-            {searchable && (
-              <div className="p-2 border-b border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
-                <div className="relative group rounded-xl bg-white dark:bg-slate-900 overflow-hidden shadow-inner">
-                   <div className="absolute inset-0 rounded-xl pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', opacity: 0.5 }} />
-                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500 z-10" />
-                   <input type="text" autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="جستجو..." className="w-full bg-transparent border-none pr-9 pl-3 py-2.5 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 relative z-10" />
-                </div>
-              </div>
-            )}
-            <div className="overflow-y-auto glass-scroll p-2 flex-1 space-y-1">
-              {filteredOptions.length > 0 ? filteredOptions.map((opt: any, index: number) => {
-                const OptIcon = opt.icon || Check;
-                const isSelected = value === opt.id || value === opt.value;
-                const isNewAction = opt.id === 'NEW_WORKER'; 
-                
-                return (
-                  <motion.button 
-                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.03 }}
-                    type="button" 
-                    key={opt.id || opt.value} 
-                    onClick={() => { onChange(opt.id || opt.value); setIsOpen(false); setSearchTerm(''); }} 
-                    className={`w-full text-right px-3 py-2.5 text-xs font-black rounded-xl transition-all flex items-center justify-between group ${
-                      isNewAction 
-                        ? 'bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500 hover:to-purple-600 text-indigo-600 dark:text-indigo-400 hover:text-white border border-indigo-200 dark:border-indigo-800/50 shadow-sm' 
-                        : isSelected 
-                        ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' 
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/80'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`p-1.5 rounded-lg transition-colors ${
-                        isNewAction ? 'bg-indigo-500 text-white group-hover:bg-white group-hover:text-indigo-600 shadow-md' 
-                        : isSelected ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400' 
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30'
-                      }`}>
-                        <OptIcon className="w-4 h-4" />
-                      </div>
-                      <span className="truncate pt-0.5">{opt.label}</span>
-                    </div>
-                    {isSelected && <CheckCircle2 className="w-5 h-5 text-indigo-500 shrink-0 drop-shadow-md" />}
-                  </motion.button>
-                )
-              }) : (
-                <div className="py-8 text-center flex flex-col items-center justify-center gap-2 opacity-50">
-                  <Search className="w-8 h-8 text-slate-400" />
-                  <span className="text-xs font-bold text-slate-500">موردی یافت نشد!</span>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </>, document.body
-      ) : null}
-    </>
-  );
-};
 
 interface NewLaborModalProps {
   projectId: string;
@@ -311,7 +92,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const { workers, addBulkLogs, specialtyTags, addOrUpdateWorker, updateLog } = useLaborStore();
+  const { workers, addBulkLogs, specialtyTags, updateLog } = useLaborStore();
   const { projects } = useProjectStore();
   const { clients } = useClientStore();
 
@@ -350,8 +131,8 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
   const watchAll = watch();
 
   // 💡 استیت‌های انتخاب هوشمند نیروی کار
-  const [workerNameInput, setWorkerNameInput] = useState('');
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [, setWorkerNameInput] = useState('');
+  const [, setShowAutocomplete] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<WorkerProfile | null>(null);
   const autocompleteRef = useRef<HTMLDivElement>(null);
   
@@ -362,7 +143,6 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
   const [weather, setWeather] = useState<WeatherCondition>('NORMAL');
   const [hasIncident, setHasIncident] = useState(false);
   const [showTimeInputs, setShowTimeInputs] = useState(false); 
-  const [isRecording, setIsRecording] = useState(false);
   const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
 
   const [isBulkDate, setIsBulkDate] = useState(false);
@@ -378,7 +158,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
     return false;
   }, [watchAll.date, selectedWorker]);
 
-  const hasMonthlyContractWithClient = (shiftProjectId: string) => {
+  const hasMonthlyContractWithClient = (_shiftProjectId: string) => {
     if (!selectedWorker) return false;
     if (selectedWorker.defaultPaymentType === 'PROJECT_MONTHLY') return true;
     return false;
@@ -496,14 +276,6 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
     { id: 'ITEM', label: 'آیتم/عدد', icon: Hash }, { id: 'SERVICE', label: 'سرویس', icon: Activity }, { id: 'CONTRACT', label: 'پروژه‌ای/کنترات', icon: FileSignature }, { id: 'MONTH', label: 'ماهانه', icon: CalendarDays }
   ];
 
-  const paymentTypeOptions = [
-    { id: 'DAILY', label: 'روزمزد', icon: Wallet },
-    { id: 'HOURLY', label: 'ساعتی (اضافه‌کاری)', icon: Clock },
-    { id: 'PIECE_WORK', label: 'دانه‌ای / مقداری', icon: Hash },
-    { id: 'CONTRACT', label: 'مقطوع / کنترات موضعی', icon: FileSignature },
-    { id: 'MONTHLY', label: 'حقوق ماهیانه (پرسنل ما)', icon: CalendarDays },
-    { id: 'PROJECT_MONTHLY', label: 'حقوق مستمر (سرایدار/نگهبان)', icon: ShieldCheck }, 
-  ];
 
   const weatherIcons: { id: WeatherCondition; icon: any; color: string }[] = [
     { id: 'SUNNY', icon: Sun, color: 'text-amber-500' }, { id: 'CLOUDY', icon: CloudRain, color: 'text-slate-400' }, { id: 'RAINY', icon: CloudRain, color: 'text-blue-500' }, { id: 'SNOWY', icon: Snowflake, color: 'text-cyan-300' }, { id: 'WINDY', icon: Wind, color: 'text-teal-400' }
@@ -576,14 +348,6 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
     toast.success('یک شیفت کاری جدید به امروز اضافه شد.');
   };
 
-  const toggleRecording = () => {
-    if (isRecording) { 
-      setIsRecording(false); 
-      setVoiceUrl('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'); 
-      toast.success('گزارش صوتی ضبط شد!'); 
-    }
-    else { setIsRecording(true); toast.info('در حال ضبط صدا...'); }
-  };
 
   // Logic: Live 3D Arbitrage Calculator
   const totalWorkerBaseRaw = parseAmount(watchAll.workerRate) * parseAmount(watchAll.workerQuantity);
@@ -629,7 +393,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
 
         return {
           recordType: 'WAGE' as LaborRecordType,
-          projectId: shift.projectId,
+          projectId: shift.projectId || 'FREE',
           clientId: clientId, // 💡 قفل شده روی کارفرما
           phaseId: shift.phaseId === 'GENERAL' ? undefined : shift.phaseId,
           workerId: workerProfile.id,
@@ -778,7 +542,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
               {/* 💡 بخش ۲: شیفت‌های کاری */}
               <div className="space-y-4">
                 {fields.map((shift, index) => {
-                  const shiftProjectId = watchAll.shifts[index].projectId;
+                  const shiftProjectId = watchAll.shifts[index].projectId || 'FREE';
                   
                   // 💡 استخراج فازهای پروژه انتخاب شده
                   const activeProject = shiftProjectId !== 'FREE' ? projects.find(p => p.id === shiftProjectId) : null;
@@ -831,7 +595,7 @@ export default function NewLaborModal({ projectId, isOpen, onClose, editData, pr
                             <div className="grid grid-cols-2 gap-3 relative z-[85]">
                               <div className="space-y-1 relative min-w-0">
                                 <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1"><UserCircle className="w-3 h-3 text-indigo-500"/> کارفرما</label>
-                                <Controller control={control} name={`shifts.${index}.clientId`} render={({ field }) => (
+                                <Controller control={control} name={`shifts.${index}.clientId`} render={() => (
                                   <PortalSelect options={activeClientOptions} value={clientId} onChange={() => {}} disabled={true} placeholder="قفل شده" icon={Briefcase} />
                                 )} />
                               </div>

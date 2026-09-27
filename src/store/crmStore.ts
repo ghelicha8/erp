@@ -33,7 +33,7 @@ interface CRMState {
 
 export const useCRMStore = create<CRMState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       clients: [],
 
       addClient: (client) => set((state) => ({

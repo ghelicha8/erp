@@ -14,7 +14,7 @@ import { useLaborStore } from '../../../../store/laborStore';
 import { useLogisticsStore } from '../../../../store/logisticsStore';
 
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../../components/ui/GlassSelect';
+import { PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 interface PhaseManagementTabProps {
   projectId: string;
@@ -78,7 +78,7 @@ const GlassInputWrapper = ({ children, className = '', icon: Icon }: any) => (
   </div>
 );
 
-const PhaseCard = ({ phase, index, isLast, onUpdate, projectTotalExpenditure }: { phase: any, index: number, isLast: boolean, onUpdate: (id: string, data: any) => void, projectTotalExpenditure: number }) => {
+const PhaseCard = ({ phase, isLast, onUpdate, projectTotalExpenditure }: { phase: any, isLast: boolean, onUpdate: (id: string, data: any) => void, projectTotalExpenditure: number }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false); 
   
@@ -234,7 +234,7 @@ const PhaseCard = ({ phase, index, isLast, onUpdate, projectTotalExpenditure }: 
               
               <div className="space-y-1.5 w-full sm:w-1/2 relative z-[70]">
                 <label className="text-xs font-bold text-slate-500 ml-1">نوع قرارداد و محاسبه این فاز</label>
-                <GlassSelect 
+                <PortalSelect 
                   icon={Target}
                   options={[
                     {value: 'METRE', label: 'مساحتی / متراژ چندگانه'}, 
@@ -244,7 +244,7 @@ const PhaseCard = ({ phase, index, isLast, onUpdate, projectTotalExpenditure }: 
                   ]} 
                   value={contractType} 
                   onChange={setContractType} 
-                />
+                 placeholder="انتخاب کنید..." />
               </div>
 
               {contractType === 'METRE' && (
@@ -480,9 +480,8 @@ export default function PhaseManagementTab({ projectId }: PhaseManagementTabProp
             {phases.map((phase: any, index: number) => (
               <PhaseCard 
                 key={phase.id} 
-                phase={phase} 
-                index={index} 
-                isLast={index === phases.length - 1} 
+                phase={phase}
+                isLast={index === phases.length - 1}
                 onUpdate={handleUpdatePhase} 
                 projectTotalExpenditure={projectCostSum} 
               />
@@ -514,7 +513,7 @@ export default function PhaseManagementTab({ projectId }: PhaseManagementTabProp
 
                   <div className="space-y-1.5 relative z-[50]">
                     <label className="text-xs font-bold text-slate-500 ml-1">قالب قرارداد فاز جدید</label>
-                    <GlassSelect 
+                    <PortalSelect 
                       icon={Target}
                       options={[
                         {value: 'METRE', label: 'مساحتی / متراژ چندگانه'}, 
@@ -523,7 +522,7 @@ export default function PhaseManagementTab({ projectId }: PhaseManagementTabProp
                       ]} 
                       value={newPhaseType} 
                       onChange={setNewPhaseType} 
-                    />
+                     placeholder="انتخاب کنید..." />
                   </div>
                 </div>
 

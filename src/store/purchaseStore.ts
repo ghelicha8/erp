@@ -75,7 +75,7 @@ export const usePurchaseStore = create<PurchaseStore>()(
       addPurchase: (record) => {
         const newRecord: PurchaseRecord = {
           ...record,
-          id: Date.now().toString(),
+          id: (record as any).id || crypto.randomUUID(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };

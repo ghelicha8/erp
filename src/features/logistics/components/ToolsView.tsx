@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo,  useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Wrench, Search, Star, ShieldAlert, LayoutGrid, List as ListIcon, 
-  Plus, ChevronDown, Check, X, Trash2, Activity, Ban, Handshake, PenTool, Hash, Truck
+  Plus,   X, Trash2, Activity, Ban, Handshake, PenTool, Hash, Truck
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,7 +12,7 @@ import type { ToolProfile } from '../../../store/logisticsStore';
 import ToolFormModal from './ToolFormModal'; 
 
 // 💡 ایمپورت دقیق سرچ نئونیِ چرخان از کامپوننت‌های مرکزی SharedLaborUI
-import { NeonSearchWrapper } from '../../../components/ui/SharedLaborUI';
+import { NeonSearchWrapper, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const ToolCard = ({ tool, onTogglePin, onDelete, onClick }: { tool: ToolProfile, onTogglePin: (id: string) => void, onDelete: (id: string) => void, onClick: () => void }) => {
   const mockValue = 8500000; 
@@ -97,21 +97,11 @@ export default function ToolsView({ activeTab, setActiveTab }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
 
   const [undoItems, setUndoItems] = useState<{ id: string, items: string[], expireAt: number }[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setIsDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -186,24 +176,8 @@ export default function ToolsView({ activeTab, setActiveTab }: any) {
                   {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-4 h-4 text-slate-500 dark:text-slate-400" /></button>}
                 </NeonSearchWrapper>
 
-                <div className="relative shrink-0" ref={dropdownRef}>
-                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="h-[52px] bg-white/40 dark:bg-slate-800/50 rounded-2xl border border-white/60 dark:border-slate-600/50 shadow-[0_8px_16px_rgba(0,0,0,0.03)] backdrop-blur-2xl flex items-center justify-between gap-3 px-5 min-w-[200px] text-sm font-black text-slate-700 dark:text-slate-200 transition-all hover:bg-white/80 dark:hover:bg-slate-700/80 hover:border-purple-300/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] focus:ring-2 focus:ring-purple-500/50">
-                    <span className="truncate">{sortBy.label}</span>
-                    <ChevronDown className={`w-4 h-4 text-purple-500 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  <AnimatePresence>
-                    {isDropdownOpen && (
-                      <motion.div initial={{ opacity: 0, y: 15, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute top-[calc(100%+8px)] w-full bg-white/90 dark:bg-slate-800/95 backdrop-blur-3xl border border-white/80 dark:border-slate-600/50 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[100] flex flex-col py-2">
-                        {SORT_OPTIONS.map((option) => (
-                          <button key={option.id} onClick={() => { setSortBy(option); setIsDropdownOpen(false); }} className={`flex items-center justify-between px-5 py-3.5 text-sm font-bold transition-all relative overflow-hidden group ${sortBy.id === option.id ? 'text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>
-                            <div className={`absolute inset-0 transition-opacity ${sortBy.id === option.id ? 'bg-purple-50 dark:bg-purple-500/10 opacity-100' : 'bg-slate-100 dark:bg-slate-700/50 opacity-0 group-hover:opacity-100'}`} />
-                            <span className="relative z-10">{option.label}</span>
-                            {sortBy.id === option.id && <Check className="w-4 h-4 relative z-10 drop-shadow-sm" />}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                <div className="shrink-0 min-w-[200px] h-[52px]">
+                  <PortalSelect options={SORT_OPTIONS} value={sortBy.id} onChange={(id: any) => setSortBy(SORT_OPTIONS.find(o => o.id === id)!)} placeholder="مرتب‌سازی" className="!rounded-2xl" />
                 </div>
 
                 <div className="flex bg-slate-200/50 dark:bg-slate-800/80 p-1.5 rounded-2xl shadow-inner border border-white/50 dark:border-slate-700/50 shrink-0 h-[52px] z-20">

@@ -3,14 +3,15 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileUp, X, CheckCircle, Database, LayoutTemplate, AlertTriangle, 
-  CheckSquare, Banknote, HardHat, ShoppingCart, Truck, Sparkles, Shuffle, Ban, Eye,
-  Activity, ShieldAlert, Check, FileWarning, Search, Info, UserSquare, FolderGit2,
-  BrainCircuit, CreditCard, Phone, Fingerprint, Receipt, Building2, Layers, ChevronDown, Download, FileSpreadsheet, CalendarClock, Coffee
+  CheckSquare, Banknote, HardHat, ShoppingCart, Truck, Shuffle,
+  ShieldAlert, Check, FileWarning, UserSquare,
+  BrainCircuit, CreditCard, Phone, Fingerprint, Receipt, Building2, Layers,  Download, FileSpreadsheet, CalendarClock, Coffee, Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import * as ExcelJS from 'exceljs';
 import Papa from 'papaparse';
+import moment from 'moment-jalaali';
 
 import { useProjectStore } from '../../features/projects/store/projectStore';
 import { useFinanceStore } from '../../store/financeStore';
@@ -23,7 +24,7 @@ import { ImportEngine } from '../../core/engines/ImportEngine';
 import type { ParsedRow } from '../../core/engines/ImportEngine';
 
 // 💡 استفاده یکپارچه از لیست کشویی گرافیکی
-import { PortalSelect } from '../ui/SharedLaborUI';
+import { PortalSelect, AnimatedCheckbox } from '../ui/SharedLaborUI';
 
 export interface ImportBuilderProps {
   projectId?: string; 
@@ -86,9 +87,8 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
   const allPurchases = usePurchaseStore(state => state.purchases) || [];
   const allLogistics = useLogisticsStore(state => state.logs) || [];
 
-  const addLaborRecord = useProjectStore(state => state.addLaborRecord);
-  const addPurchaseRecord = useProjectStore(state => state.addPurchaseRecord);
-  const addLogisticsRecord = useProjectStore(state => state.addLogisticsRecord);
+  const addPurchase = usePurchaseStore(state => state.addPurchase);
+  const addLogisticsLog = useLogisticsStore(state => state.addLog);
   const addTransaction = useFinanceStore(state => state.addTransaction);
 
   const derivedContext = context || (projectId ? 'PROJECT' : clientId ? 'CLIENT' : workerId ? 'LABOR' : 'GLOBAL');
@@ -358,13 +358,13 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
         if (r._targetModule === 'FINANCE') {
           isDuplicate = allTransactions.some(t => t.date === r.date && safeNum(t.amount) === r.amount);
         } else if (r._targetModule === 'LABOR') {
-          isDuplicate = allLabor.some(l => (l.date === r.date || l.startDate === r.date) && (safeNum(l.wage) === r.amount || safeNum(l.amount) === r.amount));
+          isDuplicate = allLabor.some(l => l.date === r.date && (safeNum(l.internalCost) === r.amount || safeNum(l.billedCost) === r.amount));
         } else if (r._targetModule === 'LABOR_MONTHLY' || r._targetModule === 'LABOR_MISC') {
-          isDuplicate = allLabor.some(l => (l.date === r.date || l.startDate === r.date) && (safeNum(l.amount) === r.amount || safeNum(l.bonus) === r.amount || safeNum(l.foodDeduction) === r.amount));
+          isDuplicate = allLabor.some(l => l.date === r.date && (safeNum(l.internalCost) === r.amount || safeNum(l.bonus) === r.amount || safeNum(l.foodDeduction) === r.amount));
         } else if (r._targetModule === 'PURCHASES') {
-          isDuplicate = allPurchases.some(p => p.date === r.date && (safeNum(p.totalCost) === r.amount || safeNum(p.amount) === r.amount || safeNum(p.billedCost) === r.amount));
+          isDuplicate = allPurchases.some(p => p.date === r.date && (safeNum(p.internalCost) === r.amount || safeNum(p.billedCost) === r.amount));
         } else if (r._targetModule === 'LOGISTICS') {
-          isDuplicate = allLogistics.some(l => l.date === r.date && (safeNum(l.totalCost) === r.amount || safeNum(l.amount) === r.amount || safeNum(l.fee) === r.amount || safeNum(l.billedCost) === r.amount));
+          isDuplicate = allLogistics.some(l => l.date === r.date && (safeNum(l.internalCost) === r.amount || safeNum(l.billedCost) === r.amount));
         }
 
         const newActions = [...r.needsUserAction];
@@ -602,24 +602,47 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
           } as any);
         } 
         else if (row._targetModule === 'LABOR') {
-          addLaborRecord(pId || 'FREE', {
-            ...baseData, workerName: row.title || 'نیروی ایمپورتی', workType: row.typeDetail || 'آزاد', 
-            wage: row.amount, billedCost: billedAmt, description: richNotes
-          } as any);
+          const matchedWorker = allWorkers.find(w => `${w.name} ${w.lastName || ''}`.trim() === String(row.title || '').trim());
+          if (!matchedWorker) { errorsCount++; continue; }
+          laborLogsToInsert.push({
+            recordType: 'WAGE',
+            workerId: matchedWorker.id,
+            workerName: `${matchedWorker.name} ${matchedWorker.lastName || ''}`,
+            projectId: pId || 'FREE',
+            date: baseData.date,
+            phaseId: row.selectedPhaseId === 'GENERAL' ? undefined : row.selectedPhaseId,
+            workType: row.typeDetail || 'کارکرد ایمپورتی',
+            attendance: 'PRESENT',
+            paymentType: 'DAILY',
+            workerUnit: row.unit || 'DAY',
+            workerQuantity: row.qty || 1,
+            workerRate: (row.unitPrice && row.unitPrice > 0) ? row.unitPrice : (row.amount / (row.qty || 1)),
+            billedUnit: row.unit || 'DAY',
+            billedQuantity: row.qty || 1,
+            billedRate: billedAmt > 0 ? (billedAmt / (row.qty || 1)) : 0,
+            description: richNotes,
+            advancePayment: 0,
+          });
         }
         else if (row._targetModule === 'PURCHASES') {
-          addPurchaseRecord(pId || 'FREE', {
-            ...baseData, title: row.typeDetail || 'کالای وارد شده', vendor: row.title || 'فروشنده عمومی',
-            billedCost: billedAmt, internalCost: row.qty * row.unitPrice, source: 'MARKET', 
+          addPurchase({
+            projectId: pId || 'FREE',
+            phaseId: row.selectedPhaseId === 'GENERAL' ? undefined : row.selectedPhaseId,
+            title: row.typeDetail || 'کالای وارد شده', vendor: row.title || 'فروشنده عمومی',
+            date: baseData.date,
+            billedCost: billedAmt, internalCost: row.qty * row.unitPrice,
             quantity: row.qty, unit: row.unit || 'مورد', notes: richNotes
-          } as any);
+          });
         }
         else if (row._targetModule === 'LOGISTICS') {
-          addLogisticsRecord(pId || 'FREE', {
-            ...baseData, type: 'TRANSPORT', source: 'EXTERNAL', provider: row.title || 'راننده عمومی',
-            vehicleInfo: '-', title: row.typeDetail || 'مسیر وارد شده', 
-            billedCost: billedAmt, internalCost: row.amount, description: richNotes
-          } as any);
+          addLogisticsLog({
+            projectId: pId || 'FREE',
+            phaseId: row.selectedPhaseId === 'GENERAL' ? undefined : row.selectedPhaseId,
+            type: 'TRANSPORT', source: 'EXTERNAL', provider: row.title || 'راننده عمومی',
+            vehicleInfo: '-', title: row.typeDetail || 'مسیر وارد شده',
+            date: baseData.date,
+            billedCost: billedAmt, internalCost: row.amount, driverWage: 0
+          });
         }
         successCount++;
       }
@@ -965,63 +988,57 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
                           <tr key={row._index} className={`transition-colors ${rowClass}`}>
                             
                             <td className="p-4 text-center align-top pt-5">
-                               <input type="checkbox" disabled={isGarbage} checked={isSelected} onChange={() => toggleRow(row._index)} className="w-5 h-5 rounded cursor-pointer accent-indigo-600" />
+                               <AnimatedCheckbox disabled={isGarbage} checked={isSelected} onChange={() => toggleRow(row._index)} theme="indigo" />
                             </td>
                             
                             <td className="p-4 align-top pt-4">
                               <div className="relative mb-2">
-                                <select 
-                                  disabled={isGarbage} value={row._targetModule} 
-                                  onChange={(e) => resolveUserAction(row._index, 'SELECT_MODULE', e.target.value)}
-                                  className="w-full p-2 pl-7 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-[11px] font-black text-indigo-700 dark:text-indigo-400 outline-none appearance-none cursor-pointer"
-                                >
-                                  <option value="UNKNOWN">-- زباله / ناشناس --</option>
-                                  {derivedContext === 'LABOR' ? (
-                                    <>
-                                      <option value="FINANCE">پرداختی / مساعده</option>
-                                      <option value="LABOR">کارکرد</option>
-                                      <option value="LABOR_MONTHLY">مدیریت ماهانه</option>
-                                      <option value="LABOR_MISC">متفرقه (رفاهی/کسر)</option>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <option value="FINANCE">مالی</option><option value="LABOR">نیرو</option>
-                                      <option value="PURCHASES">خرید</option><option value="LOGISTICS">لجستیک</option>
-                                    </>
-                                  )}
-                                </select>
-                                <ChevronDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 pointer-events-none" />
+                                <PortalSelect
+                                  disabled={isGarbage} value={row._targetModule}
+                                  onChange={(v: any) => resolveUserAction(row._index, 'SELECT_MODULE', v)}
+                                  options={derivedContext === 'LABOR' ? [
+                                    { value: 'UNKNOWN', label: '-- زباله / ناشناس --' },
+                                    { value: 'FINANCE', label: 'پرداختی / مساعده' },
+                                    { value: 'LABOR', label: 'کارکرد' },
+                                    { value: 'LABOR_MONTHLY', label: 'مدیریت ماهانه' },
+                                    { value: 'LABOR_MISC', label: 'متفرقه (رفاهی/کسر)' },
+                                  ] : [
+                                    { value: 'UNKNOWN', label: '-- زباله / ناشناس --' },
+                                    { value: 'FINANCE', label: 'مالی' },
+                                    { value: 'LABOR', label: 'نیرو' },
+                                    { value: 'PURCHASES', label: 'خرید' },
+                                    { value: 'LOGISTICS', label: 'لجستیک' },
+                                  ]}
+                                  placeholder="انتخاب ماژول..."
+                                />
                               </div>
 
                               {!isGarbage && (
                                 <div className="relative mb-2">
-                                  <select
+                                  <PortalSelect
                                     value={row.selectedProjectId}
-                                    onChange={(e) => setParsedRows(prev => prev.map(r => r._index === row._index ? { ...r, selectedProjectId: e.target.value, selectedPhaseId: 'GENERAL' } : r))}
-                                    className={`w-full p-2 pl-7 rounded-xl border outline-none text-[10px] font-bold appearance-none cursor-pointer ${!row.selectedProjectId ? 'bg-rose-50 border-rose-300 text-rose-600' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'}`}
-                                  >
-                                    <option value="">-- بدون پروژه (اخطار) --</option>
-                                    <option value="FREE">🌟 عمومی / بدون پروژه اختصاصی (آزاد)</option>
-                                    {allProjects.filter(p => !selectedClientId || String(p.clientId) === String(selectedClientId)).map(p => (
-                                      <option key={p.id} value={p.id}>{p.title || p.name || 'بدون نام'}</option>
-                                    ))}
-                                  </select>
-                                  <ChevronDown className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${!row.selectedProjectId ? 'text-rose-400' : 'text-slate-400'}`} />
+                                    onChange={(v: any) => setParsedRows(prev => prev.map(r => r._index === row._index ? { ...r, selectedProjectId: v, selectedPhaseId: 'GENERAL' } : r))}
+                                    options={[
+                                      { value: '', label: '-- بدون پروژه (اخطار) --' },
+                                      { value: 'FREE', label: '🌟 عمومی / بدون پروژه اختصاصی (آزاد)' },
+                                      ...allProjects.filter(p => !selectedClientId || String(p.clientId) === String(selectedClientId)).map(p => ({ value: p.id, label: p.title || p.name || 'بدون نام' })),
+                                    ]}
+                                    placeholder="انتخاب پروژه..."
+                                    hasError={!row.selectedProjectId}
+                                    searchable
+                                  />
                                 </div>
                               )}
 
                               {!isGarbage && (
                                 <div className="relative">
-                                  <select
+                                  <PortalSelect
                                     value={row.selectedPhaseId}
-                                    onChange={(e) => setParsedRows(prev => prev.map(r => r._index === row._index ? { ...r, selectedPhaseId: e.target.value } : r))}
-                                    className="w-full p-2 pl-7 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-400 outline-none appearance-none cursor-pointer"
-                                  >
-                                    {rowPhaseOptions.map(ph => (
-                                       <option key={ph.value} value={ph.value}>{ph.label}</option>
-                                    ))}
-                                  </select>
-                                  <ChevronDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                                    onChange={(v: any) => setParsedRows(prev => prev.map(r => r._index === row._index ? { ...r, selectedPhaseId: v } : r))}
+                                    options={rowPhaseOptions}
+                                    placeholder="انتخاب فاز..."
+                                    searchable
+                                  />
                                 </div>
                               )}
                             </td>

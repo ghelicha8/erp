@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, {    useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion } from 'framer-motion';
 import { 
-  X, CheckCircle2, ChevronDown, Check, Search, 
+  X, CheckCircle2,    
   Coffee, Shirt, Bus, Package, Banknote, ShieldAlert,
-  Building2, UserCircle, Calculator, Info
+  Building2, UserCircle, Calculator, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
@@ -16,6 +16,7 @@ import { useLaborStore } from '../../../store/laborStore';
 import { useProjectStore } from '../../projects/store/projectStore'; 
 import { useClientStore } from '../../../store/clientStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
+import { PortalSelect, GlassScrollStyles } from '../../../components/ui/SharedLaborUI';
 
 const miscSchema = z.object({
   title: z.string().min(1, 'عنوان هزینه الزامی است'),
@@ -48,97 +49,6 @@ const formatAmount = (val: string | number) => {
   return num === 0 ? '' : num.toLocaleString('en-US');
 };
 
-const GlassScrollStyles = () => (
-  <style>{`
-    .glass-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .glass-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
-    .glass-scroll::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.3); border-radius: 10px; transition: background 0.3s ease; }
-    .glass-scroll::-webkit-scrollbar-thumb:hover { background: rgba(236, 72, 153, 0.8); }
-    .dark .glass-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-    .dark .glass-scroll::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.4); }
-  `}</style>
-);
-
-const PortalSelect = ({ value, onChange, options, placeholder, icon: Icon, searchable = false, className = '' }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  
-  const selected = options.find((o:any) => String(o.id) === String(value));
-
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
-    return options.filter((o:any) => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [options, searchTerm]);
-
-  const openDropdown = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 8, left: rect.left, width: rect.width });
-      setIsOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = () => setIsOpen(false);
-    if (isOpen) {
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('resize', handleScroll);
-    }
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleScroll);
-    };
-  }, [isOpen]);
-
-  return (
-    <>
-      <button type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} className={`w-full h-[48px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 flex justify-between items-center outline-none transition-all shadow-inner hover:border-pink-400 focus:ring-2 focus:ring-pink-500/30 ${className}`}>
-        <div className="flex items-center gap-2 truncate text-right flex-1">
-           {Icon && <Icon className="w-4 h-4 text-pink-500 shrink-0" />}
-           <span className="truncate text-sm font-bold text-slate-800 dark:text-slate-200 pt-0.5">
-             {selected ? selected.label : placeholder}
-           </span>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-pink-500 shrink-0 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && createPortal(
-        <>
-          <div className="fixed inset-0 z-[999999]" onClick={() => setIsOpen(false)} />
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ top: coords.top, left: coords.left, width: coords.width }} className="fixed bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.3)] z-[1000000] overflow-hidden flex flex-col max-h-72 min-w-[200px]">
-            {searchable && (
-              <div className="p-2 border-b border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50">
-                <div className="relative group rounded-xl bg-white dark:bg-slate-900 overflow-hidden shadow-inner">
-                   <div className="absolute inset-0 rounded-xl pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', background: 'linear-gradient(90deg, #ec4899, #f43f5e)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', opacity: 0.5 }} />
-                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-pink-500 z-10" />
-                   <input type="text" autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="جستجو..." className="w-full bg-transparent border-none pr-9 pl-3 py-2.5 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 relative z-10" />
-                </div>
-              </div>
-            )}
-            <div className="overflow-y-auto glass-scroll p-1.5 flex-1">
-              {filteredOptions.length > 0 ? filteredOptions.map((opt: any) => {
-                const OptIcon = opt.icon || Check;
-                return (
-                  <button type="button" key={opt.id} onClick={() => { onChange(opt.id); setIsOpen(false); setSearchTerm(''); }} className={`w-full text-right px-4 py-3 text-xs font-black rounded-xl transition-all flex items-center justify-between group ${String(value) === String(opt.id) ? 'bg-pink-50 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-                    <div className="flex items-center gap-2">
-                      <OptIcon className={`w-4 h-4 ${String(value) === String(opt.id) ? 'text-pink-500' : 'text-slate-400 group-hover:text-pink-400'}`} />
-                      <span className="truncate pt-0.5">{opt.label}</span>
-                    </div>
-                    {String(value) === String(opt.id) && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
-                  </button>
-                )
-              }) : (
-                <div className="py-6 text-center text-xs font-bold text-slate-400">موردی یافت نشد!</div>
-              )}
-            </div>
-          </motion.div>
-        </>, document.body
-      )}
-    </>
-  );
-};
 
 const CATEGORIES = [
   { id: 'FOOD', label: 'خورد و خوراک (ناهار، شام...)', icon: Coffee },
@@ -207,6 +117,7 @@ export default function LaborMiscModal({ isOpen, onClose, workerId, editEntryId 
 
     const entryToSave = {
       id: editEntryId || generateId(),
+      createdAt: new Date().toISOString(),
       title: data.title,
       amount: parseAmount(data.amount),
       category: data.category,

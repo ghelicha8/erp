@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Plus, Search, X, CheckCircle, Clock, Banknote, FileSignature, 
+  Search, X, CheckCircle, Clock, Banknote, FileSignature, 
   Edit, Trash2, Image as ImageIcon, ArrowLeftRight, AlertTriangle, 
-  AlignLeft, Wallet, Layers, Check, RefreshCw, ArrowRightLeft, SplitSquareHorizontal,
-  Archive, History, TrendingDown, TrendingUp, Calculator, ChevronDown, Download
+  AlignLeft, Wallet, Layers, SplitSquareHorizontal,
+  Archive, History, ChevronDown, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,47 +14,15 @@ import { useFinanceStore } from '../../../store/financeStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../components/ui/GlassSelect';
+
 import NewTransactionModal from '../../projects/components/NewTransactionModal';
 import type { Transaction } from '../../../store/financeStore';
-
-const safeNum = (val: any): number => {
-  if (!val) return 0;
-  if (typeof val === 'number') return val;
-  const parsed = Number(String(val).replace(/\D/g, ''));
-  return isNaN(parsed) ? 0 : parsed;
-};
+import { sortNewestFirst } from '../../../core/utils/sortHelpers';
+import { NeonSearchWrapper, AnimatedCheckbox, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR');
 
 // 💡 استفاده از چک‌باکس انیمیشنی و گرافیکی با تم بنفش/نیلی یکپارچه
-const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
-  <div 
-    onClick={(e) => { e.stopPropagation(); onChange(); }}
-    className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm ${
-      checked 
-        ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 border-purple-400 shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105' 
-        : 'bg-white/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
-    }`}
-  >
-    <AnimatePresence>
-      {checked && (
-        <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
-          <CheckCircle className="w-4 h-4 text-white stroke-[3]" />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </div>
-);
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 const ChequeStatusBadge = ({ status }: { status: string }) => {
   const statusConfig: Record<string, any> = {
@@ -199,7 +167,7 @@ export default function ClientFinanceTab({ clientId }: { clientId: string }) {
     if (dateFrom) txs = txs.filter(t => t.date >= dateFrom);
     if (dateTo) txs = txs.filter(t => t.date <= dateTo);
 
-    txs.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.date.localeCompare(a.date));
+    txs = sortNewestFirst(txs, 'append');
     if (pageSize !== 'ALL') txs = txs.slice(0, parseInt(pageSize));
 
     return txs;
@@ -273,13 +241,13 @@ export default function ClientFinanceTab({ clientId }: { clientId: string }) {
         
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 flex-[1_1_auto] relative z-[10000] overflow-visible">
           <div className="w-[calc(50%-0.5rem)] sm:w-[110px] shrink-0 h-[46px] relative z-[10005]">
-            <GlassSelect options={[{ value: 'ALL', label: 'نمایش همه' }, { value: '10', label: 'نمایش ۱۰' }, { value: '20', label: 'نمایش ۲۰' }, { value: '50', label: 'نمایش ۵۰' }]} value={pageSize} onChange={setPageSize} placeholder="تعداد" />
+            <PortalSelect options={[{ value: 'ALL', label: 'نمایش همه' }, { value: '10', label: 'نمایش ۱۰' }, { value: '20', label: 'نمایش ۲۰' }, { value: '50', label: 'نمایش ۵۰' }]} value={pageSize} onChange={setPageSize} placeholder="تعداد" />
           </div>
           <div className="w-[calc(50%-0.5rem)] sm:w-[150px] shrink-0 h-[46px] relative z-[10004]">
-            <GlassSelect options={projectFilterOptions} value={selectedProjectFilter} onChange={setSelectedProjectFilter} placeholder="همه پروژه‌ها" />
+            <PortalSelect options={projectFilterOptions} value={selectedProjectFilter} onChange={setSelectedProjectFilter} placeholder="همه پروژه‌ها"  searchable />
           </div>
           <div className="w-[calc(50%-0.5rem)] sm:w-[130px] shrink-0 h-[46px] relative z-[10003]">
-            <GlassSelect options={phaseFilterOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="همه فازها" disabled={selectedProjectFilter === 'ALL'} />
+            <PortalSelect options={phaseFilterOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="همه فازها" disabled={selectedProjectFilter === 'ALL'}  searchable />
           </div>
           <div className="w-[calc(50%-0.5rem)] sm:w-[176px] shrink-0 h-[46px] relative z-[10002]">
             <GlassDatePicker placeholder="از تاریخ..." value={dateFrom} onChange={setDateFrom} />
