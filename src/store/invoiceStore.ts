@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeUUID } from '../utils/uuid';
 
 // ==========================================
 // 💡 تایپ‌ها و اینترفیس‌های ماژول فاکتور
@@ -75,8 +76,11 @@ export interface Invoice {
   attachments: string[];      
   editHistory: EditHistory[]; 
   
-  shareToken: string;         
-  notes?: string;             
+  shareToken: string;
+  notes?: string;
+  isOfficial?: boolean;
+  terms?: string;
+  signatures?: { client?: string; approver?: string; preparer?: string; }; 
 }
 
 interface InvoiceState {
@@ -104,10 +108,10 @@ export const useInvoiceStore = create<InvoiceState>()(
       invoiceCounter: 1000, 
 
       addInvoice: (invoiceData) => {
-        const id = crypto.randomUUID();
+        const id = safeUUID();
         const currentCounter = get().invoiceCounter + 1;
         const invoiceNumber = `INV-${currentCounter}`;
-        const shareToken = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+        const shareToken = safeUUID().replace(/-/g, '').substring(0, 12);
 
         const newInvoice: Invoice = {
           ...invoiceData,
@@ -136,7 +140,7 @@ export const useInvoiceStore = create<InvoiceState>()(
           if (editReason) {
             const d = new Date();
             newHistory.push({
-              id: crypto.randomUUID(),
+              id: safeUUID(),
               date: d.toLocaleDateString('fa-IR'),
               time: d.toLocaleTimeString('fa-IR'),
               reason: editReason,
@@ -171,9 +175,9 @@ export const useInvoiceStore = create<InvoiceState>()(
         const oldInvoice = get().invoices.find((inv) => inv.id === id);
         if (!oldInvoice) return '';
 
-        const newId = crypto.randomUUID();
+        const newId = safeUUID();
         const currentCounter = get().invoiceCounter + 1;
-        const newShareToken = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+        const newShareToken = safeUUID().replace(/-/g, '').substring(0, 12);
 
         const clonedInvoice: Invoice = {
           ...oldInvoice,

@@ -1,6 +1,10 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, LayoutGrid, List, Activity, CheckCircle, PauseCircle, Briefcase, Plus, ChevronDown } from 'lucide-react';
+import type { Transition } from 'framer-motion';
+import {
+  Search, LayoutGrid, List, Activity,
+  CheckCircle, PauseCircle, Briefcase,
+} from 'lucide-react';
 
 import { useProjectStore, rialToToman } from '../store/projectStore';
 // 💡 اضافه شدن استور کارفرمایان برای ترجمه آیدی به نام
@@ -9,6 +13,7 @@ import ProjectCard from './ProjectCard';
 import NewProjectModal from './NewProjectModal';
 import ProjectDashboard from './ProjectDashboard';
 import type { ProjectStatus, ContractType } from '../types/project.types';
+import { PortalSelect, NeonSearchWrapper } from '../../../components/ui/SharedLaborUI';
 
 const getStatusBadge = (status: ProjectStatus) => {
   switch (status) {
@@ -42,18 +47,6 @@ export default function ProjectList() {
   
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
-  const [showLimitDropdown, setShowLimitDropdown] = useState(false);
-  const limitDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (limitDropdownRef.current && !limitDropdownRef.current.contains(event.target as Node)) {
-        setShowLimitDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // 💡 تابع هوشمند برای گرفتن نام کامل
   const getClientFullName = (clientId: string) => {
@@ -81,7 +74,7 @@ export default function ProjectList() {
     return filtered.slice(0, displayLimit);
   }, [projects, searchQuery, displayLimit, clients]);
 
-  const layoutSpring = { type: 'spring', stiffness: 300, damping: 25 };
+  const layoutSpring: Transition = { type: 'spring', stiffness: 300, damping: 25 };
 
   return (
     <AnimatePresence mode="wait">
@@ -117,58 +110,27 @@ export default function ProjectList() {
               onClick={() => setIsModalOpen(true)}
               className="w-full lg:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-3 px-6 rounded-2xl shadow-[0_8px_20px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_12px_25px_-6px_rgba(16,185,129,0.6)] transition-all active:scale-95 group"
             >
-              <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+              <span className="flex group-hover:rotate-90 transition-transform duration-300"><Briefcase className="w-5 h-5" /></span>
               <span>افزودن پروژه جدید</span>
             </button>
 
-            <div className="relative w-full lg:max-w-md group flex-1">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-              <input 
+            <NeonSearchWrapper className="w-full lg:max-w-md flex-1">
+              <Search className="w-5 h-5 text-slate-400 shrink-0 group-focus-within:text-emerald-500 transition-colors" />
+              <input
                 type="text"
                 placeholder="جستجو در پروژه‌ها یا کارفرمایان..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/60 dark:bg-black/20 border border-white/40 dark:border-slate-700/50 rounded-2xl pr-12 pl-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-400 backdrop-blur-sm focus-within:scale-[1.02]"
+                className="w-full h-full bg-transparent border-none outline-none py-3 font-bold pl-2 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400"
               />
-            </div>
+            </NeonSearchWrapper>
 
             <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
-              <div className="relative" ref={limitDropdownRef}>
-                <div 
-                  onClick={() => setShowLimitDropdown(!showLimitDropdown)}
-                  className="flex items-center gap-2 bg-white/50 dark:bg-black/20 px-4 py-2 rounded-2xl border border-white/40 dark:border-slate-700/50 backdrop-blur-sm cursor-pointer hover:bg-white/60 dark:hover:bg-white/10 transition-colors"
-                >
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">نمایش:</span>
-                  <div className="font-bold text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                    {displayLimit}
-                    <ChevronDown className={`w-3.5 h-3.5 text-emerald-500 transition-transform duration-300 ${showLimitDropdown ? 'rotate-180' : ''}`} />
-                  </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">نمایش:</span>
+                <div className="w-[110px]">
+                  <PortalSelect options={[{ value: 10, label: '10' }, { value: 20, label: '20' }, { value: 50, label: '50' }]} value={displayLimit} onChange={(v: any) => setDisplayLimit(v)} placeholder="تعداد" />
                 </div>
-
-                <AnimatePresence>
-                  {showLimitDropdown && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                      className="absolute top-full left-0 mt-2 w-full min-w-[80px] backdrop-blur-2xl bg-white/90 dark:bg-slate-800/95 border border-white/50 dark:border-slate-700/50 shadow-xl rounded-2xl overflow-hidden z-50 py-1"
-                    >
-                      {[10, 20, 50].map((limit) => (
-                        <div
-                          key={limit}
-                          onClick={() => {
-                            setDisplayLimit(limit);
-                            setShowLimitDropdown(false);
-                          }}
-                          className={`px-4 py-2.5 text-center text-sm font-bold cursor-pointer transition-colors ${displayLimit === limit ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
-                        >
-                          {limit}
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
 
               <div className="flex bg-white/50 dark:bg-black/20 p-1 rounded-2xl border border-white/40 dark:border-slate-700/50 backdrop-blur-sm">

@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Search, Plus } from 'lucide-react';
+import { motion} from 'framer-motion';
+import {
+  ChevronDown, Search, Sparkles,
+} from 'lucide-react';
 
 export interface GlassSelectOption {
   value: string;
@@ -117,7 +119,7 @@ export default function GlassSelect({
               
               {searchTerm && !isExactMatch && onAddNew && (
                 <button onClick={() => { setIsOpen(false); onAddNew(searchTerm); setSearchTerm(''); }} className="w-[calc(100%-8px)] m-1 px-4 py-3 flex items-center justify-center gap-2 text-sm font-black text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-95 animate-pulse">
-                  <Plus className="w-4 h-4" /> افزودن مورد جدید: {searchTerm}
+                  <motion.span animate={{ rotate: [0, -15, 15, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="flex"><Sparkles className="w-4 h-4" /></motion.span> افزودن مورد جدید: {searchTerm}
                 </button>
               )}
             </div>

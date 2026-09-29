@@ -1,14 +1,15 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, AlertCircle, CheckCircle, ChevronDown, 
-  Banknote, FileSignature, UploadCloud, Trash2, Image as ImageIcon,
-  ClipboardPaste, AlignLeft, PieChart, Wand2, RefreshCcw, DollarSign, AlertTriangle, Link,
-  SplitSquareHorizontal, Wallet, Plus, FileText
+import {
+  X, CheckCircle, Banknote, FileSignature,
+  UploadCloud, Trash2, Image as ImageIcon, ClipboardPaste,
+  AlignLeft, PieChart, Wand2, RefreshCcw,
+  DollarSign, AlertTriangle, SplitSquareHorizontal, Wallet,
+  Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,7 +24,9 @@ import { useLaborStore } from '../../../store/laborStore';
 import { useLogisticsStore } from '../../../store/logisticsStore';
 
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../components/ui/GlassSelect'; 
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
+import { safeUUID } from '../../../utils/uuid';
+ 
 
 const transactionSchema = z.object({
   phaseId: z.string().optional(),
@@ -34,7 +37,7 @@ const transactionSchema = z.object({
   direction: z.enum(['IN', 'OUT'] as const),
   type: z.enum(['CASH', 'CHEQUE', 'COMBINED'] as const),
   description: z.string().optional(),
-  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').default([]),
+  attachments: z.array(z.string()).max(2, 'حداکثر ۲ تصویر مجاز است').optional(),
   textReceipt: z.string().optional(),
   issuer: z.string().optional(),
   sayyadId: z.string().optional(),
@@ -134,7 +137,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
   const project = useProjectStore(state => state.projects.find(p => p.id === projectId));
   const phaseOptions = useMemo(() => [
     { value: 'GENERAL', label: 'هزینه عمومی (بدون فاز)' },
-    ...(project?.phases?.map(p => ({ value: p.id, label: p.name })) || [])
+    ...(project?.phases?.map((p: any) => ({ value: p.id, label: p.name })) || [])
   ], [project?.phases]);
 
   // 💡 فیلتر هوشمند فاکتورهای خرید از استور جدید
@@ -227,7 +230,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
       const defaultAlloc: TransactionAllocation[] = [];
       if (prefillData.linkedPurchaseId && prefillData.linkedPurchaseId !== 'NONE') {
          defaultAlloc.push({
-           id: crypto.randomUUID(),
+           id: safeUUID(),
            amount: parseAmount(prefillData.amount?.toString() || '0'),
            allocationType: 'PROJECT',
            projectId: projectId,
@@ -260,7 +263,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
 
   const handleAddAllocation = () => {
     setAllocations([...allocations, { 
-      id: crypto.randomUUID(), 
+      id: safeUUID(), 
       amount: remainderToWallet || 0, 
       allocationType: 'PROJECT', 
       projectId: projectId, 
@@ -301,7 +304,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
       attachments: txAttachments, textReceipt: watch('textReceipt'), description: watch('description')
     };
     const newRecord: ChequeHistory = {
-        id: crypto.randomUUID(), date: new Date().toLocaleDateString('fa-IR'), previousStatus: currentTransaction.chequeDetails.status, 
+        id: safeUUID(), date: new Date().toLocaleDateString('fa-IR'), previousStatus: currentTransaction.chequeDetails.status, 
         newStatus: 'EXCHANGED', description: 'بایگانی جهت تعویض با چک جایگزین', attachments: [], snapshot: snapshotData
     };
     setPendingHistory([newRecord]);
@@ -340,7 +343,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
 
     try {
       if (currentTransaction && specialMode === 'CASHING') {
-        exchangeChequeForCash(currentTransaction.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد / حواله', data.attachments);
+        exchangeChequeForCash(currentTransaction.id, rawAmount, data.date, data.description || 'تبدیل چک به وجه نقد / حواله', data.attachments || []);
         toast.success('تراکنش نقدی ثبت شد و مشخصات چک قبلی در بایگانی قرار گرفت.');
         onClose(); return;
       }
@@ -351,7 +354,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
         allocations: allocations, 
         date: data.date, 
         direction: data.direction, 
-        attachments: data.attachments, 
+        attachments: data.attachments || [], 
         textReceipt: data.textReceipt 
       };
 
@@ -362,7 +365,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
 
       if (currentTransaction) {
         if (currentTransaction.type === 'CHEQUE' && data.status !== currentTransaction.chequeDetails?.status) {
-          changeChequeStatus(currentTransaction.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments);
+          changeChequeStatus(currentTransaction.id, data.status as ChequeStatus, data.description || 'تغییر وضعیت', data.date, data.attachments || []);
         }
         
         updateTransaction(currentTransaction.id, {
@@ -375,7 +378,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
         toast.success(specialMode === 'EXCHANGING' ? 'چک جایگزین با موفقیت ثبت شد.' : 'تراکنش با موفقیت به‌روزرسانی شد');
 
       } else {
-        const newIdBase = crypto.randomUUID(); 
+        const newIdBase = safeUUID(); 
         
         if (data.type === 'COMBINED') {
           addTransaction({ ...basePayload, id: newIdBase + '-1', amount: rawCash, type: 'CASH', description: (data.description || 'پرداخت ترکیبی') + ' (بخش نقدی)', status: 'COMPLETED' });
@@ -475,7 +478,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                     <div className="space-y-2 relative z-50">
                       <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">تاریخ عملیات</label>
                       <Controller control={control} name="date" render={({ field: { onChange, value } }) => (
-                        <GlassDatePicker value={value} onChange={onChange} hasError={!!errors.date} />
+                        <GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.date} />
                       )} />
                     </div>
                   </motion.div>
@@ -508,7 +511,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                     <div className="space-y-2 pt-2 relative z-50">
                       <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">تاریخ عملیات ترکیبی</label>
                       <Controller control={control} name="date" render={({ field: { onChange, value } }) => (
-                        <GlassDatePicker value={value} onChange={onChange} />
+                        <GlassDatePicker value={value || ''} onChange={onChange} />
                       )} />
                     </div>
                   </motion.div>
@@ -522,7 +525,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                     <SplitSquareHorizontal className="w-5 h-5"/> تخصیص مبلغ (بابت چیست؟)
                   </h3>
                   <button type="button" onClick={handleAddAllocation} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-500 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 shadow-sm transition-all">
-                    <Plus className="w-4 h-4"/> افزودن ردیف تخصیص
+                    <motion.span animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="flex"><Layers className="w-4 h-4" /></motion.span> افزودن ردیف تخصیص
                   </button>
                 </div>
 
@@ -547,7 +550,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
 
                         <div className="space-y-1.5 md:col-span-3 z-50">
                           <label className="text-[10px] font-bold text-slate-500">نوع تخصیص</label>
-                          <GlassSelect 
+                          <PortalSelect 
                             options={txDir === 'IN' 
                               ? [
                                   {value: 'INVOICE', label: 'تسویه صورت‌وضعیت / فاکتور'},
@@ -561,22 +564,22 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                                 ]
                             }
                             value={alloc.recordType || 'NONE'}
-                            onChange={(v) => {
+                            onChange={(v: any) => {
                               updateAllocation(alloc.id, 'recordType', v);
                               updateAllocation(alloc.id, 'recordId', undefined);
                               updateAllocation(alloc.id, 'description', '');
                             }}
                             placeholder="دسته‌بندی"
-                          />
+                           searchable />
                         </div>
 
                         {alloc.recordType === 'INVOICE' && (
                           <div className="space-y-1.5 md:col-span-6 z-40">
                             <label className="text-[10px] font-bold text-slate-500">انتخاب صورت‌وضعیت کارفرما</label>
-                            <GlassSelect 
+                            <PortalSelect 
                               options={invoiceOptions.length > 0 ? invoiceOptions : [{value: '', label: 'فاکتور بدهکاری برای این پروژه یافت نشد'}]} 
                               value={alloc.recordId || ''} 
-                              onChange={(v) => {
+                              onChange={(v: any) => {
                                 updateAllocation(alloc.id, 'recordId', v);
                                 const inv = projectInvoices.find(i => i.id === v);
                                 if (inv) {
@@ -589,62 +592,62 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                                 }
                               }} 
                               placeholder="صورت‌وضعیت را انتخاب کنید..." 
-                            />
+                             searchable />
                           </div>
                         )}
 
                         {alloc.recordType === 'PURCHASE' && (
                           <div className="space-y-1.5 md:col-span-6 z-40">
                             <label className="text-[10px] font-bold text-slate-500">انتخاب فاکتور خرید مصالح</label>
-                            <GlassSelect 
+                            <PortalSelect 
                               options={purchaseOptions.filter(o => o.value !== 'NONE').length > 0 ? purchaseOptions.filter(o => o.value !== 'NONE') : [{value: '', label: 'فاکتور خریدی با بدهی یافت نشد'}]} 
                               value={alloc.recordId || ''} 
-                              onChange={(v) => {
+                              onChange={(v: any) => {
                                 updateAllocation(alloc.id, 'recordId', v);
                                 const p = purchaseOptions.find((i:any) => i.value === v);
                                 if (p) {
                                   updateAllocation(alloc.id, 'description', `بابت تسویه ${p.label.split('|')[0]}`);
                                   if (!alloc.amount || alloc.amount === 0) {
                                     const unallocated = Math.max(totalEnteredAmount - (totalAllocatedAmount - (alloc.amount || 0)), 0);
-                                    const suggestedAmount = Math.min(p.remainingAmount || 0, unallocated);
+                                    const suggestedAmount = Math.min((p as { remainingAmount?: number }).remainingAmount || 0, unallocated);
                                     if (suggestedAmount > 0) updateAllocation(alloc.id, 'amount', suggestedAmount);
                                   }
                                 }
                               }} 
                               placeholder="فاکتور خرید را انتخاب کنید..." 
-                            />
+                             searchable />
                           </div>
                         )}
 
                         {alloc.recordType === 'LABOR' && (
                           <div className="space-y-1.5 md:col-span-6 z-40">
                             <label className="text-[10px] font-bold text-slate-500">انتخاب رکورد نیروی کار</label>
-                            <GlassSelect 
+                            <PortalSelect 
                               options={laborOptions.length > 0 ? laborOptions : [{value: '', label: 'هیچ رکوردی یافت نشد'}]} 
                               value={alloc.recordId || ''} 
-                              onChange={(v) => {
+                              onChange={(v: any) => {
                                 updateAllocation(alloc.id, 'recordId', v);
                                 const l = laborOptions.find((i:any) => i.value === v);
                                 if (l) updateAllocation(alloc.id, 'description', `بابت ${l.label}`);
                               }} 
                               placeholder="نیروی کار را انتخاب کنید..." 
-                            />
+                             searchable />
                           </div>
                         )}
 
                         {alloc.recordType === 'LOGISTICS' && (
                           <div className="space-y-1.5 md:col-span-6 z-40">
                             <label className="text-[10px] font-bold text-slate-500">انتخاب رکورد ماشین‌آلات / لجستیک</label>
-                            <GlassSelect 
+                            <PortalSelect 
                               options={logisticsOptions.length > 0 ? logisticsOptions : [{value: '', label: 'هیچ رکوردی یافت نشد'}]} 
                               value={alloc.recordId || ''} 
-                              onChange={(v) => {
+                              onChange={(v: any) => {
                                 updateAllocation(alloc.id, 'recordId', v);
                                 const l = logisticsOptions.find((i:any) => i.value === v);
                                 if (l) updateAllocation(alloc.id, 'description', `بابت ${l.label}`);
                               }} 
                               placeholder="لجستیک را انتخاب کنید..." 
-                            />
+                             searchable />
                           </div>
                         )}
 
@@ -694,7 +697,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                 <div className="space-y-2 relative">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">تخصیص به فاز پروژه</label>
                   <Controller control={control} name="phaseId" render={({ field }) => (
-                    <GlassSelect options={phaseOptions} value={field.value || 'GENERAL'} onChange={field.onChange} placeholder="پروژه کلی (هزینه عمومی)" />
+                    <PortalSelect options={phaseOptions} value={field.value || 'GENERAL'} onChange={field.onChange} placeholder="پروژه کلی (هزینه عمومی)"  searchable />
                   )} />
                 </div>
                 <div className="space-y-2">
@@ -722,7 +725,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                               {isStatusChanged && <span className="text-rose-500 animate-pulse">تغییر وضعیت در بایگانی ثبت خواهد شد!</span>}
                             </label>
                             <Controller control={control} name="status" render={({ field }) => (
-                              <GlassSelect options={chequeStatusOptions} value={field.value || 'PENDING'} onChange={field.onChange} placeholder="انتخاب وضعیت..." />
+                              <PortalSelect options={chequeStatusOptions} value={field.value || 'PENDING'} onChange={field.onChange} placeholder="انتخاب وضعیت..." />
                             )} />
                           </div>
                         )}
@@ -745,12 +748,12 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
                         </div>
                         <div className="space-y-2 relative z-[90]">
                           <label className={`text-xs font-bold text-slate-600 dark:text-slate-400`}>بانک صادرکننده *</label>
-                          <Controller control={control} name="bank" render={({ field }) => (<GlassSelect options={bankOptions} value={field.value || ''} onChange={field.onChange} placeholder="انتخاب بانک" hasError={!!errors.bank} />)} />
+                          <Controller control={control} name="bank" render={({ field }) => (<PortalSelect options={bankOptions} value={field.value || ''} onChange={field.onChange} placeholder="انتخاب بانک" hasError={!!errors.bank}  searchable />)} />
                         </div>
                         <div className="space-y-2 relative md:col-span-2 border-t border-cyan-500/20 pt-4 z-[80]">
                           <label className={`text-xs font-bold text-slate-600 dark:text-slate-400`}>تاریخ وصول (سررسید) *</label>
                           <Controller control={control} name="dueDate" render={({ field: { onChange, value } }) => (
-                            <GlassDatePicker value={value} onChange={onChange} hasError={!!errors.dueDate} />
+                            <GlassDatePicker value={value || ''} onChange={onChange} hasError={!!errors.dueDate} />
                           )} />
                         </div>
                       </div>

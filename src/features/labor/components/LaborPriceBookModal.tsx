@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion} from 'framer-motion';
 import { 
   X, Briefcase, Building2, CheckCircle2,
   HardHat, Pickaxe, Calculator, FileSignature, Clock, Percent, Activity,
-  Sun, Puzzle, Ruler, CalendarDays, Box, Truck, Target, CheckSquare
+  Sun, Puzzle, Ruler, CalendarDays, Box, Truck, Target, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ import type { PaymentType, WorkUnit, PriceBookEntry } from '../../../store/labor
 
 // 💡 استفاده از کامپوننت‌های گرافیکی یکپارچه
 import { PortalSelect, GlassScrollStyles, LuxuryTimePicker } from '../../../components/ui/SharedLaborUI';
+import { safeUUID } from '../../../utils/uuid';
 
 // ==========================================
 // 💡 الگوریتم مترجم اعداد
@@ -128,7 +129,7 @@ export default function LaborPriceBookModal({ isOpen, onClose, workerId, editEnt
     if (!worker) return;
 
     const entryToSave: PriceBookEntry = {
-      id: editEntryId || crypto.randomUUID(),
+      id: editEntryId || safeUUID(),
       specialtyId: data.specialtyId,
       paymentType: data.paymentType as PaymentType,
       workerUnit: data.workerUnit as WorkUnit,

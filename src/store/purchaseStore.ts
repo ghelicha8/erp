@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { safeUUID } from '../utils/uuid';
 
 // 💡 ریزترین جزئیات برای آیتم‌های هر فاکتور خرید
 export interface PurchaseItem {
@@ -75,7 +76,7 @@ export const usePurchaseStore = create<PurchaseStore>()(
       addPurchase: (record) => {
         const newRecord: PurchaseRecord = {
           ...record,
-          id: Date.now().toString(),
+          id: (record as any).id || safeUUID(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };

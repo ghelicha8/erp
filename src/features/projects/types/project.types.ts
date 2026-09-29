@@ -1,7 +1,7 @@
-import type { LaborRecord } from './core.types';
+import type { LaborRecord } from '../../../types/core.types';
 
 export type ProjectStatus = 'IN_PROGRESS' | 'FINISHED' | 'PAUSED';
-export type ContractType = 'CONTRAT' | 'METRI' | 'PERCENTAGE' | 'CUSTOM';
+export type ContractType = 'CONTRAT' | 'METRI' | 'PERCENTAGE' | 'CUSTOM' | 'COST_ONLY';
 export type PhaseStatus = 'IN_PROGRESS' | 'COMPLETED';
 
 // ==========================================

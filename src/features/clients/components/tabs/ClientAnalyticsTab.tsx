@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -16,7 +16,7 @@ import { useLogisticsStore } from '../../../../store/logisticsStore';
 import { useLaborStore } from '../../../../store/laborStore';
 
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
-import GlassSelect from '../../../../components/ui/GlassSelect';
+import { PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 const colorMap: Record<string, string> = {
   'دریافتی قطعی': '#10b981',
@@ -153,7 +153,7 @@ export default function ClientAnalyticsTab({ clientId }: { clientId: string }) {
           pBilled += getPurchaseBilled(p);
         }
       });
-      allLaborLogs.filter(l => l.projectId === proj.id && isMatchDateFilters(l.date || l.startDate, startDate, endDate, yearFilter)).forEach(l => {
+      allLaborLogs.filter(l => l.projectId === proj.id && isMatchDateFilters(l.date, startDate, endDate, yearFilter)).forEach(l => {
         if (phaseFilter === 'ALL' || l.phaseId === phaseFilter) {
           pInternal += getLaborInternal(l);
           pBilled += getLaborBilled(l);
@@ -200,7 +200,7 @@ export default function ClientAnalyticsTab({ clientId }: { clientId: string }) {
       allPurchases.filter(p => (!p.projectId || p.projectId === 'FREE') && isClientRelated(p) && isMatchDateFilters(p.date, startDate, endDate, yearFilter)).forEach(p => {
         fInternal += getPurchaseInternal(p); fBilled += getPurchaseBilled(p);
       });
-      allLaborLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && isClientRelated(l) && isMatchDateFilters(l.date || l.startDate, startDate, endDate, yearFilter)).forEach(l => {
+      allLaborLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && isClientRelated(l) && isMatchDateFilters(l.date, startDate, endDate, yearFilter)).forEach(l => {
         fInternal += getLaborInternal(l); fBilled += getLaborBilled(l);
       });
       allLogisticsLogs.filter(l => (!l.projectId || l.projectId === 'FREE') && isClientRelated(l) && isMatchDateFilters(l.date, startDate, endDate, yearFilter)).forEach(l => {
@@ -323,18 +323,18 @@ export default function ClientAnalyticsTab({ clientId }: { clientId: string }) {
         
         <div className="flex-1 min-w-[120px] flex flex-col gap-1 z-[99]">
           <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mr-2">سال مالی:</label>
-          <GlassSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="انتخاب سال" />
+          <PortalSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="انتخاب سال" />
         </div>
 
         <div className="flex-1 min-w-[180px] flex flex-col gap-1 z-[97]">
           <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mr-2">پروژه:</label>
-          <GlassSelect options={projectOptions} value={projectFilter} onChange={setProjectFilter} placeholder="پروژه یا آزاد" />
+          <PortalSelect options={projectOptions} value={projectFilter} onChange={setProjectFilter} placeholder="پروژه یا آزاد"  searchable />
         </div>
 
         {projectFilter !== 'ALL' && projectFilter !== 'FREE' && (
           <div className="flex-1 min-w-[150px] flex flex-col gap-1 z-[96]">
             <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mr-2">فاز اجرایی:</label>
-            <GlassSelect options={phaseOptions} value={phaseFilter} onChange={setPhaseFilter} placeholder="انتخاب فاز" />
+            <PortalSelect options={phaseOptions} value={phaseFilter} onChange={setPhaseFilter} placeholder="انتخاب فاز"  searchable />
           </div>
         )}
 

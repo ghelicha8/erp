@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeUUID } from '../utils/uuid';
 
 // ---------------------------------------------------------
 // 💡 اینترفیس‌های پایه‌ی پروفایل‌ها (جدید)
@@ -35,6 +36,7 @@ export interface ToolProfile {
 export interface LogisticsLog {
   id: string;
   projectId: string | null; 
+  clientId?: string;
   phaseId?: string;
   type: 'TRANSPORT' | 'EQUIPMENT';
   source: 'INTERNAL' | 'EXTERNAL';
@@ -42,18 +44,33 @@ export interface LogisticsLog {
   provider: string; // ID راننده
   vehicleInfo: string; // ID ماشین
   date: string;
+  createdAt?: string;
   internalCost: number;
   billedCost: number;
   driverWage: number;
   // 💡 این دو فیلد اضافه شدند تا تعداد و قیمت واحد ذخیره بشه
+  unit?: string;
   qty?: number; 
   unitPrice?: number; 
+  vendorId?: string; // لینک به پروفایل تامین‌کننده (خرید و تدارکات)
+}
+
+export interface VehicleRepair {
+  id: string;
+  vehicleId: string;
+  cost: number;
+  description: string;
+  startDate: string; // تاریخ هزینه / شروع بازه تعمیر
+  endDate?: string; // پایان بازه (اختیاری)
+  repairShopVendorId?: string; // لینک به تعمیرگاه در خرید و تدارکات (خالی = آزاد)
+  createdAt: string;
 }
 
 interface LogisticsState {
   logs: LogisticsLog[];
-  vehicles: VehicleProfile[]; 
-  tools: ToolProfile[];       
+  vehicles: VehicleProfile[];
+  tools: ToolProfile[];
+  repairs: VehicleRepair[];
   
   addLog: (log: Omit<LogisticsLog, 'id'>) => void;
   updateLog: (id: string, data: Partial<LogisticsLog>) => void;
@@ -69,6 +86,10 @@ interface LogisticsState {
   updateTool: (id: string, data: Partial<ToolProfile>) => void;
   deleteTool: (id: string) => void;
   toggleToolPin: (id: string) => void;
+
+  addRepair: (repair: Omit<VehicleRepair, 'id' | 'createdAt'>) => string;
+  updateRepair: (id: string, data: Partial<VehicleRepair>) => void;
+  deleteRepair: (id: string) => void;
 }
 
 export const useLogisticsStore = create<LogisticsState>()(
@@ -77,9 +98,10 @@ export const useLogisticsStore = create<LogisticsState>()(
       logs: [],
       vehicles: [],
       tools: [],
+      repairs: [],
       
       addLog: (log) => set((state) => ({
-        logs: [{ ...log, id: crypto.randomUUID() }, ...state.logs]
+        logs: [{ ...log, id: safeUUID(), createdAt: new Date().toISOString() }, ...state.logs]
       })),
       updateLog: (id, data) => set((state) => ({
         logs: state.logs.map(l => l.id === id ? { ...l, ...data } : l)
@@ -92,7 +114,7 @@ export const useLogisticsStore = create<LogisticsState>()(
       })),
 
       addVehicle: (vehicle) => set((state) => ({
-        vehicles: [{ ...vehicle, id: crypto.randomUUID(), createdAt: new Date().toISOString() }, ...state.vehicles]
+        vehicles: [{ ...vehicle, id: safeUUID(), createdAt: new Date().toISOString() }, ...state.vehicles]
       })),
       updateVehicle: (id, data) => set((state) => ({
         vehicles: state.vehicles.map(v => v.id === id ? { ...v, ...data } : v)
@@ -105,7 +127,7 @@ export const useLogisticsStore = create<LogisticsState>()(
       })),
 
       addTool: (tool) => set((state) => ({
-        tools: [{ ...tool, id: crypto.randomUUID(), createdAt: new Date().toISOString() }, ...state.tools]
+        tools: [{ ...tool, id: safeUUID(), createdAt: new Date().toISOString() }, ...state.tools]
       })),
       updateTool: (id, data) => set((state) => ({
         tools: state.tools.map(t => t.id === id ? { ...t, ...data } : t)
@@ -115,6 +137,20 @@ export const useLogisticsStore = create<LogisticsState>()(
       })),
       toggleToolPin: (id) => set((state) => ({
         tools: state.tools.map(t => t.id === id ? { ...t, isPinned: !t.isPinned } : t)
+      })),
+
+      addRepair: (repair) => {
+        const id = safeUUID();
+        set((state) => ({
+          repairs: [{ ...repair, id, createdAt: new Date().toISOString() }, ...state.repairs]
+        }));
+        return id;
+      },
+      updateRepair: (id, data) => set((state) => ({
+        repairs: state.repairs.map(r => r.id === id ? { ...r, ...data } : r)
+      })),
+      deleteRepair: (id) => set((state) => ({
+        repairs: state.repairs.filter(r => r.id !== id)
       })),
     }),
     { name: 'logistics-storage' }

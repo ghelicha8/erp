@@ -9,6 +9,7 @@ import { useProjectStore } from '../features/projects/store/projectStore';
 // اما اگر آن‌ها را در همان پوشه src/store ساخته‌اید، همین کدهای پایین برایشان درست است:
 import { useFinanceStore } from './financeStore';
 import { useInventoryStore } from './inventoryStore';
+import { safeUUID } from '../utils/uuid';
 export type AlertType = 'CRITICAL' | 'WARNING' | 'INFO';
 export type AlertCategory = 'CHEQUE' | 'INVENTORY' | 'CUSTOM' | 'PROJECT';
 
@@ -19,6 +20,7 @@ export interface Alert {
   title: string;
   description: string;
   date: string;
+  createdAt?: string;
   isRead: boolean;
   isArchived: boolean;
   actionText?: string;
@@ -60,7 +62,8 @@ export const useAlertStore = create<AlertState>()(
       addCustomAlert: (alertData) => set((state) => ({
         alerts: [{
           ...alertData,
-          id: crypto.randomUUID(),
+          id: safeUUID(),
+          createdAt: new Date().toISOString(),
           isRead: false,
           isArchived: false,
         }, ...state.alerts]
@@ -82,6 +85,7 @@ export const useAlertStore = create<AlertState>()(
       // 💎 موتور اسکنر هوشمند سیستم 
       // ====================================================================
       scanSystemAlerts: () => {
+        try {
         const { projects } = useProjectStore.getState();
         const { transactions } = useFinanceStore.getState();
         const { materials } = useInventoryStore.getState(); // 💡 دریافت دیتای زنده انبار مرکزی
@@ -187,8 +191,11 @@ export const useAlertStore = create<AlertState>()(
         // اضافه کردن هشدارهای جدید
         if (newAutoAlerts.length > 0) {
           set((state) => ({
-            alerts: [...newAutoAlerts, ...state.alerts]
+            alerts: [...newAutoAlerts.map(a => ({ ...a, createdAt: new Date().toISOString() })), ...state.alerts]
           }));
+        }
+        } catch (err) {
+          console.error('scanSystemAlerts failed:', err);
         }
       }
     }),

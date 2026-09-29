@@ -1,3 +1,4 @@
+import { safeUUID } from '../../../utils/uuid';
 // استراتژی‌های ورود اطلاعات
 export type ImportStrategy = 'SMART_MERGE' | 'OVERWRITE' | 'WIPE_INSERT';
 
@@ -13,7 +14,7 @@ export class SmartMergeEngine {
    */
   static mapData(rawData: any[], mapping: Record<string, string>): any[] {
     return rawData.map(row => {
-      const mappedRow: any = { id: crypto.randomUUID() }; // تولید آیدی جدید به صورت پیش‌فرض
+      const mappedRow: any = { id: safeUUID() }; // تولید آیدی جدید به صورت پیش‌فرض
       
       for (const [excelHeader, dbField] of Object.entries(mapping)) {
         if (row[excelHeader] !== undefined) {

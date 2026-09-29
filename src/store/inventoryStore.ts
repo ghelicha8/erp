@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeUUID } from '../utils/uuid';
 
 export interface MaterialItem {
   id: string;
@@ -30,7 +31,7 @@ export const useInventoryStore = create<InventoryState>()(
       ],
       
       addMaterial: (material) => set((state) => ({
-        materials: [...state.materials, { ...material, id: crypto.randomUUID() }]
+        materials: [...state.materials, { ...material, id: safeUUID() }]
       })),
       
       updateMaterial: (id, data) => set((state) => ({

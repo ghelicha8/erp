@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import {   useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, AlertCircle, CheckCircle, ChevronDown, 
+  X, AlertCircle, CheckCircle,  
   Package, ShoppingCart, Hammer, Info
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useInventoryStore } from '../../../store/inventoryStore';
 import { useProjectStore } from '../store/projectStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 // ============================================================================
 // Schema (Zod) - اعتبارسنجی شرطی و هوشمند
@@ -31,7 +32,7 @@ const materialUsageSchema = z.object({
   quantity: z.string().min(1, 'وارد کردن مقدار/تعداد الزامی است'),
   declaredPrice: z.string().min(1, 'تعیین قیمت اعلامی به کارفرما الزامی است'),
   date: z.string().min(1, 'تاریخ مصرف الزامی است'),
-  deductFromInventory: z.boolean().default(true),
+  deductFromInventory: z.boolean().optional(),
   description: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.sourceType === 'INVENTORY' && !data.materialId) {
@@ -51,42 +52,6 @@ type MaterialFormValues = z.infer<typeof materialUsageSchema>;
 // ============================================================================
 const formatAmount = (value: string) => value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-function GlassSelect({ options, value, onChange, placeholder, hasError }: any) {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const clickOutside = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false); };
-    document.addEventListener('mousedown', clickOutside);
-    return () => document.removeEventListener('mousedown', clickOutside);
-  }, []);
-
-  const selectedLabel = options.find((o: any) => o.value === value)?.label || placeholder;
-
-  return (
-    <div className="relative w-full" ref={ref}>
-      <div 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`cursor-pointer w-full bg-white/60 dark:bg-black/20 border rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-cyan-500 outline-none backdrop-blur-sm transition-all flex items-center justify-between shadow-sm ${hasError ? 'border-rose-500/70 ring-1 ring-rose-500/50' : 'border-white/40 dark:border-slate-700/50'}`}
-      >
-        <span className="font-bold text-slate-700 dark:text-slate-200 line-clamp-1">{selectedLabel}</span>
-        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180 text-cyan-500' : ''}`} />
-      </div>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }} transition={{ type: 'spring', damping: 25, stiffness: 400 }} className="absolute z-50 w-full mt-2 backdrop-blur-3xl bg-white/95 dark:bg-slate-800/95 border border-white/50 dark:border-slate-600 shadow-[0_10px_40px_rgba(0,0,0,0.15)] rounded-2xl max-h-56 overflow-y-auto modal-scrollbar">
-            {options.map((opt: any) => (
-              <div key={opt.value} onClick={() => { onChange(opt.value); setIsOpen(false); }} className={`px-4 py-3.5 cursor-pointer text-sm font-bold border-b border-slate-100/50 dark:border-slate-700/50 last:border-0 transition-colors ${value === opt.value ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400' : 'hover:bg-cyan-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300'}`}>
-                {opt.label}
-              </div>
-            ))}
-            {options.length === 0 && <div className="px-4 py-3.5 text-sm font-bold text-slate-400 text-center">انباری ثبت نشده است</div>}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 // ============================================================================
 // Main Modal Component
@@ -126,10 +91,8 @@ export default function NewMaterialUsageModal({ projectId, isOpen, onClose }: Ne
 
   const onSubmit = (data: MaterialFormValues) => {
     const rawQuantity = Number(data.quantity.replace(/,/g, ''));
-    const rawDeclaredPrice = Number(data.declaredPrice.replace(/,/g, ''));
-    const rawCostPrice = data.sourceType === 'MARKET' ? Number(data.costPrice?.replace(/,/g, '') || 0) : (selectedInventoryItem?.costPrice || 0);
 
-    if (rawQuantity <= 0) return toast.error('مقدار مصرفی نامعتبر است');
+    if (rawQuantity <= 0) { toast.error('مقدار مصرفی نامعتبر است'); return; }
 
     try {
       // ۱. اگر منبع انبار است و تیک کسر خورده، از انبار مرکزی کم کن
@@ -143,18 +106,6 @@ export default function NewMaterialUsageModal({ projectId, isOpen, onClose }: Ne
 
       // ۲. ساخت رکورد مصرف جهت ارسال به استور پروژه (کد زیر به صورت مفهومی پیاده شده است.
       // شما می‌توانید این آبجکت را در آرایه‌ی materialRecords پروژه خودتان Push کنید)
-      const usageRecord = {
-        id: crypto.randomUUID(),
-        projectId,
-        materialName: data.sourceType === 'INVENTORY' ? selectedInventoryItem?.name : data.materialName,
-        unit: data.sourceType === 'INVENTORY' ? selectedInventoryItem?.unit : data.unit,
-        quantity: rawQuantity,
-        costPrice: rawCostPrice,             // قیمت مخفی پیمانکار
-        declaredPrice: rawDeclaredPrice,     // قیمت صورت وضعیت کارفرما
-        date: data.date,
-        description: data.description,
-        source: data.sourceType
-      };
 
       // TODO: اینجا تابع addMaterialRecord را به projectStore اضافه کرده و فراخوانی کنید
       // useProjectStore.getState().addMaterialRecord(projectId, usageRecord);
@@ -224,7 +175,7 @@ export default function NewMaterialUsageModal({ projectId, isOpen, onClose }: Ne
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2 relative z-50">
                           <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">انتخاب مصالح از انبار</label>
-                          <Controller control={control} name="materialId" render={({ field }) => (<GlassSelect options={inventoryOptions} value={field.value || ''} onChange={field.onChange} placeholder="یک مورد انتخاب کنید..." hasError={!!errors.materialId} />)} />
+                          <Controller control={control} name="materialId" render={({ field }) => (<PortalSelect options={inventoryOptions} value={field.value || ''} onChange={field.onChange} placeholder="یک مورد انتخاب کنید..." hasError={!!errors.materialId}  searchable />)} />
                           {errors.materialId && <span className="text-rose-500 text-xs font-bold flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" />{errors.materialId.message}</span>}
                         </div>
                         

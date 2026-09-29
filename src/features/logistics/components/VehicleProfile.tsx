@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, Truck, Wallet, Wrench, ShieldAlert, FileText, Settings, 
@@ -9,17 +9,21 @@ import moment from 'moment-jalaali';
 import { toast } from 'sonner';
 
 import { useLogisticsStore } from '../../../store/logisticsStore'; 
-import GlassSelect from '../../../components/ui/GlassSelect';
+
 import VehicleFormModal from './VehicleFormModal';
 
 // مسیر ایمپورت‌ها 
 import VehicleFinanceTab from './VehicleFinanceTab';
+import VehicleFreightTab from './VehicleFreightTab';
+import VehicleRepairsTab from './VehicleRepairsTab';
+import VehicleRepairModal from './VehicleRepairModal';
 
 // 🚨 مسیر فایل مودال که گفتید حل شده رو اینجا داریم 🚨
 import NewLogisticsModal from "../../projects/components/NewLogisticsModal";
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 
-const ExportBuilder = ({ vehicleId, context, onClose }: any) => null;
-const ImportBuilder = ({ vehicleId, context, onClose }: any) => null;
+const ExportBuilder = (_props: any) => null;
+const ImportBuilder = (_props: any) => null;
 
 const VEHICLE_TABS = [
   { id: 'finance', label: 'تاریخچه مالی', icon: Wallet, color: 'text-emerald-500', activeClass: 'text-emerald-600 dark:text-emerald-400' },
@@ -37,10 +41,12 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
     id: vehicleId, name: 'کامیون بنز تک', plate: 'ع ۴۵ - ۱۲۳ ایران ۱۱', photo: '', status: 'ACTIVE' 
   }; 
 
+  const allRepairs = useLogisticsStore(state => state.repairs);
   const [activeTab, setActiveTab] = useState('finance');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isRepairModalOpen, setIsRepairModalOpen] = useState(false);
 
   const currentYear = moment().jYear();
   const [yearFilter, setYearFilter] = useState('ALL');
@@ -89,6 +95,8 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
           document.dispatchEvent(new CustomEvent('open-new-logistics-modal', {
             detail: { type: 'TRANSPORT', source: 'INTERNAL', vehicleInfo: vehicleId, lockType: true, lockVehicle: true }
           }));
+        } else if (activeTab === 'repair') {
+          setIsRepairModalOpen(true);
         } else {
           toast.info(`باز کردن مودال ثبت برای تب: ${activeTab}`);
         }
@@ -100,7 +108,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
 
   const stats = useMemo(() => {
     const totalIncome = 125000000;
-    const repairCosts = 15000000;
+    const repairCosts = allRepairs.filter(r => r.vehicleId === vehicleId).reduce((s, r) => s + (r.cost || 0), 0);
     const incidentalCosts = 5000000;
     const maintenanceCosts = 2000000;
     const insuranceCosts = 12000000;
@@ -109,7 +117,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
     const netProfit = totalIncome - totalCosts;
 
     return { totalIncome, repairCosts, totalCosts, netProfit };
-  }, [yearFilter, monthFilter, weekFilter, vehicleId]);
+  }, [yearFilter, monthFilter, weekFilter, vehicleId, allRepairs]);
 
   if (!vehicle) return null;
   const isProfitable = stats.netProfit >= 0;
@@ -208,7 +216,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             )}
 
             {activeTab === 'repair' && (
-              <motion.button key="btn-repair" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(244,63,94,0.35)] flex items-center justify-center gap-2.5 relative overflow-hidden border border-rose-400/50">
+              <motion.button key="btn-repair" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setIsRepairModalOpen(true)} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(244,63,94,0.35)] flex items-center justify-center gap-2.5 relative overflow-hidden border border-rose-400/50">
                 <motion.div animate={{ rotate: [0, 45, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
                   <Wrench className="w-5 h-5" />
                 </motion.div>
@@ -265,9 +273,9 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
           </div>
           
           <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full xl:w-auto relative z-[90]">
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="سال" /></div>
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={monthOptions} value={monthFilter} onChange={setMonthFilter} placeholder="ماه" /></div>
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={weekOptions} value={weekFilter} onChange={setWeekFilter} placeholder="هفته" /></div>
+            <div className="w-full md:w-[150px] h-[40px]"><PortalSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="سال" /></div>
+            <div className="w-full md:w-[150px] h-[40px]"><PortalSelect options={monthOptions} value={monthFilter} onChange={setMonthFilter} placeholder="ماه"  searchable /></div>
+            <div className="w-full md:w-[150px] h-[40px]"><PortalSelect options={weekOptions} value={weekFilter} onChange={setWeekFilter} placeholder="هفته" /></div>
           </div>
         </div>
         
@@ -281,7 +289,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             <div className="text-2xl lg:text-3xl font-black text-emerald-600 dark:text-emerald-400 text-left font-mono" dir="ltr">{stats.totalIncome.toLocaleString('fa-IR')}</div>
           </div>
 
-          <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[2rem] border border-amber-200/50 dark:border-amber-900/50 p-5 flex flex-col justify-between min-h-[120px] shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
+          <div onClick={() => setActiveTab('repair')} title="مشاهده تاریخچه تعمیر" className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[2rem] border border-amber-200/50 dark:border-amber-900/50 p-5 flex flex-col justify-between min-h-[120px] shadow-[0_8px_30px_rgba(245,158,11,0.05)] cursor-pointer hover:border-amber-400/70 hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)] transition-all">
             <div className="flex justify-between items-center w-full mb-3">
               <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">هزینه‌های تعمیر خودرو</span>
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-500/20 dark:to-amber-500/10 text-amber-600 border border-amber-200 dark:border-amber-500/30 shadow-inner"><Wrench className="w-5 h-5" /></div>
@@ -347,6 +355,14 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             <motion.div key="tab-finance" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
               <VehicleFinanceTab vehicleId={vehicleId} />
             </motion.div>
+          ) : activeTab === 'freight' ? (
+            <motion.div key="tab-freight" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleFreightTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'repair' ? (
+            <motion.div key="tab-repair" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleRepairsTab vehicleId={vehicleId} />
+            </motion.div>
           ) : (
             <motion.div key={`placeholder-${activeTab}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="flex flex-col items-center justify-center w-full h-full text-slate-400 py-20">
               <div className="w-24 h-24 bg-white/50 dark:bg-slate-800/50 rounded-[2rem] border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center mb-6 shadow-inner">
@@ -367,6 +383,8 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
       <AnimatePresence>
         {isImportModalOpen && <ImportBuilder vehicleId={vehicleId} context="VEHICLE" onClose={() => setIsImportModalOpen(false)} />}
       </AnimatePresence>
+
+      <VehicleRepairModal isOpen={isRepairModalOpen} onClose={() => setIsRepairModalOpen(false)} vehicleId={vehicleId} />
 
       <NewLogisticsModal />
 

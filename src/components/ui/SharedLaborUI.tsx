@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChevronDown, Search, Check, CheckCircle, Trash2, CalendarDays, Calendar, X } from 'lucide-react';
-import moment from 'moment-jalaali';
+import {
+  Clock, ChevronDown, Search, Check,
+  CheckCircle, Trash2, Calendar, X,
+  Sparkles,
+} from 'lucide-react';
 import DatePickerPkg from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
@@ -53,7 +56,7 @@ export const GlassInputWrapper = ({ children, className = '' }: { children: Reac
 // ==========================================
 // 4. چک‌باکس‌های انیمیشنی داینامیک
 // ==========================================
-export const AnimatedCheckbox = ({ checked, onChange, theme = 'amber' }: { checked: boolean, onChange: () => void, theme?: 'amber' | 'emerald' | 'indigo' | 'rose' }) => {
+export const AnimatedCheckbox = ({ checked, onChange, theme = 'amber', disabled = false, label, subLabel, icon: Icon, colorClass }: { checked: boolean, onChange: (val: boolean) => void, theme?: 'amber' | 'emerald' | 'indigo' | 'rose', disabled?: boolean, label?: string, subLabel?: string, icon?: any, colorClass?: 'indigo' | 'emerald' | 'amber' | 'rose' | 'fuchsia' }) => {
   const themes = {
     indigo: { active: 'bg-gradient-to-tr from-indigo-500 to-purple-500 border-indigo-400', hover: 'hover:border-indigo-400 text-indigo-500' },
     emerald: { active: 'bg-gradient-to-tr from-emerald-500 to-teal-500 border-teal-400', hover: 'hover:border-emerald-400 text-emerald-500' },
@@ -62,9 +65,34 @@ export const AnimatedCheckbox = ({ checked, onChange, theme = 'amber' }: { check
   };
   const currentTheme = themes[theme] || themes.indigo;
 
+  const cardPalette: Record<string, { border: string; box: string; text: string }> = {
+    indigo: { border: 'border-indigo-300 dark:border-indigo-700/50', box: 'bg-indigo-500 border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.5)]', text: 'text-indigo-500' },
+    emerald: { border: 'border-emerald-300 dark:border-emerald-700/50', box: 'bg-emerald-500 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]', text: 'text-emerald-500' },
+    amber: { border: 'border-amber-300 dark:border-amber-700/50', box: 'bg-amber-500 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.5)]', text: 'text-amber-500' },
+    rose: { border: 'border-rose-300 dark:border-rose-700/50', box: 'bg-rose-500 border-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.5)]', text: 'text-rose-500' },
+    fuchsia: { border: 'border-fuchsia-300 dark:border-fuchsia-700/50', box: 'bg-fuchsia-500 border-fuchsia-500 shadow-[0_0_12px_rgba(217,70,239,0.5)]', text: 'text-fuchsia-500' },
+  };
+
+  // 💡 حالت کارتی (لیبل‌دار) برای فرم‌ها
+  if (label) {
+    const card = cardPalette[colorClass || theme] || cardPalette.indigo;
+    return (
+      <label className={`flex items-center gap-4 cursor-pointer group p-4 rounded-2xl border bg-white/40 dark:bg-slate-800/40 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all shadow-sm ${checked ? card.border : 'border-slate-200 dark:border-slate-700'} ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
+        <div className={`w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center transition-colors ${checked ? card.box : 'bg-transparent border-slate-300 dark:border-slate-600'}`}>
+          <AnimatePresence>{checked && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Check className="w-4 h-4 text-white" /></motion.div>}</AnimatePresence>
+        </div>
+        <div className="flex flex-col flex-1">
+          <span className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-2">{Icon && <Icon className={`w-4 h-4 ${card.text}`} />} {label}</span>
+          {subLabel && <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{subLabel}</span>}
+        </div>
+        <input type="checkbox" className="hidden" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      </label>
+    );
+  }
+
   return (
-    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); onChange(); }}
-      className={`w-6 h-6 mx-auto rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${
+    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); if (!disabled) onChange(!checked); }}
+      className={`w-6 h-6 mx-auto rounded-xl border-2 flex items-center justify-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} transition-all duration-300 ${
         checked ? `${currentTheme.active} scale-105 shadow-md` : `bg-white/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 ${currentTheme.hover}`
       }`}
     >
@@ -83,12 +111,13 @@ export const AnimatedCheckbox = ({ checked, onChange, theme = 'amber' }: { check
 // 5. سوییچ‌های درخشان (Glow Switch)
 // ==========================================
 export const GlowSwitch = ({ checked, onChange, label, sublabel, theme = 'indigo' }: any) => {
-  const colors: any = {
+  const palette: Record<string, { border: string; bg: string; thumb: string; text: string; glow: string }> = {
     indigo: { border: 'border-indigo-400', bg: 'bg-indigo-50/80 dark:bg-indigo-900/30', thumb: 'bg-indigo-500', text: 'text-indigo-700 dark:text-indigo-300', glow: 'shadow-[0_0_15px_rgba(99,102,241,0.4)]' },
     blue: { border: 'border-blue-400', bg: 'bg-blue-50/80 dark:bg-blue-900/30', thumb: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.4)]' },
     rose: { border: 'border-rose-400', bg: 'bg-rose-50/80 dark:bg-rose-900/30', thumb: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-300', glow: 'shadow-[0_0_15px_rgba(244,63,94,0.4)]' },
     emerald: { border: 'border-emerald-400', bg: 'bg-emerald-50/80 dark:bg-emerald-900/30', thumb: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-300', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.4)]' }
-  }[theme] || { border: 'border-indigo-400', bg: 'bg-indigo-50/80 dark:bg-indigo-900/30', thumb: 'bg-indigo-500', text: 'text-indigo-700 dark:text-indigo-300', glow: 'shadow-[0_0_15px_rgba(99,102,241,0.4)]' };
+  };
+  const colors = palette[theme as string] || palette.indigo;
 
   return (
     <div onClick={() => onChange(!checked)} className={`flex items-center gap-3 cursor-pointer p-3 rounded-2xl border transition-all duration-300 ${checked ? `${colors.border} ${colors.bg}${colors.glow}` : 'border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600 shadow-sm'}`}>
@@ -108,7 +137,7 @@ export const GlowSwitch = ({ checked, onChange, label, sublabel, theme = 'indigo
 // ==========================================
 // 6. لیست کشویی انیمیشنی
 // ==========================================
-export const PortalSelect = ({ value, onChange, options, placeholder, icon: MainIcon, searchable = false, className = '', disabled = false }: any) => {
+export const PortalSelect = ({ value, onChange, options, placeholder, icon: MainIcon, searchable = false, className = '', disabled = false, hasError = false, onAddNew, closeOnScroll = true }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
@@ -122,6 +151,8 @@ export const PortalSelect = ({ value, onChange, options, placeholder, icon: Main
     if (!searchTerm) return safeOptions;
     return safeOptions.filter((o:any) => o.label?.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [safeOptions, searchTerm]);
+
+  const isExactMatch = searchTerm ? safeOptions.some((o:any) => o.label?.toLowerCase() === searchTerm.toLowerCase()) : false;
 
   const openDropdown = () => {
     if (disabled) return;
@@ -146,19 +177,19 @@ export const PortalSelect = ({ value, onChange, options, placeholder, icon: Main
       setIsOpen(false);
     };
     if (isOpen) {
-      window.addEventListener('scroll', handleScroll, true);
+      if (closeOnScroll) window.addEventListener('scroll', handleScroll, true);
       window.addEventListener('resize', handleScroll);
     }
     return () => {
       window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', handleScroll);
     };
-  }, [isOpen]);
+  }, [isOpen, closeOnScroll]);
 
   return (
     <>
       <button type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} disabled={disabled} 
-        className={`w-full h-full min-h-[42px] bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 flex justify-between items-center outline-none transition-all shadow-inner hover:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30 group ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${className}`}
+        className={`w-full h-full min-h-[42px] bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 flex justify-between items-center outline-none transition-all shadow-inner hover:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30 group ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${hasError ? '!border-rose-500 ring-1 ring-rose-500/50' : ''} ${className}`}
       >
         <div className="flex items-center gap-2 truncate text-right flex-1">
            {MainIcon && <MainIcon className="w-4 h-4 shrink-0 text-indigo-500 group-hover:text-indigo-600" />}
@@ -206,13 +237,18 @@ export const PortalSelect = ({ value, onChange, options, placeholder, icon: Main
                       >
                         <div className="flex items-center gap-2">
                           {OptIcon && <OptIcon className="w-4 h-4" />}
-                          <span className="truncate pt-0.5">{opt.label}</span>
+                          <div className="flex flex-col min-w-0"><span className="truncate pt-0.5">{opt.label}</span>{opt.subLabel && <span className="block text-[10px] text-slate-400 mt-0.5 truncate">{opt.subLabel}</span>}</div>
                         </div>
                         {isSelected && <Check className="w-4 h-4 shrink-0" />}
                       </button>
                     )
                   }) : (
                     <div className="py-6 text-center text-xs font-bold text-slate-400">موردی یافت نشد!</div>
+                  )}
+                  {searchTerm && !isExactMatch && onAddNew && (
+                    <button type="button" onClick={() => { onAddNew(searchTerm); setIsOpen(false); setSearchTerm(''); }} className="w-[calc(100%-8px)] m-1 px-4 py-3 flex items-center justify-center gap-2 text-sm font-black text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-95 animate-pulse">
+                      <motion.span animate={{ rotate: [0, -15, 15, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="flex"><Sparkles className="w-4 h-4" /></motion.span> افزودن مورد جدید: {searchTerm}
+                    </button>
                   )}
                 </div>
               </motion.div>
@@ -354,7 +390,7 @@ export function GlassDatePicker({ value, onChange, placeholder = '140X/XX/XX', h
 // ==========================================
 // 8. ساعت لوکس آنالوگ 
 // ==========================================
-export const LuxuryTimePicker = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder: string }) => {
+export const LuxuryTimePicker = ({ value, onChange, placeholder = 'انتخاب ساعت...' }: { value: string, onChange: (v: string) => void, placeholder?: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'hours' | 'minutes'>('hours');
   const [isPM, setIsPM] = useState(false);

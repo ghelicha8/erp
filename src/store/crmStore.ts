@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 // ایمپورت استورهای مالی و پروژه جهت پیاده‌سازی منطق Data Mirroring
 import { useProjectStore } from '../features/projects/store/projectStore';
 import { useFinanceStore } from './financeStore';
+import { safeUUID } from '../utils/uuid';
 
 export interface ClientProfile {
   id: string;
@@ -33,11 +34,11 @@ interface CRMState {
 
 export const useCRMStore = create<CRMState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       clients: [],
 
       addClient: (client) => set((state) => ({
-        clients: [...state.clients, { ...client, id: crypto.randomUUID() }]
+        clients: [...state.clients, { ...client, id: safeUUID() }]
       })),
 
       updateClient: (id, data) => set((state) => ({

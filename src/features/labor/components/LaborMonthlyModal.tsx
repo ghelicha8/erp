@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +19,7 @@ import type { LaborMonthlyContract } from '../../../store/laborStore';
 import { GlassScrollStyles, PortalSelect } from '../../../components/ui/SharedLaborUI';
 // 💡 اضافه کردن تقویم اصلی و قدرتمند
 import GlassDatePicker from '../../../components/ui/GlassDatePicker'; 
+import { safeUUID } from '../../../utils/uuid';
 
 // ==========================================
 // 💡 توابع کمکی
@@ -124,7 +125,7 @@ export default function LaborMonthlyModal({ isOpen, onClose, workerId }: LaborMo
     }
 
     const newContract: LaborMonthlyContract = {
-      id: crypto.randomUUID(),
+      id: safeUUID(),
       title: data.title,
       projectId: finalProjectId,
       clientId: finalClientId,

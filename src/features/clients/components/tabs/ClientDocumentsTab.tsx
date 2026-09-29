@@ -3,14 +3,16 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Archive, FileUp, FileText, Image as ImageIcon, Trash2, Download, Search, X, FolderOpen, 
-  FileCheck, File, Eye, Info, List, Grid, Edit3, Tag, MessageSquare, ExternalLink, 
+  FileCheck, File, Eye, List, Grid, Edit3, Tag, MessageSquare, ExternalLink, 
   CheckSquare, CheckCircle, User, ShieldCheck, Mail, Briefcase, Link as LinkIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useClientStore } from '../../../../store/clientStore';
 import { useProjectStore } from '../../../projects/store/projectStore';
-import GlassSelect from '../../../../components/ui/GlassSelect';
+
+import { sortNewestFirst } from '../../../../core/utils/sortHelpers';
+import { NeonSearchWrapper, PortalSelect } from '../../../../components/ui/SharedLaborUI';
 
 interface ClientDocumentsTabProps {
   clientId: string;
@@ -23,15 +25,6 @@ const FOLDERS = [
   { id: 'نامه‌نگاری‌ها و مکاتبات', icon: Mail, color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10 border-fuchsia-500/20' },
   { id: 'سایر مدارک', icon: File, color: 'text-slate-500', bg: 'bg-slate-500/10 border-slate-500/20' },
 ];
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-indigo-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
   const client = useClientStore(state => state.clients.find(c => c.id === clientId));
@@ -149,7 +142,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
   }, [archiveRecords]);
 
   const filteredRecords = useMemo(() => {
-    return archiveRecords.filter((r: any) => {
+    return sortNewestFirst(archiveRecords.filter((r: any) => {
       if (pendingDeleteIds.includes(r.id)) return false;
       const matchesSearch = !searchQuery || 
         r.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -158,7 +151,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
         (r.linkedProjectName && r.linkedProjectName.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesFolder = filterFolder === 'ALL' || r.folder === filterFolder;
       return matchesSearch && matchesFolder;
-    }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }), 'append');
   }, [archiveRecords, searchQuery, filterFolder, pendingDeleteIds]);
 
   const toggleSelectAll = () => {
@@ -393,7 +386,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
             <div className="space-y-1.5">
                <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5 ml-1"><FolderOpen className="w-4 h-4 text-indigo-500"/> مقصد ذخیره‌سازی:</label>
                <div className="h-[52px]">
-                 <GlassSelect options={FOLDERS.map(f => ({ value: f.id, label: f.id }))} value={uploadFolder} onChange={setUploadFolder} placeholder="انتخاب پوشه" />
+                 <PortalSelect options={FOLDERS.map(f => ({ value: f.id, label: f.id }))} value={uploadFolder} onChange={setUploadFolder} placeholder="انتخاب پوشه"  searchable />
                </div>
             </div>
 
@@ -403,7 +396,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
                   {uploadProjectId && <span className="text-[9px] bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 px-2 py-0.5 rounded font-black">Sync فعال</span>}
                </div>
                <div className="h-[52px]">
-                 <GlassSelect 
+                 <PortalSelect 
                     options={[{value: '', label: 'بدون اتصال (فقط در پرونده کارفرما)'}, ...clientProjects.map(p => ({ value: p.id, label: p.name }))]} 
                     value={uploadProjectId} 
                     onChange={setUploadProjectId} 
@@ -429,7 +422,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
             {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
           </NeonSearchWrapper>
           <div className="w-full sm:w-64 h-[48px]">
-            <GlassSelect options={[{ value: 'ALL', label: 'همه پوشه‌ها' }, ...FOLDERS.map(f => ({ value: f.id, label: f.id }))]} value={filterFolder} onChange={setFilterFolder} placeholder="فیلتر پوشه‌ها" />
+            <PortalSelect options={[{ value: 'ALL', label: 'همه پوشه‌ها' }, ...FOLDERS.map(f => ({ value: f.id, label: f.id }))]} value={filterFolder} onChange={setFilterFolder} placeholder="فیلتر پوشه‌ها" />
           </div>
         </div>
 
@@ -707,7 +700,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
                   <div className="relative z-[160]">
                     <label className="text-xs font-bold text-slate-500 mb-1.5 block ml-1 flex items-center gap-1"><Briefcase className="w-3.5 h-3.5 text-emerald-500"/> متصل به پروژه</label>
                     <div className="h-[52px]">
-                       <GlassSelect 
+                       <PortalSelect 
                           options={[{value: '', label: 'بدون اتصال (فقط در پرونده کارفرما)'}, ...clientProjects.map(p => ({ value: p.id, label: p.name }))]} 
                           value={editLinkedProjectId} 
                           onChange={setEditLinkedProjectId} 
@@ -720,7 +713,7 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
 
                   <div className="relative z-[150]">
                     <label className="text-xs font-bold text-slate-500 mb-1.5 block ml-1 flex items-center gap-1"><FolderOpen className="w-3.5 h-3.5"/> انتقال به پوشه</label>
-                    <div className="h-[52px]"><GlassSelect options={FOLDERS.map(f => ({ value: f.id, label: f.id }))} value={editFolder} onChange={setEditFolder} placeholder="انتخاب پوشه..." /></div>
+                    <div className="h-[52px]"><PortalSelect options={FOLDERS.map(f => ({ value: f.id, label: f.id }))} value={editFolder} onChange={setEditFolder} placeholder="انتخاب پوشه..."  searchable /></div>
                   </div>
                   
                   <div className="grid grid-cols-1 gap-4">

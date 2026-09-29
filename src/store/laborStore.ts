@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import moment from 'moment-jalaali';
+import { safeUUID } from '../utils/uuid';
 
 // ==========================================
 // 💡 ENUMS & TYPES
@@ -56,7 +57,8 @@ export interface LoanInstallment {
 export interface DocumentRecord {
   id: string;
   title: string;
-  fileUrl?: string; 
+  fileUrl?: string;
+  mimeType?: string;
   documentType: 'ID_CARD' | 'CONTRACT' | 'PROMISSORY_NOTE' | 'CERTIFICATE' | 'OTHER';
   uploadDate: string;
 }
@@ -139,6 +141,7 @@ export interface LaborLog {
   workerId: string;
   workerName: string; 
   date: string;
+  createdAt?: string;
 
   startTime?: string;
   endTime?: string;
@@ -346,7 +349,7 @@ export const useLaborStore = create<LaborState>()(
         
         const newWorker: WorkerProfile = {
           ...data,
-          id: crypto.randomUUID(),
+          id: safeUUID(),
           status: 'ACTIVE',
           trustScore: 5, 
           issuedTools: [],
@@ -383,7 +386,7 @@ export const useLaborStore = create<LaborState>()(
 
       addToolToWorker: (workerId, tool) => set((state) => ({
         workers: state.workers.map(w => 
-          w.id === workerId ? { ...w, issuedTools: [...w.issuedTools, { ...tool, id: crypto.randomUUID() }] } : w
+          w.id === workerId ? { ...w, issuedTools: [...w.issuedTools, { ...tool, id: safeUUID() }] } : w
         )
       })),
 
@@ -398,13 +401,13 @@ export const useLaborStore = create<LaborState>()(
 
       addDocumentToWorker: (workerId, doc) => set((state) => ({
         workers: state.workers.map(w => 
-          w.id === workerId ? { ...w, documents: [...(w.documents || []), { ...doc, id: crypto.randomUUID(), uploadDate: moment().format('jYYYY/jMM/jDD') }] } : w
+          w.id === workerId ? { ...w, documents: [...(w.documents || []), { ...doc, id: safeUUID(), uploadDate: moment().format('jYYYY/jMM/jDD') }] } : w
         )
       })),
 
       addLoanToWorker: (workerId, loan) => set((state) => ({
         workers: state.workers.map(w => 
-          w.id === workerId ? { ...w, loans: [...(w.loans || []), { ...loan, id: crypto.randomUUID(), isActive: true }] } : w
+          w.id === workerId ? { ...w, loans: [...(w.loans || []), { ...loan, id: safeUUID(), isActive: true }] } : w
         )
       })),
 
@@ -413,7 +416,8 @@ export const useLaborStore = create<LaborState>()(
         const newLog: LaborLog = { 
           ...log, 
           recordType: log.recordType || 'WAGE',
-          id: crypto.randomUUID(), 
+          id: safeUUID(), 
+          createdAt: new Date().toISOString(),
           ...financials 
         };
         
@@ -428,7 +432,8 @@ export const useLaborStore = create<LaborState>()(
           return {
             ...log,
             recordType: log.recordType || 'WAGE',
-            id: crypto.randomUUID(),
+            id: safeUUID(),
+            createdAt: new Date().toISOString(),
             ...financials
           };
         });

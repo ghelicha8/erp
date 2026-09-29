@@ -1,7 +1,7 @@
 // ============================================================================
 // PART 1: Imports & Interfaces
 // ============================================================================
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -10,8 +10,7 @@ import {
   Search, CalendarClock, CreditCard, Package, ArrowLeft, Trash2, X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import GlassSelect from '../../../../components/ui/GlassSelect';
-import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
+import GlassDatePicker from '../components/ui/GlassDatePicker';
 
 // ============================================================================
 // PART 2: Types & Mock Data (Mocks for Demonstration)

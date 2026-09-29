@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Project, ContractType } from '../types/project.types';
-import type { LaborRecord } from '../types/core.types';
+import type { ContractType } from '../types/project.types';
+import { safeUUID } from '../../../utils/uuid';
 
 export const rialToToman = (rialAmount: number | undefined): number => {
   if (!rialAmount) return 0;
@@ -101,7 +101,7 @@ export const useProjectStore = create<ProjectState>()(
       addProject: (projectData) => set((state) => {
         const newProject = {
           ...projectData,
-          id: crypto.randomUUID(),
+          id: safeUUID(),
           financials: projectData.financials || { totalExpenditure: 0, estimatedProfit: 0 },
           phases: projectData.phases || [],
           consumptions: [], 
@@ -131,7 +131,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addConsumeRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, consumptions: [...(p.consumptions || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, consumptions: [...(p.consumptions || []), { ...record, id: safeUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
         get().recalculateProjectFinancials(projectId);
       },
@@ -150,7 +150,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addPettyCashRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, pettyCash: [...(p.pettyCash || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, pettyCash: [...(p.pettyCash || []), { ...record, id: safeUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
         get().recalculateProjectFinancials(projectId);
       },
@@ -169,7 +169,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addArchiveRecord: (projectId, record) => {
         set((state) => ({
-          projects: state.projects.map(p => p.id === projectId ? { ...p, archive: [...(p.archive || []), { ...record, id: crypto.randomUUID(), projectId }] } : p)
+          projects: state.projects.map(p => p.id === projectId ? { ...p, archive: [...(p.archive || []), { ...record, id: safeUUID(), createdAt: new Date().toISOString(), projectId }] } : p)
         }));
       },
       updateArchiveRecord: (projectId, recordId, updatedData) => {
@@ -241,7 +241,7 @@ export const useProjectStore = create<ProjectState>()(
 
             const newPhaseNumber = updatedPhases.length + 1;
             const newPhaseItem = {
-              id: crypto.randomUUID(),
+              id: safeUUID(),
               name: `فاز ${newPhaseNumber}`,
               description: `شروع شده در تاریخ ${startDate}`,
               isCompleted: false,

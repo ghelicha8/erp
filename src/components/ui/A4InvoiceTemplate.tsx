@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { QrCode, Camera, Send, Globe, Phone, MapPin, Percent } from 'lucide-react';
 import type { Invoice, InvoiceItem } from '../../store/invoiceStore';
 
@@ -30,6 +30,9 @@ export default function A4InvoiceTemplate({ invoice, userSettings }: A4InvoiceTe
   };
 
   const isProforma = invoice.status === 'PROFORMA';
+
+  // 💡 گارد داده‌های قدیمی: اگر فاکتور فیلد پرداخت نداشت، با مقادیر صفر رندر کن تا کرش نکند
+  const pay = invoice.payment || {} as NonNullable<Invoice['payment']>;
 
   // 💡 الگوریتم صفحه‌بندی ثابت و منظم (دقیقاً حداکثر ۱۰ ردیف در هر صفحه)
   const pages = useMemo(() => {
@@ -208,10 +211,10 @@ export default function A4InvoiceTemplate({ invoice, userSettings }: A4InvoiceTe
                     <div className="space-y-2.5">
                       <div className="flex justify-between items-center text-sm">
                         <span className="font-bold text-emerald-600">واریز نقدی / حواله:</span>
-                        <span className="font-black font-mono text-emerald-700" dir="ltr">{formatNum(invoice.payment.cashAmount)} <span className="text-[9px] font-normal">تومان</span></span>
+                        <span className="font-black font-mono text-emerald-700" dir="ltr">{formatNum(pay.cashAmount)} <span className="text-[9px] font-normal">تومان</span></span>
                       </div>
                       
-                      {(invoice.payment.cheques || []).map((cheque, idx) => (
+                      {(pay.cheques || []).map((cheque, idx) => (
                         <div key={idx} className="bg-white border border-slate-200 p-2.5 rounded-xl">
                           <div className="flex justify-between items-center text-sm mb-1.5">
                             <span className="font-bold text-indigo-600">چک ({cheque.bank}):</span>
@@ -227,7 +230,7 @@ export default function A4InvoiceTemplate({ invoice, userSettings }: A4InvoiceTe
 
                       <div className="flex justify-between items-center text-sm pt-2 border-t border-slate-200">
                         <span className="font-black text-rose-600">مانده بدهی (نسیه):</span>
-                        <span className="font-black font-mono text-rose-700" dir="ltr">{formatNum(invoice.payment.debtAmount)} <span className="text-[9px] font-normal">تومان</span></span>
+                        <span className="font-black font-mono text-rose-700" dir="ltr">{formatNum(pay.debtAmount)} <span className="text-[9px] font-normal">تومان</span></span>
                       </div>
                     </div>
                   </div>
