@@ -9,17 +9,33 @@ import moment from 'moment-jalaali';
 import { toast } from 'sonner';
 
 import { useLogisticsStore } from '../../../store/logisticsStore'; 
-import GlassSelect from '../../../components/ui/GlassSelect';
+import { PortalSelect } from '../../../components/ui/SharedLaborUI';
 import VehicleFormModal from './VehicleFormModal';
+import ThreeDTabs from '../../../components/ui/ThreeDTabs';
 
 // مسیر ایمپورت‌ها 
 import VehicleFinanceTab from './VehicleFinanceTab';
+import VehicleRepairTab from './VehicleRepairTab';
+import VehicleRepairModal from './VehicleRepairModal';
+import VehicleInsuranceTab from './VehicleInsuranceTab';
+import VehicleInsuranceModal from './VehicleInsuranceModal';
+import VehicleMiscTab from './VehicleMiscTab';
+import VehicleMiscModal from './VehicleMiscModal';
+import PeriodicServiceTab from './PeriodicServiceTab';
+import PeriodicServiceModal from './PeriodicServiceModal';
+import VehicleDriversTab from './VehicleDriversTab';
+import VehicleDriverModal from './VehicleDriverModal';
+import VehicleFreightTab from './VehicleFreightTab';
+import VehicleAnalyticsTab from './VehicleAnalyticsTab';
+import UniversalTransactionModal from '../../../components/shared/UniversalTransactionModal';
+import { useFinanceStore } from '../../../store/financeStore';
+import { calculateSmartDriverCostForVehicle } from '../../../store/logisticsStore';
 
 // 🚨 مسیر فایل مودال که گفتید حل شده رو اینجا داریم 🚨
 import NewLogisticsModal from "../../projects/components/NewLogisticsModal";
 
-const ExportBuilder = ({ vehicleId, context, onClose }: any) => null;
-const ImportBuilder = ({ vehicleId, context, onClose }: any) => null;
+import ExportBuilder from '../../../components/shared/ExportBuilder';
+import ImportBuilder from '../../../components/shared/ImportBuilder';
 
 const VEHICLE_TABS = [
   { id: 'finance', label: 'تاریخچه مالی', icon: Wallet, color: 'text-emerald-500', activeClass: 'text-emerald-600 dark:text-emerald-400' },
@@ -36,11 +52,45 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
   const vehicle = useLogisticsStore(state => state.vehicles.find(v => v.id === vehicleId)) || { 
     id: vehicleId, name: 'کامیون بنز تک', plate: 'ع ۴۵ - ۱۲۳ ایران ۱۱', photo: '', status: 'ACTIVE' 
   }; 
+  const insurances = useLogisticsStore(state => state.insurances) || [];
+  const repairs = useLogisticsStore(state => state.repairs) || [];
+  const miscExpenses = useLogisticsStore(state => state.miscExpenses) || [];
+  const periodicServices = useLogisticsStore(state => state.periodicServices) || [];
+  const logs = useLogisticsStore(state => state.logs) || [];
 
   const [activeTab, setActiveTab] = useState('finance');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isRepairModalOpen, setIsRepairModalOpen] = useState(false);
+  const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
+  const [isMiscModalOpen, setIsMiscModalOpen] = useState(false);
+  const [isPeriodicModalOpen, setIsPeriodicModalOpen] = useState(false);
+  const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // وضعیت موتور هوشمند تسویه و پرداخت
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentTargetDebtId, setPaymentTargetDebtId] = useState<string | undefined>(undefined);
+  const [paymentInitialAmount, setPaymentInitialAmount] = useState<number | undefined>(undefined);
+
+  // سوئیچ دوحالته چک: REALIZED (وصول‌شده نقدی) یا COMMITTED (تعهدی)
+  const [chequeMode, setChequeMode] = useState<'REALIZED' | 'COMMITTED'>('REALIZED');
+
+  const transactions = useFinanceStore(state => state.transactions) || [];
+
+  // گوش دادن به رویدادهای باز شدن مدال پرداخت از سایر تب‌ها
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { vehicleId: targetVid, targetDebtId, initialAmount } = e.detail || {};
+      if (targetVid === vehicleId) {
+        setPaymentTargetDebtId(targetDebtId);
+        setPaymentInitialAmount(initialAmount);
+        setIsPaymentModalOpen(true);
+      }
+    };
+    document.addEventListener('open-vehicle-payment-modal', handler);
+    return () => document.removeEventListener('open-vehicle-payment-modal', handler);
+  }, [vehicleId]);
 
   const currentYear = moment().jYear();
   const [yearFilter, setYearFilter] = useState('ALL');
@@ -85,10 +135,19 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
         if (activeTab === 'finance') {
           document.dispatchEvent(new CustomEvent('open-new-vehicle-transaction-modal'));
         } else if (activeTab === 'freight') {
-          // 💡 اعمال قفل‌ها هنگام استفاده از دکمه‌های میانبر (Ctrl+N)
           document.dispatchEvent(new CustomEvent('open-new-logistics-modal', {
             detail: { type: 'TRANSPORT', source: 'INTERNAL', vehicleInfo: vehicleId, lockType: true, lockVehicle: true }
           }));
+        } else if (activeTab === 'repair') {
+          setIsRepairModalOpen(true);
+        } else if (activeTab === 'insurance') {
+          setIsInsuranceModalOpen(true);
+        } else if (activeTab === 'incidental') {
+          setIsMiscModalOpen(true);
+        } else if (activeTab === 'maintenance') {
+          setIsPeriodicModalOpen(true);
+        } else if (activeTab === 'drivers') {
+          setIsDriverModalOpen(true);
         } else {
           toast.info(`باز کردن مودال ثبت برای تب: ${activeTab}`);
         }
@@ -99,17 +158,60 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
   }, [activeTab, vehicleId]);
 
   const stats = useMemo(() => {
-    const totalIncome = 125000000;
-    const repairCosts = 15000000;
-    const incidentalCosts = 5000000;
-    const maintenanceCosts = 2000000;
-    const insuranceCosts = 12000000;
+    const isDateMatch = (dStr?: string) => {
+      if (!dStr) return true;
+      if (yearFilter !== 'ALL' && dStr.substring(0, 4) !== yearFilter) return false;
+      if (monthFilter !== 'ALL' && dStr.substring(5, 7) !== monthFilter) return false;
+      return true;
+    };
 
-    const totalCosts = repairCosts + incidentalCosts + maintenanceCosts + insuranceCosts;
+    const vehicleFreightLogs = (logs || []).filter(l => l.type === 'TRANSPORT' && l.vehicleInfo === vehicleId && isDateMatch(l.date));
+    const freightIncome = vehicleFreightLogs.reduce((acc, l) => acc + (l.billedCost || 0), 0);
+
+    const vehicleRepairs = (repairs || []).filter(r => r.vehicleId === vehicleId && isDateMatch(r.date));
+    const repairCosts = vehicleRepairs.reduce((acc, r) => acc + (r.totalCost || 0), 0);
+
+    const vehicleMisc = (miscExpenses || []).filter(m => m.vehicleId === vehicleId && isDateMatch(m.date));
+    const incidentalCosts = vehicleMisc.reduce((acc, m) => acc + (m.amount || 0), 0);
+
+    const vehiclePeriodic = (periodicServices || []).filter(p => p.vehicleId === vehicleId && isDateMatch(p.serviceDate));
+    const maintenanceCosts = vehiclePeriodic.reduce((acc, p) => acc + (p.totalCost || 0), 0);
+
+    const vehicleInsurances = (insurances || []).filter(ins => ins.vehicleId === vehicleId && isDateMatch(ins.startDate));
+    const insuranceCosts = vehicleInsurances.reduce((acc, ins) => acc + (ins.totalAmount || 0), 0);
+
+    const smartDrivers = calculateSmartDriverCostForVehicle(vehicleId);
+    const driverWages = smartDrivers.totalDriverCost;
+
+    // تراکنش‌های مالی خودرو با اعمال دقیق فیلتر دوحالته چک
+    const vehicleTxs = transactions.filter(t => 
+      (t.allocations?.some(a => a.recordType === 'LOGISTICS' && a.recordId === vehicleId) || t.referenceId === vehicleId) &&
+      isDateMatch(t.date)
+    );
+
+    let financeIncome = 0;
+    let financeExpense = 0;
+
+    vehicleTxs.forEach(t => {
+      if (t.type === 'CHEQUE') {
+        const cStatus = t.chequeDetails?.status || 'PENDING';
+        if (cStatus === 'BOUNCED' || cStatus === 'RETURNED') return;
+        if (chequeMode === 'REALIZED' && cStatus !== 'CASHED' && cStatus !== 'EXCHANGED') return;
+      }
+
+      const vAlloc = t.allocations?.find(a => a.recordType === 'LOGISTICS' && a.recordId === vehicleId);
+      const amt = vAlloc?.amount || t.amount;
+
+      if (t.direction === 'IN') financeIncome += amt;
+      else if (t.direction === 'OUT') financeExpense += amt;
+    });
+
+    const totalIncome = freightIncome + financeIncome;
+    const totalCosts = repairCosts + incidentalCosts + maintenanceCosts + insuranceCosts + driverWages + financeExpense;
     const netProfit = totalIncome - totalCosts;
 
-    return { totalIncome, repairCosts, totalCosts, netProfit };
-  }, [yearFilter, monthFilter, weekFilter, vehicleId]);
+    return { totalIncome, repairCosts, totalCosts, netProfit, freightIncome, driverWages };
+  }, [yearFilter, monthFilter, weekFilter, vehicleId, insurances, repairs, miscExpenses, periodicServices, logs, transactions, chequeMode]);
 
   if (!vehicle) return null;
   const isProfitable = stats.netProfit >= 0;
@@ -208,7 +310,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             )}
 
             {activeTab === 'repair' && (
-              <motion.button key="btn-repair" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(244,63,94,0.35)] flex items-center justify-center gap-2.5 relative overflow-hidden border border-rose-400/50">
+              <motion.button key="btn-repair" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setIsRepairModalOpen(true)} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(244,63,94,0.35)] flex items-center justify-center gap-2.5 relative overflow-hidden border border-rose-400/50 cursor-pointer">
                 <motion.div animate={{ rotate: [0, 45, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
                   <Wrench className="w-5 h-5" />
                 </motion.div>
@@ -217,7 +319,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             )}
 
             {activeTab === 'insurance' && (
-              <motion.button key="btn-insure" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(59,130,246,0.35)] flex items-center justify-center gap-2.5 relative overflow-hidden border border-blue-400/50">
+              <motion.button key="btn-insure" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setIsInsuranceModalOpen(true)} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(99,102,241,0.35)] flex items-center justify-center gap-2.5 relative overflow-hidden border border-indigo-400/50 cursor-pointer">
                 <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
                   <ShieldAlert className="w-5 h-5" />
                 </motion.div>
@@ -226,7 +328,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             )}
 
             {activeTab === 'incidental' && (
-              <motion.button key="btn-incidental" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(249,115,22,0.35)] flex items-center justify-center gap-2.5 border border-orange-400/50">
+              <motion.button key="btn-incidental" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setIsMiscModalOpen(true)} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(249,115,22,0.35)] flex items-center justify-center gap-2.5 border border-amber-400/50 cursor-pointer">
                 <motion.div animate={{ rotate: [-10, 10, -10] }} transition={{ repeat: Infinity, duration: 1 }}>
                   <FileText className="w-5 h-5" />
                 </motion.div>
@@ -235,7 +337,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             )}
 
             {activeTab === 'maintenance' && (
-              <motion.button key="btn-maint" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(20,184,166,0.35)] flex items-center justify-center gap-2.5 border border-teal-400/50">
+              <motion.button key="btn-maint" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setIsPeriodicModalOpen(true)} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2.5 border border-emerald-400/50 cursor-pointer">
                 <motion.div animate={{ rotate: [0, 90, 180, 270, 360] }} transition={{ repeat: Infinity, duration: 4, ease: "linear" }}>
                   <Settings className="w-5 h-5" />
                 </motion.div>
@@ -244,7 +346,7 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             )}
 
             {activeTab === 'drivers' && (
-              <motion.button key="btn-drivers" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-400 hover:to-blue-400 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(99,102,241,0.35)] flex items-center justify-center gap-2.5 border border-indigo-400/50">
+              <motion.button key="btn-drivers" initial={{ opacity: 0, scale: 0.9, width: 0 }} animate={{ opacity: 1, scale: 1, width: 'auto' }} exit={{ opacity: 0, scale: 0.9, width: 0 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setIsDriverModalOpen(true)} className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(37,99,235,0.35)] flex items-center justify-center gap-2.5 border border-blue-400/50 cursor-pointer">
                 <motion.div animate={{ scale: [1, 0.8, 1] }} transition={{ repeat: Infinity, duration: 1.2 }}>
                   <Users className="w-5 h-5" />
                 </motion.div>
@@ -265,9 +367,37 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
           </div>
           
           <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full xl:w-auto relative z-[90]">
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="سال" /></div>
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={monthOptions} value={monthFilter} onChange={setMonthFilter} placeholder="ماه" /></div>
-            <div className="w-full md:w-[150px] h-[40px]"><GlassSelect options={weekOptions} value={weekFilter} onChange={setWeekFilter} placeholder="هفته" /></div>
+            {/* کلید دوحالته چک: وصول‌شده در برابر تعهدی */}
+            <div className="flex items-center bg-white/80 dark:bg-slate-800/80 p-1 rounded-2xl h-[40px] border border-slate-200 dark:border-slate-700 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setChequeMode('REALIZED')}
+                className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                  chequeMode === 'REALIZED'
+                    ? 'bg-emerald-500 text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+                title="فقط تراکنش‌های نقدی و چک‌های وصول‌شده"
+              >
+                وصول‌شده (نقدی)
+              </button>
+              <button
+                type="button"
+                onClick={() => setChequeMode('COMMITTED')}
+                className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                  chequeMode === 'COMMITTED'
+                    ? 'bg-amber-500 text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+                title="تعهدات کامل شامل چک‌های در جریان و اسناد معوق"
+              >
+                تعهدی (شامل چک‌های در جریان)
+              </button>
+            </div>
+
+            <div className="w-full md:w-[130px] h-[40px]"><PortalSelect options={yearOptions} value={yearFilter} onChange={setYearFilter} placeholder="سال" searchable={true} /></div>
+            <div className="w-full md:w-[130px] h-[40px]"><PortalSelect options={monthOptions} value={monthFilter} onChange={setMonthFilter} placeholder="ماه" searchable={true} /></div>
+            <div className="w-full md:w-[130px] h-[40px]"><PortalSelect options={weekOptions} value={weekFilter} onChange={setWeekFilter} placeholder="هفته" searchable={true} /></div>
           </div>
         </div>
         
@@ -297,47 +427,46 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
             <div className="text-2xl lg:text-3xl font-black text-rose-600 dark:text-rose-400 text-left font-mono" dir="ltr">{stats.totalCosts.toLocaleString('fa-IR')}</div>
           </div>
 
-          <div className={`bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[2rem] border ${isProfitable ? 'border-indigo-200/50 dark:border-indigo-900/50 shadow-[0_8px_30px_rgba(99,102,241,0.08)]' : 'border-rose-400/50 shadow-[0_8px_30px_rgba(244,63,94,0.15)]'} p-5 flex flex-col justify-between min-h-[120px]`}>
+          <div className={`bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[2rem] border ${
+            isProfitable 
+              ? 'border-emerald-300/60 dark:border-emerald-800/60 shadow-[0_8px_30px_rgba(16,185,129,0.1)]' 
+              : 'border-rose-400/60 dark:border-rose-800/60 shadow-[0_8px_30px_rgba(244,63,94,0.15)]'
+          } p-5 flex flex-col justify-between min-h-[120px]`}>
             <div className="flex justify-between items-center w-full mb-3">
-              <span className={`text-[11px] font-bold ${isProfitable ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                {isProfitable ? 'سود خالص خودرو' : 'زیان خالص خودرو'}
-              </span>
-              <div className={`p-2.5 rounded-xl shadow-inner ${isProfitable ? 'bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-500/20 dark:to-indigo-500/10 text-indigo-600 border border-indigo-200 dark:border-indigo-500/30' : 'bg-gradient-to-br from-rose-100 to-rose-50 dark:from-rose-500/20 dark:to-rose-500/10 text-rose-500 border border-rose-200 dark:border-rose-500/30'}`}>
+              <div>
+                <span className={`text-[11px] font-black ${isProfitable ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  {isProfitable ? 'بستانکار / سودده' : 'بدهکار / زیانده'}
+                </span>
+                <span className="text-[10px] text-slate-400 block font-bold mt-0.5">
+                  {chequeMode === 'REALIZED' ? 'بر مبنای وصولی قطعی' : 'بر مبنای تعهد کل'}
+                </span>
+              </div>
+              <div className={`p-2.5 rounded-xl shadow-inner ${
+                isProfitable 
+                  ? 'bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-500/20 dark:to-emerald-500/10 text-emerald-600 border border-emerald-200 dark:border-emerald-500/30' 
+                  : 'bg-gradient-to-br from-rose-100 to-rose-50 dark:from-rose-500/20 dark:to-rose-500/10 text-rose-500 border border-rose-200 dark:border-rose-500/30'
+              }`}>
                 {isProfitable ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
               </div>
             </div>
-            <div className={`text-2xl lg:text-3xl font-black text-left font-mono ${isProfitable ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`} dir="ltr">{Math.abs(stats.netProfit).toLocaleString('fa-IR')}</div>
+            <div className={`text-2xl lg:text-3xl font-black text-left font-mono ${
+              isProfitable ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+            }`} dir="ltr">
+              {Math.abs(stats.netProfit).toLocaleString('fa-IR')}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* نوار تب‌های متحرک */}
-      <div className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/50 dark:border-slate-700/50 shadow-[0_4px_20px_rgba(0,0,0,0.05)] rounded-[1.5rem] p-2 z-[90] sticky top-[130px] overflow-x-auto glass-scroll flex items-center gap-2 mt-4 transition-all">
-        {VEHICLE_TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-black transition-colors duration-300 shrink-0 ${
-                isActive 
-                  ? 'text-indigo-700 dark:text-indigo-300' 
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-white'
-              }`}
-            >
-              {isActive && (
-                <motion.div 
-                  layoutId="activeTabVehicleIndicator" 
-                  transition={{ type: "tween", ease: "easeInOut", duration: 0.25 }}
-                  className="absolute inset-0 bg-white/90 dark:bg-slate-700/90 backdrop-blur-md rounded-xl border border-white dark:border-slate-500 shadow-[0_6px_12px_rgba(0,0,0,0.08),inset_0_2px_4px_rgba(255,255,255,0.9)] dark:shadow-[0_6px_12px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] z-0" 
-                />
-              )}
-              <Icon className={`w-4 h-4 relative z-10 transition-colors duration-300 ${isActive ? tab.activeClass : tab.color}`} />
-              <span className="relative z-10">{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* نوار تب‌های سه‌بعدی */}
+      <div className="w-full z-[90] sticky top-[130px] mt-4">
+        <ThreeDTabs
+          tabs={VEHICLE_TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          theme="amber"
+          layoutId="activeTabVehicleIndicator"
+        />
       </div>
 
       {/* محتوای تب‌ها */}
@@ -346,6 +475,34 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
           {activeTab === 'finance' ? (
             <motion.div key="tab-finance" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
               <VehicleFinanceTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'freight' ? (
+            <motion.div key="tab-freight" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleFreightTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'repair' ? (
+            <motion.div key="tab-repair" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleRepairTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'insurance' ? (
+            <motion.div key="tab-insurance" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleInsuranceTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'incidental' ? (
+            <motion.div key="tab-incidental" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleMiscTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'maintenance' ? (
+            <motion.div key="tab-maintenance" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <PeriodicServiceTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'drivers' ? (
+            <motion.div key="tab-drivers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleDriversTab vehicleId={vehicleId} />
+            </motion.div>
+          ) : activeTab === 'dashboard' ? (
+            <motion.div key="tab-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="w-full h-full">
+              <VehicleAnalyticsTab vehicleId={vehicleId} />
             </motion.div>
           ) : (
             <motion.div key={`placeholder-${activeTab}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15, ease: "easeOut" }} className="flex flex-col items-center justify-center w-full h-full text-slate-400 py-20">
@@ -360,6 +517,50 @@ export default function VehicleProfile({ vehicleId, onBack }: { vehicleId: strin
       </div>
 
       <VehicleFormModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} editVehicleId={vehicleId} />
+      
+      <VehicleRepairModal
+        isOpen={isRepairModalOpen}
+        onClose={() => setIsRepairModalOpen(false)}
+        defaultVehicleId={vehicleId}
+      />
+
+      <VehicleInsuranceModal
+        isOpen={isInsuranceModalOpen}
+        onClose={() => setIsInsuranceModalOpen(false)}
+        defaultVehicleId={vehicleId}
+      />
+
+      <VehicleMiscModal
+        isOpen={isMiscModalOpen}
+        onClose={() => setIsMiscModalOpen(false)}
+        defaultVehicleId={vehicleId}
+      />
+
+      <PeriodicServiceModal
+        isOpen={isPeriodicModalOpen}
+        onClose={() => setIsPeriodicModalOpen(false)}
+        defaultVehicleId={vehicleId}
+      />
+
+      <VehicleDriverModal
+        isOpen={isDriverModalOpen}
+        onClose={() => setIsDriverModalOpen(false)}
+        defaultVehicleId={vehicleId}
+      />
+
+      {/* موتور هوشمند تسویه و پرداخت سراسری خودرو */}
+      <UniversalTransactionModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setPaymentTargetDebtId(undefined);
+          setPaymentInitialAmount(undefined);
+        }}
+        context="VEHICLE"
+        vehicleId={vehicleId}
+        initialDebtId={paymentTargetDebtId}
+        initialAmount={paymentInitialAmount}
+      />
       
       <AnimatePresence>
         {isExportModalOpen && <ExportBuilder vehicleId={vehicleId} context="VEHICLE" onClose={() => setIsExportModalOpen(false)} />}

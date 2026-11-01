@@ -6,7 +6,8 @@ import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, CalendarDays, Wallet, Building2, Calculator, 
-  CheckCircle2, AlertCircle, FileText, UserCircle, Target
+  CheckCircle2, AlertCircle, FileText, UserCircle, Target,
+  ShieldCheck, Percent
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
@@ -15,6 +16,7 @@ import { useLaborStore } from '../../../store/laborStore';
 import { useClientStore } from '../../../store/clientStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import type { LaborMonthlyContract } from '../../../store/laborStore';
+import { generateUUID } from '../../../core/utils/uuid';
 
 import { GlassScrollStyles, PortalSelect } from '../../../components/ui/SharedLaborUI';
 // 💡 اضافه کردن تقویم اصلی و قدرتمند
@@ -50,6 +52,8 @@ const monthlySchema = z.object({
   endDate: z.string().regex(/^[1-4]\d{3}\/(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])$/, 'فرمت 140X/XX/XX'),
   internalMonthlyWage: z.string().min(1, 'مبلغ نیروی کار الزامی است'),
   billedMonthlyWage: z.string().optional(),
+  employeeInsuranceRate: z.coerce.number().min(0, 'حداقل ۰٪').max(100, 'حداکثر ۱۰۰٪').default(7),
+  employerInsuranceRate: z.coerce.number().min(0, 'حداقل ۰٪').max(100, 'حداکثر ۱۰۰٪').default(23),
 }).superRefine((data, ctx) => {
   if (data.targetType === 'CLIENT' && !data.clientId) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'انتخاب کارفرما الزامی است', path: ['clientId'] });
@@ -76,16 +80,18 @@ export default function LaborMonthlyModal({ isOpen, onClose, workerId }: LaborMo
   const worker = workers.find(w => w.id === workerId);
 
   const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm<MonthlyFormValues>({
-    resolver: zodResolver(monthlySchema),
+    resolver: zodResolver(monthlySchema as any),
     defaultValues: {
       title: 'قرارداد ماهانه جدید',
       targetType: 'US', 
       clientId: '',
       projectId: '',
-      startDate: moment().format('jYYYY/jMM/01'), 
-      endDate: moment().endOf('jMonth').format('jYYYY/jMM/jDD'), 
+      startDate: (moment as any)().format('jYYYY/jMM/01'), 
+      endDate: (moment as any)().endOf('jMonth').format('jYYYY/jMM/jDD'), 
       internalMonthlyWage: '',
       billedMonthlyWage: '',
+      employeeInsuranceRate: worker?.defaultEmployeeInsuranceRate ?? 7,
+      employerInsuranceRate: worker?.defaultEmployerInsuranceRate ?? 23,
     }
   });
 
@@ -124,7 +130,7 @@ export default function LaborMonthlyModal({ isOpen, onClose, workerId }: LaborMo
     }
 
     const newContract: LaborMonthlyContract = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       title: data.title,
       projectId: finalProjectId,
       clientId: finalClientId,
@@ -133,6 +139,8 @@ export default function LaborMonthlyModal({ isOpen, onClose, workerId }: LaborMo
       internalMonthlyWage: parseAmount(data.internalMonthlyWage),
       billedMonthlyWage: finalBilledWage,
       isActive: true,
+      employeeInsuranceRate: Number(data.employeeInsuranceRate) || 7,
+      employerInsuranceRate: Number(data.employerInsuranceRate) || 23,
     };
 
     const updatedContracts = [...(worker.activeContracts || []), newContract];
@@ -288,6 +296,88 @@ export default function LaborMonthlyModal({ isOpen, onClose, workerId }: LaborMo
                 <span className={`text-sm font-black font-mono tracking-widest ${expectedArbitrage > 0 ? 'text-emerald-500' : 'text-slate-400'}`} dir="ltr">{expectedArbitrage > 0 ? formatAmount(expectedArbitrage) : '0'} <span className="text-[9px]">تومان</span></span>
               </div>
             )}
+
+            {/* 💡 بخش تنظیمات و تفکیک بیمه تأمین اجتماعی */}
+            <div className="bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-3xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-indigo-500" />
+                  <span className="text-sm font-black text-slate-800 dark:text-white">محاسبات و کسورات حق بیمه تأمین اجتماعی</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 bg-slate-200/50 dark:bg-slate-700/50 px-2.5 py-1 rounded-lg">قانون کار و امور پرسنلی</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                    <Percent className="w-3.5 h-3.5 text-rose-500" /> سهم بیمه کارگر (کسر از حقوق)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      {...register('employeeInsuranceRate')}
+                      className="w-full h-[44px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 pl-10 text-sm font-black text-rose-600 dark:text-rose-400 outline-none focus:border-rose-500 transition-all font-mono"
+                    />
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">٪ (پیش‌فرض: ۷)</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                    <Percent className="w-3.5 h-3.5 text-indigo-500" /> سهم بیمه کارفرما (هزینه بالاسری شرکت)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      {...register('employerInsuranceRate')}
+                      className="w-full h-[44px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 pl-10 text-sm font-black text-indigo-600 dark:text-indigo-400 outline-none focus:border-indigo-500 transition-all font-mono"
+                    />
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">٪ (پیش‌فرض: ۲۳)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* کارت پیش‌نمایش آنی تفکیک بیمه */}
+              {parseAmount(watchAll.internalMonthlyWage) > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="p-3.5 rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/40">
+                    <div className="flex items-center justify-between text-xs font-bold text-rose-700 dark:text-rose-400 mb-1">
+                      <span>کسر سهم بیمه کارگر ({watchAll.employeeInsuranceRate ?? 7}٪):</span>
+                      <span className="font-mono font-black" dir="ltr">
+                        - {formatAmount(Math.round(parseAmount(watchAll.internalMonthlyWage) * ((Number(watchAll.employeeInsuranceRate) || 7) / 100)))} تومان
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-black text-slate-800 dark:text-slate-200 pt-1 border-t border-rose-200/40 dark:border-rose-900/30">
+                      <span>دریافتی پایه خالص کارگر:</span>
+                      <span className="font-mono text-emerald-600 dark:text-emerald-400" dir="ltr">
+                        {formatAmount(parseAmount(watchAll.internalMonthlyWage) - Math.round(parseAmount(watchAll.internalMonthlyWage) * ((Number(watchAll.employeeInsuranceRate) || 7) / 100)))} تومان
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40">
+                    <div className="flex items-center justify-between text-xs font-bold text-indigo-700 dark:text-indigo-400 mb-1">
+                      <span>سهم بیمه کارفرما ({watchAll.employerInsuranceRate ?? 23}٪):</span>
+                      <span className="font-mono font-black" dir="ltr">
+                        + {formatAmount(Math.round(parseAmount(watchAll.internalMonthlyWage) * ((Number(watchAll.employerInsuranceRate) || 23) / 100)))} تومان
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-black text-slate-800 dark:text-slate-200 pt-1 border-t border-indigo-200/40 dark:border-indigo-900/30">
+                      <span>بهای تمام‌شده کل برای شرکت:</span>
+                      <span className="font-mono text-indigo-600 dark:text-indigo-400" dir="ltr">
+                        {formatAmount(parseAmount(watchAll.internalMonthlyWage) + Math.round(parseAmount(watchAll.internalMonthlyWage) * ((Number(watchAll.employerInsuranceRate) || 23) / 100)))} تومان
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="pt-2">
               <button type="submit" className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-2xl font-black text-sm shadow-[0_10px_20px_rgba(6,182,212,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2">

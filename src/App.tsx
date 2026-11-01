@@ -8,17 +8,22 @@ import ProjectList from './features/projects/components/ProjectList';
 
 // ایمپورت ماژول‌هایی که ساختیم
 import SettingsPanel from './features/settings/SettingsPanel';
-import InvoiceTab from './features/projects/components/tabs/InvoiceTab';
+import InvoicesDashboard from './features/invoices/components/InvoicesDashboard';
 import AlertsCenter from './features/alerts/AlertsCenter'; 
 import ClientCenter from './features/clients/ClientCenter';
 import MainDashboard from './features/dashboard/MainDashboard'; 
 import LaborDashboard from './features/labor/components/LaborDashboard'; 
 
-// 💡 ایمپورت داشبورد لجستیک
+// 💡 ایمپورت داشبورد لجستیک، انبارداری، خرید و گزارشات
 import LogisticsCenter from './features/logistics/LogisticsCenter';
+import InventoryCenter from './features/inventory/InventoryCenter';
+import ProcurementCenter from './features/procurement/ProcurementCenter';
+import ReportsCenter from './features/reports/ReportsCenter';
+import ContractsCenter from './features/contracts/ContractsCenter';
 
 // ایمپورت استورها
 import { useAlertStore } from './store/useAlertStore'; 
+import GlobalTooltip from './components/ui/GlobalTooltip'; 
 
 // ============================================================================
 // کامپوننت Placeholder برای صفحاتی که در حال توسعه هستند
@@ -86,40 +91,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [scanSystemAlerts]);
 
-  // 💡 اسکریپت سراسری برای تبدیل خودکار تمام تایتل‌های مرورگری (Tooltipها) به راهنمای شیشه‌ایِ انیمیشنی
-  useEffect(() => {
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const titleText = target.getAttribute('title') || target.closest('[title]')?.getAttribute('title');
-      
-      if (titleText) {
-        const element = (target.getAttribute('title') ? target : target.closest('[title]')) as HTMLElement;
-        element.setAttribute('data-tooltip', titleText);
-        element.removeAttribute('title'); // حذف تایتل پیش‌فرض مرورگر
-
-        // ایجاد کادر شیشه‌ای و انیمیشن‌دارِ مدرن
-        const tooltip = document.createElement('div');
-        tooltip.className = 'absolute z-[99999999] px-3.5 py-2 text-xs font-black text-slate-800 dark:text-white bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/60 dark:border-slate-700/60 rounded-xl shadow-2xl pointer-events-none transition-all animate-in fade-in zoom-in-95 duration-200';
-        tooltip.textContent = titleText;
-        document.body.appendChild(tooltip);
-
-        const rect = element.getBoundingClientRect();
-        tooltip.style.top = `${rect.top - 40 + window.scrollY}px`;
-        tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + window.scrollX}px`;
-
-        const removeTooltip = () => {
-          tooltip.remove();
-          element.setAttribute('data-tooltip', titleText);
-          element.removeEventListener('mouseleave', removeTooltip);
-        };
-        element.addEventListener('mouseleave', removeTooltip);
-      }
-    };
-
-    document.addEventListener('mouseover', handleMouseOver);
-    return () => document.removeEventListener('mouseover', handleMouseOver);
-  }, []);
-
   const currentMenuItem = useMemo(() => MENU_ITEMS?.find(m => m.id === activeMenu || m.label === activeMenu), [activeMenu]);
   const currentPageTitle = currentMenuItem ? currentMenuItem.label : 'داشبورد';
 
@@ -130,6 +101,9 @@ export default function App() {
     if (activeMenu === 'داشبورد' || activeMenu === 'dashboard') {
       return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><MainDashboard /></div>;
     }
+    if (activeMenu.includes('گزارش') || activeMenu === 'reports' || currentPageTitle.includes('گزارش')) {
+      return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><ReportsCenter /></div>;
+    }
     if (activeMenu === 'مدیریت پروژه ها' || activeMenu === 'projects') {
       return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><ProjectList /></div>;
     }
@@ -137,7 +111,7 @@ export default function App() {
       return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><SettingsPanel /></div>;
     }
     if (activeMenu === 'صورت‌وضعیت‌ها' || activeMenu === 'invoices') {
-      return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><InvoiceTab projectId="ALL" /></div>;
+      return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><InvoicesDashboard /></div>;
     }
     if (activeMenu === 'مرکز هشدار ها' || activeMenu === 'alerts') {
       return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><AlertsCenter /></div>;
@@ -145,11 +119,20 @@ export default function App() {
     if (activeMenu.includes('کارفرما') || activeMenu === 'customers' || currentPageTitle.includes('کارفرما')) {
       return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><ClientCenter /></div>;
     }
-    if (activeMenu.includes('نیروی کار') || activeMenu === 'labor' || currentPageTitle.includes('نیروی کار')) {
+    if (activeMenu.includes('نیروی کار') || activeMenu === 'labor' || activeMenu === 'hr' || currentPageTitle.includes('نیروی کار')) {
       return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><LaborDashboard /></div>;
     }
-    if (activeMenu.includes('خودرو') || activeMenu.includes('ابزار') || activeMenu.includes('لجستیک') || activeMenu === 'logistics' || currentPageTitle.includes('خودرو')) {
+    if (activeMenu.includes('خودرو') || activeMenu.includes('ابزار') || activeMenu.includes('لجستیک') || activeMenu === 'logistics' || activeMenu === 'equipment' || currentPageTitle.includes('خودرو')) {
       return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><LogisticsCenter /></div>;
+    }
+    if (activeMenu.includes('انبار') || activeMenu === 'inventory' || currentPageTitle.includes('انبار')) {
+      return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><InventoryCenter /></div>;
+    }
+    if (activeMenu.includes('خرید') || activeMenu.includes('تداروکات') || activeMenu === 'procurement' || currentPageTitle.includes('خرید')) {
+      return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><ProcurementCenter /></div>;
+    }
+    if (activeMenu.includes('قرارداد') || activeMenu === 'contracts' || currentPageTitle.includes('قرارداد')) {
+      return <div className="w-full flex flex-col h-full relative animate-in fade-in zoom-in-95 duration-300"><ContractsCenter /></div>;
     }
     
     return <UnderConstruction title={currentPageTitle} />;
@@ -176,6 +159,8 @@ export default function App() {
           error: <AlertCircle className="w-6 h-6 text-rose-500 shrink-0" />,
         }}
       />
+
+      <GlobalTooltip />
 
       <MainLayout
         pageTitle={currentPageTitle}

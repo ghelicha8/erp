@@ -21,6 +21,7 @@ import { useInvoiceStore } from '../../../store/invoiceStore';
 import { usePurchaseStore } from '../../../store/purchaseStore';
 import { useLaborStore } from '../../../store/laborStore';
 import { useLogisticsStore } from '../../../store/logisticsStore';
+import { generateUUID } from '../../../core/utils/uuid';
 
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../components/ui/GlassSelect'; 
@@ -260,7 +261,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
 
   const handleAddAllocation = () => {
     setAllocations([...allocations, { 
-      id: crypto.randomUUID(), 
+      id: generateUUID(), 
       amount: remainderToWallet || 0, 
       allocationType: 'PROJECT', 
       projectId: projectId, 
@@ -301,7 +302,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
       attachments: txAttachments, textReceipt: watch('textReceipt'), description: watch('description')
     };
     const newRecord: ChequeHistory = {
-        id: crypto.randomUUID(), date: new Date().toLocaleDateString('fa-IR'), previousStatus: currentTransaction.chequeDetails.status, 
+        id: generateUUID(), date: new Date().toLocaleDateString('fa-IR'), previousStatus: currentTransaction.chequeDetails.status, 
         newStatus: 'EXCHANGED', description: 'بایگانی جهت تعویض با چک جایگزین', attachments: [], snapshot: snapshotData
     };
     setPendingHistory([newRecord]);
@@ -375,7 +376,7 @@ export default function NewTransactionModal({ projectId, isOpen, onClose, editDa
         toast.success(specialMode === 'EXCHANGING' ? 'چک جایگزین با موفقیت ثبت شد.' : 'تراکنش با موفقیت به‌روزرسانی شد');
 
       } else {
-        const newIdBase = crypto.randomUUID(); 
+        const newIdBase = generateUUID(); 
         
         if (data.type === 'COMBINED') {
           addTransaction({ ...basePayload, id: newIdBase + '-1', amount: rawCash, type: 'CASH', description: (data.description || 'پرداخت ترکیبی') + ' (بخش نقدی)', status: 'COMPLETED' });

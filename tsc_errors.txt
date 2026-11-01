@@ -1,0 +1,421 @@
+src/components/shared/ExportBuilder.tsx(244,47): error TS2339: Property 'plateNumber' does not exist on type 'VehicleProfile'.
+src/components/shared/ExportBuilder.tsx(297,73): error TS2339: Property 'plateNumber' does not exist on type 'VehicleProfile'.
+src/components/shared/ExportBuilder.tsx(447,148): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(452,179): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(459,177): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(467,171): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(469,196): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(470,213): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(471,218): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(478,143): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(497,38): error TS2339: Property 'vehicleId' does not exist on type 'LogisticsLog'.
+src/components/shared/ExportBuilder.tsx(497,94): error TS2339: Property 'startDate' does not exist on type 'LogisticsLog'.
+src/components/shared/ExportBuilder.tsx(503,73): error TS2339: Property 'startDate' does not exist on type 'LogisticsLog'.
+src/components/shared/ExportBuilder.tsx(504,57): error TS2551: Property 'driverName' does not exist on type 'LogisticsLog'. Did you mean 'driverWage'?
+src/components/shared/ExportBuilder.tsx(507,31): error TS2339: Property 'description' does not exist on type 'LogisticsLog'.
+src/components/shared/ExportBuilder.tsx(514,36): error TS2339: Property 'totalPrice' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(523,28): error TS2339: Property 'projectName' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(525,25): error TS2339: Property 'title' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(525,37): error TS2339: Property 'quantity' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(528,23): error TS2339: Property 'status' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(529,43): error TS2339: Property 'description' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(541,37): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<RepairType, string>'.
+src/components/shared/ExportBuilder.tsx(541,58): error TS2339: Property 'type' does not exist on type 'VehicleRepairRecord'.
+src/components/shared/ExportBuilder.tsx(541,69): error TS2339: Property 'type' does not exist on type 'VehicleRepairRecord'.
+src/components/shared/ExportBuilder.tsx(542,23): error TS2339: Property 'mechanicName' does not exist on type 'VehicleRepairRecord'.
+src/components/shared/ExportBuilder.tsx(543,23): error TS2339: Property 'repairStatus' does not exist on type 'VehicleRepairRecord'.
+src/components/shared/ExportBuilder.tsx(544,32): error TS2339: Property 'parts' does not exist on type 'VehicleRepairRecord'.
+src/components/shared/ExportBuilder.tsx(544,43): error TS2339: Property 'parts' does not exist on type 'VehicleRepairRecord'.
+src/components/shared/ExportBuilder.tsx(544,65): error TS2339: Property 'parts' does not exist on type 'VehicleRepairRecord'.
+src/components/shared/ExportBuilder.tsx(550,96): error TS2339: Property 'issueDate' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(551,38): error TS2339: Property 'totalPremium' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(556,23): error TS2339: Property 'issueDate' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(556,47): error TS2339: Property 'expiryDate' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(557,20): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<InsuranceType, string>'.
+src/components/shared/ExportBuilder.tsx(557,46): error TS2339: Property 'type' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(557,59): error TS2339: Property 'type' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(559,25): error TS2339: Property 'paymentType' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(559,63): error TS2339: Property 'paymentType' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(560,79): error TS2339: Property 'description' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(560,105): error TS2339: Property 'description' does not exist on type 'VehicleInsuranceRecord'.
+src/components/shared/ExportBuilder.tsx(566,99): error TS2339: Property 'date' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/components/shared/ExportBuilder.tsx(572,22): error TS2339: Property 'date' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/components/shared/ExportBuilder.tsx(572,39): error TS2339: Property 'items' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/components/shared/ExportBuilder.tsx(573,24): error TS2339: Property 'currentMileage' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/components/shared/ExportBuilder.tsx(573,63): error TS2339: Property 'currentMileage' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/components/shared/ExportBuilder.tsx(575,24): error TS2339: Property 'paymentStatus' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/components/shared/ExportBuilder.tsx(575,68): error TS2339: Property 'paymentStatus' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/components/shared/ExportBuilder.tsx(576,32): error TS2339: Property 'description' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/components/shared/ExportBuilder.tsx(588,36): error TS2339: Property 'category' does not exist on type 'VehicleMiscExpense'.
+src/components/shared/ExportBuilder.tsx(590,23): error TS2339: Property 'paymentStatus' does not exist on type 'VehicleMiscExpense'.
+src/components/shared/ExportBuilder.tsx(590,66): error TS2339: Property 'paymentStatus' does not exist on type 'VehicleMiscExpense'.
+src/components/shared/ExportBuilder.tsx(597,100): error TS2551: Property 'assignDate' does not exist on type 'VehicleDriverAssignment'. Did you mean 'assignedDate'?
+src/components/shared/ExportBuilder.tsx(600,22): error TS2551: Property 'assignDate' does not exist on type 'VehicleDriverAssignment'. Did you mean 'assignedDate'?
+src/components/shared/ExportBuilder.tsx(600,44): error TS2339: Property 'contractType' does not exist on type 'VehicleDriverAssignment'.
+src/components/shared/ExportBuilder.tsx(601,32): error TS2339: Property 'totalEarned' does not exist on type 'VehicleDriverAssignment'.
+src/components/shared/ExportBuilder.tsx(602,24): error TS2339: Property 'paymentStatus' does not exist on type 'VehicleDriverAssignment'.
+src/components/shared/ExportBuilder.tsx(641,80): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(651,162): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/components/shared/ExportBuilder.tsx(656,37): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/components/shared/ExportBuilder.tsx(664,373): error TS2339: Property 'description' does not exist on type 'LogisticsLog'.
+src/components/shared/ExportBuilder.tsx(668,36): error TS2339: Property 'totalPrice' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(677,28): error TS2339: Property 'projectName' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(678,25): error TS2339: Property 'toolName' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(678,41): error TS2339: Property 'title' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ExportBuilder.tsx(681,66): error TS2339: Property 'description' does not exist on type 'ToolRentalRecord'.
+src/components/shared/ImportBuilder.tsx(99,57): error TS2339: Property 'addLaborRecord' does not exist on type 'ProjectState'.
+src/components/shared/ImportBuilder.tsx(100,60): error TS2339: Property 'addPurchaseRecord' does not exist on type 'ProjectState'.
+src/components/shared/ImportBuilder.tsx(101,61): error TS2339: Property 'addLogisticsRecord' does not exist on type 'ProjectState'.
+src/components/shared/ImportBuilder.tsx(381,104): error TS2339: Property 'amount' does not exist on type 'LaborLog'.
+src/components/shared/ImportBuilder.tsx(383,104): error TS2339: Property 'amount' does not exist on type 'PurchaseRecord'.
+src/components/shared/ImportBuilder.tsx(621,42): error TS2339: Property 'plateNumber' does not exist on type 'VehicleProfile'.
+src/components/shared/ImportBuilder.tsx(622,39): error TS2339: Property 'driverName' does not exist on type 'VehicleProfile'.
+src/components/shared/ImportBuilder.tsx(679,15): error TS2353: Object literal may only specify known properties, and 'toolName' does not exist in type 'Omit<ToolRentalRecord, "id" | "createdAt">'.
+src/components/shared/ImportBuilder.tsx(862,103): error TS2339: Property 'plateNumber' does not exist on type 'VehicleProfile'.
+src/components/shared/UniversalTransactionModal.tsx(638,40): error TS2339: Property 'clientId' does not exist on type 'LogisticsLog'.
+src/components/shared/UniversalTransactionModal.tsx(657,99): error TS2339: Property 'toolName' does not exist on type 'ToolRentalRecord'.
+src/components/ui/GlassSelect.tsx(101,23): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/SharedLaborUI.tsx(98,25): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/SharedLaborUI.tsx(139,81): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/ui/SharedLaborUI.tsx(441,19): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/ui/SharedLaborUI.tsx(444,20): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/ui/SharedLaborUI.tsx(451,19): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/ui/SharedLaborUI.tsx(454,20): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/ui/SharedLaborUI.tsx(553,27): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/core/engines/ImportEngine.ts(1241,8): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"LOGISTICS"' have no overlap.
+src/core/engines/ImportEngine.ts(1242,9): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"VEHICLE_FREIGHT"' have no overlap.
+src/core/engines/ImportEngine.ts(1243,9): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"TOOL_RENTAL"' have no overlap.
+src/core/engines/ImportEngine.ts(1244,9): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"LOGISTICS_REPAIR"' have no overlap.
+src/core/engines/ImportEngine.ts(1245,9): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"LOGISTICS_SERVICE"' have no overlap.
+src/core/engines/ImportEngine.ts(1246,9): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"LOGISTICS_INSURANCE"' have no overlap.
+src/core/engines/ImportEngine.ts(1247,9): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"LOGISTICS_MISC"' have no overlap.
+src/core/engines/ImportEngine.ts(1254,8): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"LABOR"' have no overlap.
+src/core/engines/ImportEngine.ts(1254,41): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"LABOR_MONTHLY"' have no overlap.
+src/core/engines/ImportEngine.ts(1254,82): error TS2367: This comparison appears to be unintentional because the types '"UNKNOWN"' and '"LABOR_MISC"' have no overlap.
+src/features/alerts/AlertsCenter.tsx(403,47): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/alerts/AlertsCenter.tsx(416,47): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/AlertsCenter.tsx(13,25): error TS2307: Cannot find module '../../../../components/ui/GlassSelect' or its corresponding type declarations.
+src/features/AlertsCenter.tsx(14,29): error TS2307: Cannot find module '../../../../components/ui/GlassDatePicker' or its corresponding type declarations.
+src/features/clients/ClientCenter.tsx(76,23): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/clients/ClientCenter.tsx(85,23): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/clients/ClientCenter.tsx(268,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/clients/ClientProfile.tsx(178,122): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/clients/ClientProfile.tsx(179,83): error TS2339: Property 'totalWage' does not exist on type 'LaborLog'.
+src/features/clients/ClientProfile.tsx(179,107): error TS2339: Property 'salary' does not exist on type 'LaborLog'.
+src/features/clients/ClientProfile.tsx(179,128): error TS2339: Property 'totalPrice' does not exist on type 'LaborLog'.
+src/features/clients/ClientProfile.tsx(179,153): error TS2339: Property 'amount' does not exist on type 'LaborLog'.
+src/features/clients/ClientProfile.tsx(185,83): error TS2339: Property 'totalPrice' does not exist on type 'PurchaseRecord'.
+src/features/clients/ClientProfile.tsx(185,108): error TS2339: Property 'totalCost' does not exist on type 'PurchaseRecord'.
+src/features/clients/ClientProfile.tsx(185,132): error TS2339: Property 'amount' does not exist on type 'PurchaseRecord'.
+src/features/clients/ClientProfile.tsx(190,71): error TS2339: Property 'clientId' does not exist on type 'LogisticsLog'.
+src/features/clients/ClientProfile.tsx(191,83): error TS2339: Property 'totalCost' does not exist on type 'LogisticsLog'.
+src/features/clients/ClientProfile.tsx(191,107): error TS2339: Property 'fee' does not exist on type 'LogisticsLog'.
+src/features/clients/ClientProfile.tsx(191,125): error TS2339: Property 'amount' does not exist on type 'LogisticsLog'.
+src/features/clients/components/ClientExportModal.tsx(101,164): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/clients/components/ClientExportModal.tsx(102,58): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/clients/components/ClientExportModal.tsx(107,30): error TS2339: Property 'clientId' does not exist on type 'LogisticsLog'.
+src/features/clients/components/ClientFinanceTab.tsx(156,52): error TS2367: This comparison appears to be unintentional because the types '"PROJECT" | "FREELANCE"' and '"WALLET"' have no overlap.
+src/features/clients/components/ClientFinanceTab.tsx(166,35): error TS2339: Property 'projectId' does not exist on type 'Transaction'.
+src/features/clients/components/ClientFinanceTab.tsx(186,31): error TS2339: Property 'phaseId' does not exist on type 'Transaction'.
+src/features/clients/components/ClientFinanceTab.tsx(595,27): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/clients/components/ClientInvoicesTab.tsx(195,18): error TS2367: This comparison appears to be unintentional because the types '"toman" | "rial"' and '"RIAL"' have no overlap.
+src/features/clients/components/ClientInvoicesTab.tsx(390,112): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/clients/components/ClientInvoicesTab.tsx(603,93): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/clients/components/ClientNewLaborModal.tsx(95,48): error TS2339: Property 'addOrUpdateWorker' does not exist on type 'LaborState'.
+src/features/clients/components/ClientNewLaborModal.tsx(103,5): error TS2322: Type 'Resolver<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; shifts: { workType: string; billedUnit: string; billedQuantity: string; billedRate: string; startTime?: string | undefined; ... 5 more ...; isBilledAsFullDay?: boolean | undefined; }[]; ... 6 more ...; incidentDescription?: stri...' is not assignable to type 'Resolver<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; projectId: string; phaseId: string; billedUnit: string; ... 6 more ...; specialtyId?: string | undefined; }[]; ... 5 more ...; incidentDescription?: string | undefined; ...'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; projectId: string; phaseId: string; billedUnit: string; ... 6 more ...; specialtyId?: string | undefined; }[]; ... 5 more ...; incidentDescription?: string | unde...' is not assignable to type 'ResolverOptions<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; shifts: { workType: string; billedUnit: string; billedQuantity: string; billedRate: string; startTime?: string | undefined; ... 5 more ...; isBilledAsFullDay?: boolean | undefined; }[]; ... 6 more ...; incidentDescription...'.
+      Type 'boolean | undefined' is not assignable to type 'boolean'.
+        Type 'undefined' is not assignable to type 'boolean'.
+src/features/clients/components/ClientNewLaborModal.tsx(423,35): error TS2552: Cannot find name 'PaymentType'. Did you mean 'PaymentItem'?
+src/features/clients/components/ClientNewLaborModal.tsx(613,63): error TS2322: Type '`shifts.${number}.clientId`' is not assignable to type '"date" | "workerUnit" | "workerQuantity" | "workerRate" | "overtimeHours" | "overtimeWage" | "bonus" | "penaltyDeduction" | "incidentDescription" | "foodDeduction" | "isCoveredByUsMonthly" | ... 12 more ... | `shifts.${number}.isCoveredByClientMonthly`'.
+src/features/clients/components/ClientNewLaborModal.tsx(783,104): error TS2345: Argument of type 'TFieldValues' is not assignable to parameter of type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; projectId: string; phaseId: string; billedUnit: string; ... 6 more ...; specialtyId?: string | undefined; }[]; ... 5 more ...; incidentDescription?: string | undefined; }'.
+  Type 'FieldValues' is missing the following properties from type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; projectId: string; phaseId: string; billedUnit: string; ... 6 more ...; specialtyId?: string | undefined; }[]; ... 5 more ...; incidentDescription?: string | undefined; }': date, workerUnit, workerQuantity, workerRate, and 2 more.
+src/features/clients/components/ClientProjectsTab.tsx(52,10): error TS2678: Type '"COST_ONLY"' is not comparable to type 'ContractType | undefined'.
+src/features/clients/components/ClientTransactionModal.tsx(139,5): error TS2322: Type 'Resolver<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 9 more ...; status?: string | undefined; }, any, { ...; }>' is not assignable to type 'Resolver<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }, any, { ...; }>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 9 more ...; status?: string | undefined; }>'.
+      Type 'string[] | undefined' is not assignable to type 'string[]'.
+        Type 'undefined' is not assignable to type 'string[]'.
+src/features/clients/components/ClientTransactionModal.tsx(144,23): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(names: readonly ("type" | "date" | "amount" | "issuer" | "sayyadId" | "serialNumber" | "series" | "bank" | "issueDate" | "dueDate" | "status" | "description" | "attachments" | "textReceipt" | "totalAmount" | "cashAmount" | `attachments.${number}`)[], defaultValue?: { ...; } | undefined): readonly (string | ... 1 more ... | undefined)[]', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'readonly ("type" | "date" | "amount" | "issuer" | "sayyadId" | "serialNumber" | "series" | "bank" | "issueDate" | "dueDate" | "status" | "description" | "attachments" | "textReceipt" | "totalAmount" | "cashAmount" | `attachments.${number}`)[]'.
+  Overload 2 of 4, '(name: "type" | "date" | "amount" | "issuer" | "sayyadId" | "serialNumber" | "series" | "bank" | "issueDate" | "dueDate" | "status" | "description" | "attachments" | "textReceipt" | "totalAmount" | "cashAmount" | `attachments.${number}`, defaultValue?: string | ... 1 more ... | undefined): string | ... 1 more ... | undefined', gave the following error.
+    Argument of type '"direction"' is not assignable to parameter of type '"type" | "date" | "amount" | "issuer" | "sayyadId" | "serialNumber" | "series" | "bank" | "issueDate" | "dueDate" | "status" | "description" | "attachments" | "textReceipt" | "totalAmount" | "cashAmount" | `attachments.${number}`'.
+  Overload 3 of 4, '(callback: WatchObserver<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }>, defaultValues?: { ...; } | undefined): Subscription', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'WatchObserver<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }>'.
+src/features/clients/components/ClientTransactionModal.tsx(338,42): error TS2345: Argument of type '(data: TransactionFormValues) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }'.
+      Type 'FieldValues' is missing the following properties from type '{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }': date, type, attachments
+src/features/clients/components/ClientTransactionModal.tsx(411,26): error TS2367: This comparison appears to be unintentional because the types '"PROJECT" | "FREELANCE"' and '"INVOICE"' have no overlap.
+src/features/clients/components/ClientTransactionModal.tsx(553,325): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/clients/components/tabs/ClientAnalyticsTab.tsx(156,90): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/clients/components/tabs/ClientAnalyticsTab.tsx(203,129): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/clients/components/tabs/ClientDocumentsTab.tsx(126,28): error TS2339: Property 'isFromProjectTab' does not exist on type 'ClientDocument'.
+src/features/clients/components/tabs/ClientLaborTab.tsx(915,9): error TS2322: Type '(undoId: string, items: string[]) => void' is not assignable to type '(id: string | number, itemsOrIds?: unknown) => void'.
+  Types of parameters 'undoId' and 'id' are incompatible.
+    Type 'string | number' is not assignable to type 'string'.
+      Type 'number' is not assignable to type 'string'.
+src/features/clients/components/tabs/ClientLogisticsTab.tsx(83,12): error TS2339: Property 'clientId' does not exist on type 'LogisticsLog'.
+src/features/clients/components/tabs/ClientLogisticsTab.tsx(83,28): error TS2339: Property 'clientId' does not exist on type 'LogisticsLog'.
+src/features/clients/components/tabs/ClientPurchasesTab.tsx(183,75): error TS2339: Property 'linkedPurchaseId' does not exist on type 'Transaction'.
+src/features/crm/components/ClientProfile.tsx(241,31): error TS2367: This comparison appears to be unintentional because the types '"RETURNED" | "EXCHANGED" | "CASHED" | "BOUNCED" | undefined' and '"CASH_SETTLED"' have no overlap.
+src/features/invoices/components/InvoicesDashboard.tsx(351,103): error TS2345: Argument of type 'number' is not assignable to parameter of type 'SetStateAction<string>'.
+src/features/io/importers/DataMapperUI.tsx(5,28): error TS1484: 'ImportStrategy' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/labor/components/LaborAnalyticsTab.tsx(168,33): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborAnalyticsTab.tsx(172,65): error TS2339: Property 'totalWage' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborAnalyticsTab.tsx(172,91): error TS2339: Property 'wage' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborAnalyticsTab.tsx(172,112): error TS2339: Property 'salary' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborDashboard.tsx(109,81): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/labor/components/LaborDashboard.tsx(121,79): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/labor/components/LaborDashboard.tsx(314,55): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborDashboard.tsx(331,69): error TS2339: Property 'totalWage' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborDashboard.tsx(331,95): error TS2339: Property 'totalPrice' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborDashboard.tsx(334,41): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborDashboard.tsx(396,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/labor/components/LaborFinanceTab.tsx(198,59): error TS2339: Property 'projectId' does not exist on type 'Transaction'.
+src/features/labor/components/LaborFinanceTab.tsx(206,39): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborFinanceTab.tsx(527,198): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/labor/components/LaborFormModal.tsx(108,17): error TS2345: Argument of type '{ profilePhoto: string; name: string; lastName: string; phone1: string; phone2: string; nationalId: string; nationality: string; insuranceCode: string; specialtyIds: string[]; priceBook: PriceBookEntry[]; ... 9 more ...; status: WorkerStatus; }' is not assignable to parameter of type 'Omit<WorkerProfile, "id" | "isPinned" | "status" | "createdAt" | "updatedAt" | "lastActiveDate" | "trustScore" | "issuedTools" | "documents" | "loans" | "guaranteeRetained">'.
+  Property 'crewLeaderId' is missing in type '{ profilePhoto: string; name: string; lastName: string; phone1: string; phone2: string; nationalId: string; nationality: string; insuranceCode: string; specialtyIds: string[]; priceBook: PriceBookEntry[]; ... 9 more ...; status: WorkerStatus; }' but required in type 'Omit<WorkerProfile, "id" | "isPinned" | "status" | "createdAt" | "updatedAt" | "lastActiveDate" | "trustScore" | "issuedTools" | "documents" | "loans" | "guaranteeRetained">'.
+src/features/labor/components/LaborHSEModal.tsx(296,41): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/labor/components/LaborHSETab.tsx(112,43): error TS2339: Property 'url' does not exist on type 'DocumentRecord'.
+src/features/labor/components/LaborHSETab.tsx(112,60): error TS2339: Property 'url' does not exist on type 'DocumentRecord'.
+src/features/labor/components/LaborHSETab.tsx(308,44): error TS2339: Property 'url' does not exist on type '{ safeId: string; id: string; title: string; fileUrl?: string | undefined; documentType: "CONTRACT" | "ID_CARD" | "PROMISSORY_NOTE" | "CERTIFICATE" | "OTHER"; uploadDate: string; }'.
+src/features/labor/components/LaborHSETab.tsx(310,45): error TS2339: Property 'type' does not exist on type '{ safeId: string; id: string; title: string; fileUrl?: string | undefined; documentType: "CONTRACT" | "ID_CARD" | "PROMISSORY_NOTE" | "CERTIFICATE" | "OTHER"; uploadDate: string; }'.
+src/features/labor/components/LaborHSETab.tsx(311,45): error TS2339: Property 'type' does not exist on type '{ safeId: string; id: string; title: string; fileUrl?: string | undefined; documentType: "CONTRACT" | "ID_CARD" | "PROMISSORY_NOTE" | "CERTIFICATE" | "OTHER"; uploadDate: string; }'.
+src/features/labor/components/LaborMiscTab.tsx(285,40): error TS2552: Cannot find name 'toggleDocSelection'. Did you mean 'toggleSelection'?
+src/features/labor/components/LaborMonthlyTab.tsx(166,12): error TS2345: Argument of type '{ workerId: string; workerName: string; date: any; projectId: string; attendance: "ABSENT" | "UNPAID_LEAVE"; paymentType: "MONTHLY"; workerUnit: "DAY"; workerQuantity: number; workerRate: number; ... 5 more ...; appliedStandardWorkHours: number; }' is not assignable to parameter of type 'Omit<LaborLog, "id" | "internalCost" | "billedCost" | "hiddenProfit" | "recordType"> & { recordType?: LaborRecordType | undefined; }'.
+  Property 'advancePayment' is missing in type '{ workerId: string; workerName: string; date: any; projectId: string; attendance: "ABSENT" | "UNPAID_LEAVE"; paymentType: "MONTHLY"; workerUnit: "DAY"; workerQuantity: number; workerRate: number; ... 5 more ...; appliedStandardWorkHours: number; }' but required in type 'Omit<LaborLog, "id" | "internalCost" | "billedCost" | "hiddenProfit" | "recordType">'.
+src/features/labor/components/LaborPaymentModal.tsx(223,5): error TS2322: Type 'Resolver<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 9 more ...; status?: string | undefined; }, any, { ...; }>' is not assignable to type 'Resolver<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }, any, { ...; }>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 9 more ...; status?: string | undefined; }>'.
+      Type 'string[] | undefined' is not assignable to type 'string[]'.
+        Type 'undefined' is not assignable to type 'string[]'.
+src/features/labor/components/LaborPaymentModal.tsx(387,40): error TS2345: Argument of type '(data: TransactionFormValues) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }'.
+      Type 'FieldValues' is missing the following properties from type '{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }': date, type, attachments
+src/features/labor/components/LaborPaymentModal.tsx(588,322): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/labor/components/LaborPriceBookTab.tsx(282,58): error TS18046: 'items' is of type 'unknown'.
+src/features/labor/components/LaborProfile.tsx(237,51): error TS2339: Property 'startDate' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborProfile.tsx(259,64): error TS2339: Property 'totalWage' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborProfile.tsx(259,90): error TS2339: Property 'totalPrice' does not exist on type 'LaborLog'.
+src/features/labor/components/LaborWorkLogModal.tsx(113,5): error TS2322: Type 'Resolver<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; shifts: { workType: string; billedUnit: string; billedQuantity: string; billedRate: string; startTime?: string | undefined; ... 6 more ...; isBilledAsFullDay?: boolean | undefined; }[]; ... 7 more ...; incidentDescription?: stri...' is not assignable to type 'Resolver<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; },...'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefi...' is not assignable to type 'ResolverOptions<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; shifts: { workType: string; billedUnit: string; billedQuantity: string; billedRate: string; startTime?: string | undefined; ... 6 more ...; isBilledAsFullDay?: boolean | undefined; }[]; ... 7 more ...; incidentDescription...'.
+      Type 'boolean | undefined' is not assignable to type 'boolean'.
+        Type 'undefined' is not assignable to type 'boolean'.
+src/features/labor/components/LaborWorkLogModal.tsx(805,60): error TS2345: Argument of type 'TFieldValues' is not assignable to parameter of type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; }'.
+  Type 'FieldValues' is missing the following properties from type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; }': date, workerUnit, workerQuantity, workerRate, and 3 more.
+src/features/labor/components/LaborWorkLogModal.tsx(815,60): error TS2345: Argument of type 'TFieldValues' is not assignable to parameter of type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; }'.
+  Type 'FieldValues' is missing the following properties from type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; }': date, workerUnit, workerQuantity, workerRate, and 3 more.
+src/features/labor/components/LaborWorkLogsTab.tsx(704,9): error TS2322: Type '(undoId: string, items: string[]) => void' is not assignable to type '(id: string | number, itemsOrIds?: unknown) => void'.
+  Types of parameters 'undoId' and 'id' are incompatible.
+    Type 'string | number' is not assignable to type 'string'.
+      Type 'number' is not assignable to type 'string'.
+src/features/labor/components/UniversalLaborModal.tsx(109,48): error TS2339: Property 'addOrUpdateWorker' does not exist on type 'LaborState'.
+src/features/labor/components/UniversalLaborModal.tsx(125,5): error TS2322: Type 'Resolver<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; shifts: { workType: string; billedUnit: string; billedQuantity: string; billedRate: string; startTime?: string | undefined; ... 6 more ...; isBilledAsFullDay?: boolean | undefined; }[]; ... 7 more ...; incidentDescription?: stri...' is not assignable to type 'Resolver<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; },...'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefi...' is not assignable to type 'ResolverOptions<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; shifts: { workType: string; billedUnit: string; billedQuantity: string; billedRate: string; startTime?: string | undefined; ... 6 more ...; isBilledAsFullDay?: boolean | undefined; }[]; ... 7 more ...; incidentDescription...'.
+      Type 'boolean | undefined' is not assignable to type 'boolean'.
+        Type 'undefined' is not assignable to type 'boolean'.
+src/features/labor/components/UniversalLaborModal.tsx(921,60): error TS2345: Argument of type 'TFieldValues' is not assignable to parameter of type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; }'.
+  Type 'FieldValues' is missing the following properties from type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; }': date, workerUnit, workerQuantity, workerRate, and 3 more.
+src/features/labor/components/UniversalLaborModal.tsx(931,60): error TS2345: Argument of type 'TFieldValues' is not assignable to parameter of type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; }'.
+  Type 'FieldValues' is missing the following properties from type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; clientId: string; projectId: string; phaseId: string; ... 7 more ...; specialtyId?: string | undefined; }[]; ... 6 more ...; incidentDescription?: string | undefined; }': date, workerUnit, workerQuantity, workerRate, and 3 more.
+src/features/logistics/components/ToolsView.tsx(74,92): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/ToolsView.tsx(77,92): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/ToolsView.tsx(80,92): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/ToolsView.tsx(165,48): error TS2339: Property 'inWorkshop' does not exist on type 'VehicleRepairRecord'.
+src/features/logistics/components/ToolsView.tsx(166,50): error TS2339: Property 'isActive' does not exist on type 'ToolRentalRecord'.
+src/features/logistics/components/ToolsView.tsx(172,64): error TS2339: Property 'totalRentalAmount' does not exist on type 'ToolRentalRecord'.
+src/features/logistics/components/ToolsView.tsx(174,47): error TS2339: Property 'cost' does not exist on type 'VehicleRepairRecord'.
+src/features/logistics/components/ToolsView.tsx(175,50): error TS2339: Property 'cost' does not exist on type 'VehicleInsuranceRecord'.
+src/features/logistics/components/ToolsView.tsx(177,48): error TS2339: Property 'cost' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/features/logistics/components/ToolsView.tsx(256,42): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/ToolsView.tsx(293,15): error TS2322: Type '(undoId: string, items: string[]) => void' is not assignable to type '(id: string | number, itemsOrIds?: unknown) => void'.
+  Types of parameters 'undoId' and 'id' are incompatible.
+    Type 'string | number' is not assignable to type 'string'.
+      Type 'number' is not assignable to type 'string'.
+src/features/logistics/components/VehicleFinanceTab.tsx(114,23): error TS2322: Type '"UNPAID"' is not assignable to type 'SettlementStatus | undefined'.
+src/features/logistics/components/VehicleFinanceTab.tsx(121,23): error TS2322: Type '"UNPAID"' is not assignable to type 'SettlementStatus | undefined'.
+src/features/logistics/components/VehicleFinanceTab.tsx(128,23): error TS2322: Type '"UNPAID"' is not assignable to type 'SettlementStatus | undefined'.
+src/features/logistics/components/VehicleFinanceTab.tsx(135,25): error TS2561: Object literal may only specify known properties, but 'operatorPaidAmount' does not exist in type 'Partial<ToolRentalRecord>'. Did you mean to write 'operatorPaid'?
+src/features/logistics/components/VehicleFinanceTab.tsx(135,61): error TS2551: Property 'operatorPaidAmount' does not exist on type 'ToolRentalRecord'. Did you mean 'operatorPaid'?
+src/features/logistics/components/VehicleFinanceTab.tsx(141,25): error TS2322: Type '"UNPAID"' is not assignable to type 'SettlementStatus | undefined'.
+src/features/logistics/components/VehicleFinanceTab.tsx(149,23): error TS2322: Type '"UNPAID"' is not assignable to type 'SettlementStatus | undefined'.
+src/features/logistics/components/VehicleFinanceTab.tsx(314,82): error TS2551: Property 'operatorSettlementStatus' does not exist on type 'ToolRentalRecord'. Did you mean 'settlementStatus'?
+src/features/logistics/components/VehicleFinanceTab.tsx(315,22): error TS2551: Property 'operatorPaidAmount' does not exist on type 'ToolRentalRecord'. Did you mean 'operatorPaid'?
+src/features/logistics/components/VehicleFinanceTab.tsx(323,71): error TS2339: Property 'counterpartyName' does not exist on type 'ToolRentalRecord'.
+src/features/logistics/components/VehicleFinanceTab.tsx(836,140): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/VehiclePaymentModal.tsx(247,82): error TS2551: Property 'operatorSettlementStatus' does not exist on type 'ToolRentalRecord'. Did you mean 'settlementStatus'?
+src/features/logistics/components/VehiclePaymentModal.tsx(248,22): error TS2551: Property 'operatorPaidAmount' does not exist on type 'ToolRentalRecord'. Did you mean 'operatorPaid'?
+src/features/logistics/components/VehiclePaymentModal.tsx(256,71): error TS2339: Property 'counterpartyName' does not exist on type 'ToolRentalRecord'.
+src/features/logistics/components/VehiclePaymentModal.tsx(406,13): error TS2561: Object literal may only specify known properties, but 'operatorPaidAmount' does not exist in type 'Partial<ToolRentalRecord>'. Did you mean to write 'operatorPaid'?
+src/features/logistics/components/VehiclesView.tsx(77,92): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/VehiclesView.tsx(80,92): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/VehiclesView.tsx(83,92): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/VehiclesView.tsx(117,80): error TS2339: Property 'drivers' does not exist on type 'LogisticsState'.
+src/features/logistics/components/VehiclesView.tsx(162,46): error TS2339: Property 'vehicleId' does not exist on type 'LogisticsLog'.
+src/features/logistics/components/VehiclesView.tsx(167,48): error TS2339: Property 'inWorkshop' does not exist on type 'VehicleRepairRecord'.
+src/features/logistics/components/VehiclesView.tsx(173,92): error TS2554: Expected 1-2 arguments, but got 3.
+src/features/logistics/components/VehiclesView.tsx(175,7): error TS2365: Operator '+' cannot be applied to types 'number' and 'SmartDriverCostResult'.
+src/features/logistics/components/VehiclesView.tsx(175,47): error TS2339: Property 'cost' does not exist on type 'VehicleRepairRecord'.
+src/features/logistics/components/VehiclesView.tsx(176,50): error TS2339: Property 'cost' does not exist on type 'VehicleInsuranceRecord'.
+src/features/logistics/components/VehiclesView.tsx(178,48): error TS2339: Property 'cost' does not exist on type 'VehiclePeriodicServiceRecord'.
+src/features/logistics/components/VehiclesView.tsx(262,42): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/logistics/components/VehiclesView.tsx(300,15): error TS2322: Type '(undoId: string, items: string[]) => void' is not assignable to type '(id: string | number, itemsOrIds?: unknown) => void'.
+  Types of parameters 'undoId' and 'id' are incompatible.
+    Type 'string | number' is not assignable to type 'string'.
+      Type 'number' is not assignable to type 'string'.
+src/features/logistics/components/VehicleTransactionModal.tsx(181,55): error TS2339: Property 'laborers' does not exist on type 'LaborState'.
+src/features/logistics/components/VehicleTransactionModal.tsx(193,5): error TS2322: Type 'Resolver<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 9 more ...; status?: string | undefined; }, any, { ...; }>' is not assignable to type 'Resolver<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }, any, { ...; }>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 9 more ...; status?: string | undefined; }>'.
+      Type 'string[] | undefined' is not assignable to type 'string[]'.
+        Type 'undefined' is not assignable to type 'string[]'.
+src/features/logistics/components/VehicleTransactionModal.tsx(466,42): error TS2345: Argument of type '(data: TransactionFormValues) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }'.
+      Type 'FieldValues' is missing the following properties from type '{ date: string; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; description?: string | undefined; ... 8 more ...; status?: string | undefined; }': date, type, attachments
+src/features/logistics/components/VehicleTransactionModal.tsx(589,338): error TS2322: Type 'boolean | "" | undefined' is not assignable to type 'boolean | undefined'.
+  Type '""' is not assignable to type 'boolean | undefined'.
+src/features/logistics/components/VehicleTransactionModal.tsx(682,303): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/procurement/components/SupplierProfileModal.tsx(181,12): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(181,38): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(184,49): error TS2339: Property 'paymentType' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(194,26): error TS2339: Property 'paymentType' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(195,27): error TS2339: Property 'chequeStatus' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(195,59): error TS2339: Property 'status' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(197,12): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(197,38): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(224,14): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(224,40): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(719,38): error TS2339: Property 'paymentType' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(741,44): error TS2339: Property 'chequeStatus' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(743,35): error TS2339: Property 'chequeStatus' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(745,36): error TS2339: Property 'chequeStatus' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(753,44): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(755,42): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(755,81): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(755,119): error TS2339: Property 'chequeData' does not exist on type 'Transaction'.
+src/features/procurement/components/SupplierProfileModal.tsx(1153,9): error TS2322: Type '(undoId: string, itemsToRestore: string[]) => void' is not assignable to type '(id: string | number, itemsOrIds?: unknown) => void'.
+  Types of parameters 'undoId' and 'id' are incompatible.
+    Type 'string | number' is not assignable to type 'string'.
+      Type 'number' is not assignable to type 'string'.
+src/features/procurement/ProcurementCenter.tsx(366,25): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/projects/components/AdvancedPurchaseModal.tsx(94,23): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/projects/components/AdvancedPurchaseModal.tsx(148,61): error TS2339: Property 'addLogisticsRecord' does not exist on type 'ProjectState'.
+src/features/projects/components/AdvancedPurchaseModal.tsx(149,57): error TS2339: Property 'addLaborRecord' does not exist on type 'ProjectState'.
+src/features/projects/components/AdvancedPurchaseModal.tsx(178,19): error TS2339: Property 'model' does not exist on type 'VehicleProfile'.
+src/features/projects/components/AdvancedPurchaseModal.tsx(178,37): error TS2339: Property 'model' does not exist on type 'VehicleProfile'.
+src/features/projects/components/AdvancedPurchaseModal.tsx(189,19): error TS2339: Property 'role' does not exist on type 'WorkerProfile'.
+src/features/projects/components/AdvancedPurchaseModal.tsx(360,69): error TS2304: Cannot find name 'mockVendors'.
+src/features/projects/components/AdvancedPurchaseModal.tsx(360,86): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/features/projects/components/AdvancedPurchaseModal.tsx(409,61): error TS2552: Cannot find name 'mockInternalDrivers'. Did you mean 'internalDrivers'?
+src/features/projects/components/AdvancedPurchaseModal.tsx(410,49): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/features/projects/components/AdvancedPurchaseModal.tsx(412,62): error TS2552: Cannot find name 'mockInternalVehicles'. Did you mean 'internalVehicles'?
+src/features/projects/components/AdvancedPurchaseModal.tsx(413,51): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/features/projects/components/InvoiceBuilder.tsx(540,9): error TS2353: Object literal may only specify known properties, and 'id' does not exist in type 'Omit<Client, "id" | "isPinned" | "creditScore" | "archive">'.
+src/features/projects/components/NewLaborModal.tsx(95,48): error TS2339: Property 'addOrUpdateWorker' does not exist on type 'LaborState'.
+src/features/projects/components/NewLaborModal.tsx(106,5): error TS2322: Type 'Resolver<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; shifts: { workType: string; billedUnit: string; billedQuantity: string; billedRate: string; startTime?: string | undefined; ... 5 more ...; isBilledAsFullDay?: boolean | undefined; }[]; ... 6 more ...; incidentDescription?: stri...' is not assignable to type 'Resolver<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; projectId: string; phaseId: string; billedUnit: string; ... 6 more ...; specialtyId?: string | undefined; }[]; ... 5 more ...; incidentDescription?: string | undefined; ...'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; projectId: string; phaseId: string; billedUnit: string; ... 6 more ...; specialtyId?: string | undefined; }[]; ... 5 more ...; incidentDescription?: string | unde...' is not assignable to type 'ResolverOptions<{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; shifts: { workType: string; billedUnit: string; billedQuantity: string; billedRate: string; startTime?: string | undefined; ... 5 more ...; isBilledAsFullDay?: boolean | undefined; }[]; ... 6 more ...; incidentDescription...'.
+      Type 'boolean | undefined' is not assignable to type 'boolean'.
+        Type 'undefined' is not assignable to type 'boolean'.
+src/features/projects/components/NewLaborModal.tsx(424,35): error TS2552: Cannot find name 'PaymentType'. Did you mean 'PaymentItem'?
+src/features/projects/components/NewLaborModal.tsx(615,63): error TS2322: Type '`shifts.${number}.clientId`' is not assignable to type '"date" | "workerUnit" | "workerQuantity" | "workerRate" | "overtimeHours" | "overtimeWage" | "bonus" | "penaltyDeduction" | "incidentDescription" | "foodDeduction" | "isCoveredByUsMonthly" | ... 12 more ... | `shifts.${number}.isCoveredByClientMonthly`'.
+src/features/projects/components/NewLaborModal.tsx(785,104): error TS2345: Argument of type 'TFieldValues' is not assignable to parameter of type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; projectId: string; phaseId: string; billedUnit: string; ... 6 more ...; specialtyId?: string | undefined; }[]; ... 5 more ...; incidentDescription?: string | undefined; }'.
+  Type 'FieldValues' is missing the following properties from type '{ date: string; workerUnit: string; workerQuantity: string; workerRate: string; isCoveredByUsMonthly: boolean; shifts: { workType: string; projectId: string; phaseId: string; billedUnit: string; ... 6 more ...; specialtyId?: string | undefined; }[]; ... 5 more ...; incidentDescription?: string | undefined; }': date, workerUnit, workerQuantity, workerRate, and 2 more.
+src/features/projects/components/NewLogisticsModal.tsx(243,39): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/features/projects/components/NewLogisticsModal.tsx(243,42): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/features/projects/components/NewMaterialUsageModal.tsx(109,5): error TS2322: Type 'Resolver<{ sourceType: "MARKET" | "INVENTORY"; quantity: string; declaredPrice: string; date: string; materialId?: string | undefined; materialName?: string | undefined; unit?: string | undefined; costPrice?: string | undefined; deductFromInventory?: boolean | undefined; description?: string | undefined; }, any, { ....' is not assignable to type 'Resolver<{ sourceType: "MARKET" | "INVENTORY"; quantity: string; declaredPrice: string; date: string; deductFromInventory: boolean; materialId?: string | undefined; materialName?: string | undefined; unit?: string | undefined; costPrice?: string | undefined; description?: string | undefined; }, any, { ...; }>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ sourceType: "MARKET" | "INVENTORY"; quantity: string; declaredPrice: string; date: string; deductFromInventory: boolean; materialId?: string | undefined; materialName?: string | undefined; unit?: string | undefined; costPrice?: string | undefined; description?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ sourceType: "MARKET" | "INVENTORY"; quantity: string; declaredPrice: string; date: string; materialId?: string | undefined; materialName?: string | undefined; unit?: string | undefined; costPrice?: string | undefined; deductFromInventory?: boolean | undefined; description?: string | undefined; }>'.
+      Type 'boolean | undefined' is not assignable to type 'boolean'.
+        Type 'undefined' is not assignable to type 'boolean'.
+src/features/projects/components/NewMaterialUsageModal.tsx(198,44): error TS2345: Argument of type '(data: MaterialFormValues) => string | number | undefined' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ sourceType: "MARKET" | "INVENTORY"; quantity: string; declaredPrice: string; date: string; deductFromInventory: boolean; materialId?: string | undefined; materialName?: string | undefined; unit?: string | undefined; costPrice?: string | undefined; description?: string | undefined; }'.
+      Type 'FieldValues' is missing the following properties from type '{ sourceType: "MARKET" | "INVENTORY"; quantity: string; declaredPrice: string; date: string; deductFromInventory: boolean; materialId?: string | undefined; materialName?: string | undefined; unit?: string | undefined; costPrice?: string | undefined; description?: string | undefined; }': sourceType, quantity, declaredPrice, date, deductFromInventory
+src/features/projects/components/NewProjectForm.tsx(23,19): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: readonly ["METRI", "CONTRAT", "PERCENTAGE", "COST_ONLY", "CUSTOM"], params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>> | undefined; message?: string | undefined; } | undefined): ZodEnum<...>', gave the following error.
+    Object literal may only specify known properties, and 'required_error' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>> | undefined; message?: string | undefined; }'.
+  Overload 2 of 2, '(entries: Readonly<Record<string, EnumValue>>, params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>> | undefined; message?: string | undefined; } | undefined): ZodEnum<...>', gave the following error.
+    Argument of type 'readonly ["METRI", "CONTRAT", "PERCENTAGE", "COST_ONLY", "CUSTOM"]' is not assignable to parameter of type 'Readonly<Record<string, EnumValue>>'.
+      Index signature for type 'string' is missing in type 'readonly ["METRI", "CONTRAT", "PERCENTAGE", "COST_ONLY", "CUSTOM"]'.
+src/features/projects/components/NewProjectForm.tsx(91,5): error TS2322: Type 'Resolver<{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM" | "COST_ONLY"; startDate: string; profilePhoto?: string | undefined; photos?: string[] | undefined; }, any, { ...; }>' is not assignable to type 'Resolver<{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM" | "COST_ONLY"; startDate: string; photos: string[]; profilePhoto?: string | undefined; }, any, { ...; }>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM" | "COST_ONLY"; startDate: string; photos: string[]; profilePhoto?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM" | "COST_ONLY"; startDate: string; profilePhoto?: string | undefined; photos?: string[] | undefined; }>'.
+      Type 'string[] | undefined' is not assignable to type 'string[]'.
+        Type 'undefined' is not assignable to type 'string[]'.
+src/features/projects/components/NewProjectForm.tsx(159,11): error TS2322: Type '"CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM" | "COST_ONLY"' is not assignable to type 'ContractType'.
+  Type '"COST_ONLY"' is not assignable to type 'ContractType'.
+src/features/projects/components/NewProjectForm.tsx(225,34): error TS2345: Argument of type '(data: ProjectFormValues) => Promise<void>' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM" | "COST_ONLY"; startDate: string; photos: string[]; profilePhoto?: string | undefined; }'.
+      Type 'FieldValues' is missing the following properties from type '{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM" | "COST_ONLY"; startDate: string; photos: string[]; profilePhoto?: string | undefined; }': name, clientId, contractType, startDate, photos
+src/features/projects/components/NewProjectModal.tsx(19,19): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: readonly ["METRI", "CONTRAT", "PERCENTAGE", "CUSTOM"], params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>> | undefined; message?: string | undefined; } | undefined): ZodEnum<...>', gave the following error.
+    Object literal may only specify known properties, and 'required_error' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>> | undefined; message?: string | undefined; }'.
+  Overload 2 of 2, '(entries: Readonly<Record<string, EnumValue>>, params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>> | undefined; message?: string | undefined; } | undefined): ZodEnum<...>', gave the following error.
+    Argument of type 'readonly ["METRI", "CONTRAT", "PERCENTAGE", "CUSTOM"]' is not assignable to parameter of type 'Readonly<Record<string, EnumValue>>'.
+      Index signature for type 'string' is missing in type 'readonly ["METRI", "CONTRAT", "PERCENTAGE", "CUSTOM"]'.
+src/features/projects/components/NewProjectModal.tsx(96,5): error TS2322: Type 'Resolver<{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM"; startDate: string; profilePhoto?: string | undefined; photos?: string[] | undefined; phasePhotos?: string[] | undefined; area?: string | undefined; unitPrice?: string | undefined; fixedPrice?: string | undefined; ...' is not assignable to type 'Resolver<{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM"; startDate: string; photos: string[]; phasePhotos: string[]; profilePhoto?: string | undefined; area?: string | undefined; unitPrice?: string | undefined; fixedPrice?: string | undefined; contractorPercentage?: str...'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM"; startDate: string; photos: string[]; phasePhotos: string[]; profilePhoto?: string | undefined; area?: string | undefined; unitPrice?: string | undefined; fixedPrice?: string | undefined; contractorPercentag...' is not assignable to type 'ResolverOptions<{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM"; startDate: string; profilePhoto?: string | undefined; photos?: string[] | undefined; phasePhotos?: string[] | undefined; area?: string | undefined; unitPrice?: string | undefined; fixedPrice?: string | unde...'.
+      Type 'string[] | undefined' is not assignable to type 'string[]'.
+        Type 'undefined' is not assignable to type 'string[]'.
+src/features/projects/components/NewProjectModal.tsx(340,44): error TS2345: Argument of type '(data: ProjectFormValues) => Promise<void>' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM"; startDate: string; photos: string[]; phasePhotos: string[]; profilePhoto?: string | undefined; area?: string | undefined; unitPrice?: string | undefined; fixedPrice?: string | undefined; contractorPercentage?: string | und...'.
+      Type 'FieldValues' is missing the following properties from type '{ name: string; clientId: string; contractType: "CONTRAT" | "METRI" | "PERCENTAGE" | "CUSTOM"; startDate: string; photos: string[]; phasePhotos: string[]; profilePhoto?: string | undefined; area?: string | undefined; unitPrice?: string | undefined; fixedPrice?: string | undefined; contractorPercentage?: string | und...': name, clientId, contractType, startDate, and 2 more.
+src/features/projects/components/NewTransactionModal.tsx(138,30): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/features/projects/components/NewTransactionModal.tsx(190,5): error TS2322: Type 'Resolver<{ date: string; direction: "IN" | "OUT"; type: "CASH" | "CHEQUE" | "COMBINED"; phaseId?: string | undefined; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; ... 10 more ...; status?: string | undefined; }, any, { ...; }>' is not assignable to type 'Resolver<{ date: string; direction: "IN" | "OUT"; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; phaseId?: string | undefined; amount?: string | undefined; totalAmount?: string | undefined; ... 10 more ...; status?: string | undefined; }, any, { ...; }>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ date: string; direction: "IN" | "OUT"; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; phaseId?: string | undefined; amount?: string | undefined; totalAmount?: string | undefined; ... 10 more ...; status?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ date: string; direction: "IN" | "OUT"; type: "CASH" | "CHEQUE" | "COMBINED"; phaseId?: string | undefined; amount?: string | undefined; totalAmount?: string | undefined; cashAmount?: string | undefined; ... 10 more ...; status?: string | undefined; }>'.
+      Type 'string[] | undefined' is not assignable to type 'string[]'.
+        Type 'undefined' is not assignable to type 'string[]'.
+src/features/projects/components/NewTransactionModal.tsx(210,37): error TS2339: Property 'phaseId' does not exist on type 'Transaction'.
+src/features/projects/components/NewTransactionModal.tsx(446,42): error TS2345: Argument of type '(data: TransactionFormValues) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ date: string; direction: "IN" | "OUT"; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; phaseId?: string | undefined; amount?: string | undefined; totalAmount?: string | undefined; ... 10 more ...; status?: string | undefined; }'.
+      Type 'FieldValues' is missing the following properties from type '{ date: string; direction: "IN" | "OUT"; type: "CASH" | "CHEQUE" | "COMBINED"; attachments: string[]; phaseId?: string | undefined; amount?: string | undefined; totalAmount?: string | undefined; ... 10 more ...; status?: string | undefined; }': date, direction, type, attachments
+src/features/projects/components/NewTransactionModal.tsx(574,26): error TS2367: This comparison appears to be unintentional because the types 'AllocationRecordType | undefined' and '"INVOICE"' have no overlap.
+src/features/projects/components/NewTransactionModal.tsx(610,72): error TS2339: Property 'remainingAmount' does not exist on type '{ value: any; label: string; remainingAmount: number; } | { value: string; label: string; }'.
+  Property 'remainingAmount' does not exist on type '{ value: string; label: string; }'.
+src/features/projects/components/NewTransactionModal.tsx(754,46): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/projects/components/ProjectCard.tsx(33,46): error TS2339: Property 'lastName' does not exist on type 'Client | ClientProfile'.
+  Property 'lastName' does not exist on type 'ClientProfile'.
+src/features/projects/components/ProjectList.tsx(13,33): error TS2304: Cannot find name 'ProjectStatus'.
+src/features/projects/components/ProjectList.tsx(22,39): error TS2304: Cannot find name 'ContractType'.
+src/features/projects/components/tabs/InventoryTab.tsx(627,23): error TS2322: Type 'Dispatch<SetStateAction<"USE" | "WASTE" | "TRANSFER">>' is not assignable to type '(value: string) => void'.
+  Types of parameters 'value' and 'value' are incompatible.
+    Type 'string' is not assignable to type 'SetStateAction<"USE" | "WASTE" | "TRANSFER">'.
+src/features/projects/components/tabs/InvoiceTab.tsx(210,18): error TS2367: This comparison appears to be unintentional because the types '"toman" | "rial"' and '"RIAL"' have no overlap.
+src/features/projects/components/tabs/LaborTab.tsx(745,9): error TS2322: Type '(undoId: string, items: string[]) => void' is not assignable to type '(id: string | number, itemsOrIds?: unknown) => void'.
+  Types of parameters 'undoId' and 'id' are incompatible.
+    Type 'string | number' is not assignable to type 'string'.
+      Type 'number' is not assignable to type 'string'.
+src/features/projects/components/tabs/NotesTab.tsx(271,141): error TS18048: 'block.content' is possibly 'undefined'.
+src/features/projects/components/tabs/NotesTab.tsx(319,32): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/features/projects/components/tabs/NotesTab.tsx(330,36): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/features/projects/components/tabs/PettyCashTab.tsx(275,153): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/features/projects/components/tabs/PettyCashTab.tsx(275,158): error TS7006: Parameter 'curr' implicitly has an 'any' type.
+src/features/projects/components/tabs/PettyCashTab.tsx(328,78): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/features/projects/components/tabs/PettyCashTab.tsx(328,83): error TS7006: Parameter 'curr' implicitly has an 'any' type.
+src/features/projects/components/tabs/PurchasesTab.tsx(167,75): error TS2339: Property 'linkedPurchaseId' does not exist on type 'Transaction'.
+src/features/projects/components/tabs/ReportsTab.tsx(76,132): error TS2339: Property 'phaseId' does not exist on type 'Transaction'.
+src/features/projects/components/tabs/TransactionTab.tsx(137,69): error TS2339: Property 'phaseId' does not exist on type 'Transaction'.
+src/features/reports/ReportsCenter.tsx(61,66): error TS2339: Property 'totalWage' does not exist on type 'LaborLog'.
+src/store/invoiceStore.ts(127,15): error TS2740: Type '{ id: string; invoiceNumber: string; shareToken: string; editHistory: never[]; }' is missing the following properties from type 'Invoice': date, clientName, clientPhone, status, and 6 more.

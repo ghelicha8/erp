@@ -1,22 +1,35 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Wrench, Search, Star, ShieldAlert, LayoutGrid, List as ListIcon, 
-  Plus, ChevronDown, Check, X, Trash2, Activity, Ban, Handshake, PenTool, Hash, Truck
+  Wrench, Star, ShieldAlert, LayoutGrid, List as ListIcon, 
+  Plus, Trash2, Activity, Ban, Handshake, PenTool, Hash, Truck, Edit2, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useLogisticsStore } from '../../../store/logisticsStore';
-import type { ToolProfile } from '../../../store/logisticsStore';
+import type { ToolProfile as ToolProfileType } from '../../../store/logisticsStore';
 import ToolFormModal from './ToolFormModal'; 
+import ToolProfile from './ToolProfile';
 
-// 💡 ایمپورت دقیق سرچ نئونیِ چرخان از کامپوننت‌های مرکزی SharedLaborUI
-import { NeonSearchWrapper } from '../../../components/ui/SharedLaborUI';
+import { AppSearchInput, PortalSelect, FloatingUndoToast } from '../../../components/ui/SharedLaborUI';
 
-const ToolCard = ({ tool, onTogglePin, onDelete, onClick }: { tool: ToolProfile, onTogglePin: (id: string) => void, onDelete: (id: string) => void, onClick: () => void }) => {
-  const mockValue = 8500000; 
-
+const ToolCard = ({ 
+  tool, 
+  computedStatus, 
+  netBalance, 
+  onTogglePin, 
+  onEdit, 
+  onDelete, 
+  onClick 
+}: { 
+  tool: ToolProfileType; 
+  computedStatus: string;
+  netBalance: number;
+  onTogglePin: (id: string) => void; 
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void; 
+  onClick: () => void; 
+}) => {
   return (
     <motion.div 
       layout="position" transition={{ layout: { type: "spring", stiffness: 400, damping: 30, mass: 0.8 }, opacity: { duration: 0.2 } }}
@@ -38,12 +51,12 @@ const ToolCard = ({ tool, onTogglePin, onDelete, onClick }: { tool: ToolProfile,
                 <PenTool className="w-7 h-7" />
               </div>
             )}
-            <div className={`absolute -bottom-2 -right-2 rounded-lg px-1.5 py-0.5 shadow-md border flex items-center gap-0.5 text-[10px] font-black ${tool.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : tool.status === 'REPAIR' ? 'bg-amber-100 text-amber-600 border-amber-200' : tool.status === 'RENTED' ? 'bg-blue-100 text-blue-600 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-              {tool.status === 'ACTIVE' && <Activity className="w-3 h-3" />}
-              {tool.status === 'REPAIR' && <Wrench className="w-3 h-3" />}
-              {tool.status === 'RENTED' && <Handshake className="w-3 h-3" />}
-              {tool.status === 'UNAVAILABLE' && <Ban className="w-3 h-3" />}
-              {tool.status === 'ACTIVE' ? 'آماده کار' : tool.status === 'REPAIR' ? 'تعمیرگاه' : tool.status === 'RENTED' ? 'اجاره رفته' : 'غیرفعال'}
+            <div className={`absolute -bottom-2 -right-2 rounded-lg px-1.5 py-0.5 shadow-md border flex items-center gap-0.5 text-[10px] font-black ${computedStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : computedStatus === 'REPAIR' ? 'bg-amber-100 text-amber-600 border-amber-200' : computedStatus === 'RENTED' ? 'bg-blue-100 text-blue-600 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+              {computedStatus === 'ACTIVE' && <Activity className="w-3 h-3" />}
+              {computedStatus === 'REPAIR' && <Wrench className="w-3 h-3" />}
+              {computedStatus === 'RENTED' && <Handshake className="w-3 h-3" />}
+              {computedStatus === 'UNAVAILABLE' && <Ban className="w-3 h-3" />}
+              {computedStatus === 'ACTIVE' ? 'آماده کار' : computedStatus === 'REPAIR' ? 'تعمیرگاه' : computedStatus === 'RENTED' ? 'اجاره رفته' : 'غیرفعال'}
             </div>
           </div>
           <div className="flex flex-col">
@@ -58,6 +71,9 @@ const ToolCard = ({ tool, onTogglePin, onDelete, onClick }: { tool: ToolProfile,
         </div>
 
         <div className="flex items-center gap-1 z-20">
+          <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.85 }} onClick={(e) => { e.stopPropagation(); onEdit(tool.id); }} title="ویرایش ابزار" className="relative p-2 rounded-xl transition-all text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 cursor-pointer opacity-0 group-hover:opacity-100">
+            <Edit2 className="w-4 h-4 transition-all" />
+          </motion.button>
           <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.85 }} onClick={(e) => { e.stopPropagation(); onDelete(tool.id); }} title="حذف ابزار" className="relative p-2 rounded-xl transition-all text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 cursor-pointer opacity-0 group-hover:opacity-100">
             <Trash2 className="w-5 h-5 transition-all" />
           </motion.button>
@@ -72,13 +88,16 @@ const ToolCard = ({ tool, onTogglePin, onDelete, onClick }: { tool: ToolProfile,
 
       <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-slate-200/60 dark:border-slate-700/50 relative z-10">
         <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-3 rounded-xl border border-white/80 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
-          <span className="text-[10px] font-bold text-slate-500 block mb-1">تاریخ ثبت سیستم</span>
-          <span className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-1">{new Date(tool.createdAt).toLocaleDateString('fa-IR')}</span>
+          <span className="text-[10px] font-bold text-slate-500 block mb-1">تاریخ خرید / ثبت</span>
+          <span className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-1">
+            {tool.purchaseDate || new Date(tool.createdAt).toLocaleDateString('fa-IR')}
+          </span>
         </div>
         <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-3 rounded-xl border border-white/80 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
-          <span className="text-[10px] font-bold text-slate-500 block mb-1">ارزش تقریبی (دفتری)</span>
-          <span className="text-sm font-black text-purple-600 dark:text-purple-400 flex items-center gap-1">
-            {mockValue.toLocaleString('fa-IR')} <span className="text-[10px]">تومان</span>
+          <span className="text-[10px] font-bold text-slate-500 block mb-1">تراز مالی (درآمد - هزینه)</span>
+          <span className={`text-sm font-black flex items-center gap-1 ${netBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            {netBalance >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+            {Math.abs(netBalance).toLocaleString('fa-IR')} <span className="text-[10px]">تومان</span>
           </span>
         </div>
       </div>
@@ -93,13 +112,14 @@ const SORT_OPTIONS = [
 ];
 
 export default function ToolsView({ activeTab, setActiveTab }: any) {
-  const { tools, toggleToolPin, deleteTool } = useLogisticsStore();
+  const { tools, toolRentals, repairs, insurances, miscExpenses, periodicServices, toggleToolPin, deleteTool } = useLogisticsStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingToolId, setEditingToolId] = useState<string | null>(null);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
 
   const [undoItems, setUndoItems] = useState<{ id: string, items: string[], expireAt: number }[]>([]);
@@ -135,6 +155,31 @@ export default function ToolsView({ activeTab, setActiveTab }: any) {
     setPendingDeleteIds(prev => [...prev, ...ids]);
   };
 
+  const getComputedToolMeta = (tool: ToolProfileType) => {
+    const tRepairs = (repairs || []).filter(r => r.vehicleId === tool.id);
+    const tRentals = (toolRentals || []).filter(r => r.toolId === tool.id);
+    const tInsurances = (insurances || []).filter(i => i.vehicleId === tool.id);
+    const tMisc = (miscExpenses || []).filter(m => m.vehicleId === tool.id);
+    const tPeriodic = (periodicServices || []).filter(p => p.vehicleId === tool.id);
+
+    const hasOpenRepair = tRepairs.some(r => r.inWorkshop);
+    const hasActiveRental = tRentals.some(r => r.isActive);
+    let computedStatus: string = tool.status || 'ACTIVE';
+    if (hasOpenRepair) computedStatus = 'REPAIR';
+    else if (hasActiveRental) computedStatus = 'RENTED';
+    else if (computedStatus === 'REPAIR' || computedStatus === 'RENTED') computedStatus = 'ACTIVE';
+
+    const income = tRentals.reduce((sum, r) => sum + (Number(r.totalRentalAmount) || 0), 0);
+    const expenses = 
+      tRepairs.reduce((s, r) => s + (Number(r.cost) || 0), 0) +
+      tInsurances.reduce((s, i) => s + (Number(i.cost) || 0), 0) +
+      tMisc.reduce((s, m) => s + (Number(m.amount) || 0), 0) +
+      tPeriodic.reduce((s, p) => s + (Number(p.cost) || 0), 0) +
+      tRentals.reduce((s, r) => s + (r.hasOperator ? (Number(r.operatorTotalWage) || 0) : 0), 0);
+
+    return { computedStatus, netBalance: income - expenses };
+  };
+
   const processedTools = useMemo(() => {
     let result = [...tools];
     result = result.filter(t => !pendingDeleteIds.includes(t.id));
@@ -162,7 +207,10 @@ export default function ToolsView({ activeTab, setActiveTab }: any) {
       <AnimatePresence mode="wait">
         {selectedToolId ? (
           <motion.div key="profile-view" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }} className="w-full">
-             <div className="p-10 text-center text-slate-500 font-bold">پروفایل ابزارآلات به زودی متصل می‌شود... <button onClick={() => setSelectedToolId(null)} className="text-purple-500 hover:underline">بازگشت</button></div>
+            <ToolProfile 
+              toolId={selectedToolId} 
+              onBack={() => setSelectedToolId(null)} 
+            />
           </motion.div>
         ) : (
           <motion.div key="list-view" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} className="w-full space-y-6 pb-24">
@@ -180,30 +228,24 @@ export default function ToolsView({ activeTab, setActiveTab }: any) {
               </div>
 
               <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-4 w-full">
-                <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[52px]">
-                  <Search className="w-5 h-5 text-slate-400 shrink-0" />
-                  <input placeholder="جستجو نام یا سریال..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 transition-colors placeholder:text-slate-500" />
-                  {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-4 h-4 text-slate-500 dark:text-slate-400" /></button>}
-                </NeonSearchWrapper>
+                <div className="flex-1 w-full xl:w-auto min-w-[250px]">
+                  <AppSearchInput
+                    placeholder="جستجو نام یا سریال..."
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                  />
+                </div>
 
-                <div className="relative shrink-0" ref={dropdownRef}>
-                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="h-[52px] bg-white/40 dark:bg-slate-800/50 rounded-2xl border border-white/60 dark:border-slate-600/50 shadow-[0_8px_16px_rgba(0,0,0,0.03)] backdrop-blur-2xl flex items-center justify-between gap-3 px-5 min-w-[200px] text-sm font-black text-slate-700 dark:text-slate-200 transition-all hover:bg-white/80 dark:hover:bg-slate-700/80 hover:border-purple-300/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] focus:ring-2 focus:ring-purple-500/50">
-                    <span className="truncate">{sortBy.label}</span>
-                    <ChevronDown className={`w-4 h-4 text-purple-500 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  <AnimatePresence>
-                    {isDropdownOpen && (
-                      <motion.div initial={{ opacity: 0, y: 15, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute top-[calc(100%+8px)] w-full bg-white/90 dark:bg-slate-800/95 backdrop-blur-3xl border border-white/80 dark:border-slate-600/50 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[100] flex flex-col py-2">
-                        {SORT_OPTIONS.map((option) => (
-                          <button key={option.id} onClick={() => { setSortBy(option); setIsDropdownOpen(false); }} className={`flex items-center justify-between px-5 py-3.5 text-sm font-bold transition-all relative overflow-hidden group ${sortBy.id === option.id ? 'text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>
-                            <div className={`absolute inset-0 transition-opacity ${sortBy.id === option.id ? 'bg-purple-50 dark:bg-purple-500/10 opacity-100' : 'bg-slate-100 dark:bg-slate-700/50 opacity-0 group-hover:opacity-100'}`} />
-                            <span className="relative z-10">{option.label}</span>
-                            {sortBy.id === option.id && <Check className="w-4 h-4 relative z-10 drop-shadow-sm" />}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                <div className="w-full sm:w-[200px] h-[52px]">
+                  <PortalSelect
+                    options={SORT_OPTIONS}
+                    value={sortBy.id}
+                    onChange={(val) => {
+                      const opt = SORT_OPTIONS.find(o => o.id === val);
+                      if (opt) setSortBy(opt);
+                    }}
+                    placeholder="مرتب‌سازی"
+                  />
                 </div>
 
                 <div className="flex bg-slate-200/50 dark:bg-slate-800/80 p-1.5 rounded-2xl shadow-inner border border-white/50 dark:border-slate-700/50 shrink-0 h-[52px] z-20">
@@ -211,7 +253,7 @@ export default function ToolsView({ activeTab, setActiveTab }: any) {
                   <button onClick={() => setViewMode('LIST')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'LIST' ? 'bg-white dark:bg-slate-700 text-purple-600 shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}><ListIcon className="w-5 h-5" /></button>
                 </div>
 
-                <motion.button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(true); }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="h-[52px] px-7 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-400 hover:to-fuchsia-500 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(168,85,247,0.4)] border-t-2 border-purple-300/50 transition-all shrink-0 w-full md:w-auto relative overflow-hidden group z-20">
+                <motion.button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingToolId(null); setIsModalOpen(true); }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="h-[52px] px-7 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-400 hover:to-fuchsia-500 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(168,85,247,0.4)] border-t-2 border-purple-300/50 transition-all shrink-0 w-full md:w-auto relative overflow-hidden group z-20">
                   <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shine" />
                   <Plus className="w-5 h-5 relative z-10"/> <span className="relative z-10">ابزار جدید</span>
                 </motion.button>
@@ -227,33 +269,44 @@ export default function ToolsView({ activeTab, setActiveTab }: any) {
             ) : (
               <motion.div layout className={`grid gap-6 ${viewMode === 'GRID' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
                 <AnimatePresence>
-                  {processedTools.map(tool => (
-                    <ToolCard key={tool.id} tool={tool} onTogglePin={toggleToolPin} onDelete={(id) => triggerDelete([id])} onClick={() => setSelectedToolId(tool.id)} />
-                  ))}
+                  {processedTools.map(tool => {
+                    const { computedStatus, netBalance } = getComputedToolMeta(tool);
+                    return (
+                      <ToolCard 
+                        key={tool.id} 
+                        tool={tool} 
+                        computedStatus={computedStatus}
+                        netBalance={netBalance}
+                        onTogglePin={toggleToolPin} 
+                        onEdit={(id) => { setEditingToolId(id); setIsModalOpen(true); }}
+                        onDelete={(id) => triggerDelete([id])} 
+                        onClick={() => setSelectedToolId(tool.id)} 
+                      />
+                    );
+                  })}
                 </AnimatePresence>
               </motion.div>
             )}
 
-            {/* پاپ‌آپ حذف تایمردارِ گرافیکی */}
-            {typeof document !== 'undefined' && createPortal(
-              <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[9999999] flex flex-col gap-3 pointer-events-none w-[90%] max-w-sm">
-                <AnimatePresence>
-                  {undoItems.map(undo => (
-                    <motion.div key={undo.id} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl backdrop-saturate-150 border border-white/50 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-[2rem] p-3 flex items-center gap-4 pointer-events-auto" dir="rtl">
-                      <div className="p-2.5 bg-rose-100 dark:bg-rose-500/20 rounded-xl shrink-0"><Trash2 className="w-5 h-5 text-rose-600" /></div>
-                      <div className="flex flex-col flex-1"><span className="text-sm font-black text-slate-800 dark:text-white">{undo.items.length > 1 ? `${undo.items.length} ابزار در حال حذف` : 'ابزار در حال حذف'}</span><span className="text-[10px] font-medium text-slate-500 mt-0.5">تا چند ثانیه دیگر پاک می‌شود...</span></div>
-                      <button onClick={() => { setPendingDeleteIds(prev => prev.filter(id => !undo.items.includes(id))); setUndoItems(prev => prev.filter(u => u.id !== undo.id)); toast.success('حذف لغو شد'); }} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-colors shrink-0 cursor-pointer">انصراف</button>
-                      <motion.div initial={{ width: '100%' }} animate={{ width: '0%' }} transition={{ duration: 5, ease: 'linear' }} className="absolute bottom-0 right-0 h-1 bg-rose-500" style={{ transformOrigin: 'right' }} />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>, document.body
-            )}
+            <FloatingUndoToast 
+              undoItems={undoItems.map(u => ({ id: u.id, items: u.items }))} 
+              onCancel={(undoId: string, items: string[]) => {
+                setPendingDeleteIds(prev => prev.filter(id => !items.includes(id)));
+                setUndoItems(prev => prev.filter(u => u.id !== undoId));
+                toast.success('حذف لغو شد');
+              }} 
+            />
           </motion.div>
         )}
       </AnimatePresence>
       
-      {isModalOpen && <ToolFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && (
+        <ToolFormModal 
+          isOpen={isModalOpen} 
+          onClose={() => { setIsModalOpen(false); setEditingToolId(null); }} 
+          editToolId={editingToolId || undefined}
+        />
+      )}
     </div>
   );
 }

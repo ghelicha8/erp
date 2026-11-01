@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HardHat, Search, X, Layers, Edit, Trash2, CheckCircle, CalendarDays, List, ChevronRight, ChevronLeft, User, ShieldCheck, Users, Banknote, Briefcase, TrendingUp, Copy, BarChart3, Plus, Eye, EyeOff } from 'lucide-react';
+import { HardHat, Search, X, Layers, Edit, Trash2, CheckCircle, CalendarDays, List, ChevronRight, ChevronLeft, User, ShieldCheck, Users, Banknote, Briefcase, TrendingUp, Copy, BarChart3, Plus, Eye, EyeOff, ChevronDown, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
 
@@ -13,8 +13,7 @@ import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../../components/ui/GlassSelect';
 import UniversalLaborModal from '../../../labor/components/UniversalLaborModal';
 
-// 💡 ایمپورت پاپ‌آپ‌های یکپارچه از فایل مشترک
-import { FloatingUndoToast, BulkSelectionToast } from '../../../../components/ui/SharedLaborUI';
+import { FloatingUndoToast, BulkSelectionToast, AppSearchInput } from '../../../../components/ui/SharedLaborUI';
 
 // ==========================================
 // 💡 استایل‌های اسکرول شیشه‌ای
@@ -70,15 +69,6 @@ const useCurrency = () => {
   const formatCurrency = (amount: number) => new Intl.NumberFormat('fa-IR').format(amount);
   return { currency, formatCurrency };
 };
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-inner ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 // 💡 PortalSelect
 const PortalSelect = ({ value, onChange, options, placeholder, className = '', searchable = false }: any) => {
@@ -411,11 +401,13 @@ export default function ClientLaborTab({ clientId }: ClientLaborTabProps) {
       <div className="flex flex-col gap-4 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 shadow-sm rounded-[2rem] p-4 sm:p-5 z-[90] relative w-full">
         
         <div className="flex flex-col lg:flex-row items-center gap-3 w-full border-b border-white/20 dark:border-slate-700/30 pb-4">
-          <NeonSearchWrapper className="flex-1 w-full h-[48px]">
-            <Search className="w-5 h-5 text-slate-400 shrink-0" />
-            <input placeholder="جستجو نام نیرو..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 transition-colors placeholder:text-slate-500" />
-            {searchQuery && <button type="button" onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
-          </NeonSearchWrapper>
+          <div className="flex-1 w-full">
+            <AppSearchInput
+              placeholder="جستجو نام نیرو..."
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+          </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto shrink-0">
             <button type="button" onClick={() => setShowProfitMatrix(true)} className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-black text-xs rounded-xl border border-blue-200 dark:border-blue-800/50 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors whitespace-nowrap shadow-inner">

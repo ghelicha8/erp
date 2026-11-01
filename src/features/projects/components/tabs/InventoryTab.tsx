@@ -18,6 +18,7 @@ import {
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../../components/ui/GlassSelect';
 import { useProjectStore } from '../../store/projectStore';
+import { AppSearchInput } from '../../../../components/ui/SharedLaborUI';
 
 // 💡 اضافه کردن استور خرید برای محاسبه دقیق موجودی انبار از طریق فاکتورهای جدید
 import { usePurchaseStore } from '../../../../store/purchaseStore';
@@ -58,15 +59,6 @@ const AnimatedNumber = ({ value, format = true }: { value: number, format?: bool
   useEffect(() => { const controls = animate(0, value, { duration: 1.5, ease: "easeOut", onUpdate: (v) => count.set(v) }); return controls.stop; }, [value, count]);
   return <motion.span>{displayValue}</motion.span>;
 };
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
   <div className={`relative rounded-xl bg-white/60 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm focus-within:border-indigo-500/60 transition-all duration-300 overflow-hidden flex items-center ${className}`}>
@@ -409,11 +401,12 @@ export default function InventoryTab({ projectId }: InventoryTabProps) {
           <motion.div key="history" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="w-full space-y-4">
             
             <div className="flex flex-wrap items-center gap-4 bg-white/10 dark:bg-slate-900/10 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-[2rem] px-6 py-4 transition-all z-[90] relative">
-              <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]">
-                <Search className="w-5 h-5 text-slate-400 shrink-0" />
-                <input placeholder="جستجوی نام مصالح در کاردکس..." value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 transition-colors placeholder:text-slate-500" />
-                {historySearch && <button onClick={() => setHistorySearch('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
-              </NeonSearchWrapper>
+              <AppSearchInput
+                placeholder="جستجوی نام مصالح در کاردکس..."
+                value={historySearch}
+                onChange={setHistorySearch}
+                className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]"
+              />
 
               <div className="w-full xl:w-px h-px xl:h-8 bg-slate-300 dark:bg-slate-700 hidden xl:block" />
               

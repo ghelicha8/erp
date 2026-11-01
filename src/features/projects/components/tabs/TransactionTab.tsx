@@ -36,16 +36,10 @@ const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: (
   </div>
 );
 
-const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR');
+import { AppSearchInput } from '../../../../components/ui/SharedLaborUI';
+import { formatCurrency, getCurrencyUnit } from '../../../../core/utils/currency';
 
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
+const formatAmount = (val: string | number) => formatCurrency(val, { includeUnit: false });
 
 const ChequeStatusBadge = ({ trx }: { trx: Transaction }) => {
   const status = trx.chequeDetails?.status || 'PENDING';
@@ -181,11 +175,12 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
       
       <div className="flex flex-wrap gap-4 bg-white/10 dark:bg-slate-900/10 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-[2rem] px-4 sm:px-6 py-4 z-[9000] relative overflow-visible">
         
-        <NeonSearchWrapper className="flex-[1_1_250px] h-[46px]">
-          <Search className="w-5 h-5 text-slate-400 shrink-0" />
-          <input placeholder="جستجو در تراکنش‌ها..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 transition-colors placeholder:text-slate-500" />
-          {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
-        </NeonSearchWrapper>
+        <AppSearchInput
+          placeholder="جستجو در تراکنش‌ها..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+          className="flex-[1_1_250px] h-[46px]"
+        />
         
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 flex-[1_1_auto] relative z-[10000] overflow-visible">
           <div className="w-[calc(50%-0.5rem)] sm:w-[110px] shrink-0 h-[46px] relative z-[10004]">
@@ -209,7 +204,7 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
             <tr className="bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
               <th className="w-12 p-5 text-center"><CheckCircle className="w-4 h-4 text-slate-400 mx-auto" /></th>
               <th className="p-5 font-bold text-sm text-slate-800 dark:text-white">شرح و تاریخ</th>
-              <th className="p-5 font-bold text-sm text-slate-800 dark:text-white">مبلغ (تومان)</th>
+              <th className="p-5 font-bold text-sm text-slate-800 dark:text-white">مبلغ ({getCurrencyUnit()})</th>
               <th className="p-5 font-bold text-sm text-slate-800 dark:text-white">نوع / جزئیات پرداخت</th>
               <th className="p-5 font-bold text-sm text-slate-800 dark:text-white text-center">وضعیت</th>
               <th className="p-5 font-bold text-sm text-slate-800 dark:text-white text-center">عملیات</th>
@@ -229,7 +224,7 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
                   <td className="p-5 align-top w-[15%]">
                     <div className="flex flex-col gap-1.5 pt-1">
                       <span className={`font-black text-lg ${trx.direction === 'IN' ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`} dir="ltr">
-                        {trx.amount.toLocaleString('fa-IR')}
+                        {formatAmount(trx.amount)}
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-1 rounded-md w-max ${trx.direction === 'IN' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'}`}>
                         {trx.direction === 'IN' ? 'دریافتی از کارفرما' : 'پرداختی (هزینه)'}
@@ -248,10 +243,10 @@ export default function TransactionTab({ projectId }: { projectId: string }) {
                             {/* 💡 نمایش تمامی فیلدهای چک */}
                             <div className="flex flex-wrap gap-1.5 mt-1">
                               {trx.chequeDetails?.issuer && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">صاحب: {trx.chequeDetails.issuer}</span>}
-                              {trx.chequeDetails?.receiver && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">در وجه: {trx.chequeDetails.receiver}</span>}
+                              {(trx.chequeDetails as any)?.receiver && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">در وجه: {(trx.chequeDetails as any).receiver}</span>}
                               {trx.chequeDetails?.bank && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">بانک: {trx.chequeDetails.bank}</span>}
-                              {trx.chequeDetails?.branch && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">شعبه: {trx.chequeDetails.branch}</span>}
-                              {trx.chequeDetails?.accountNumber && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">حساب: {trx.chequeDetails.accountNumber}</span>}
+                              {(trx.chequeDetails as any)?.branch && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">شعبه: {(trx.chequeDetails as any).branch}</span>}
+                              {(trx.chequeDetails as any)?.accountNumber && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">حساب: {(trx.chequeDetails as any).accountNumber}</span>}
                               {trx.chequeDetails?.sayyadId && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">صیاد: {trx.chequeDetails.sayyadId}</span>}
                               {trx.chequeDetails?.series && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">سری: {trx.chequeDetails.series}</span>}
                               {trx.chequeDetails?.serialNumber && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">سریال: {trx.chequeDetails.serialNumber}</span>}

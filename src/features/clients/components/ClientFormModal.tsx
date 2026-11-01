@@ -14,10 +14,11 @@ type ClientFormType = 'PERSON' | 'COMPANY';
 interface ClientFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  clientToEdit?: Client | null; // 💡 پراپ جدید برای حالت ویرایش
+  clientToEdit?: Client | null;
+  onSuccess?: (client: Client) => void; // 💡 پراپ جدید برای حالت ویرایش
 }
 
-export default function ClientFormModal({ isOpen, onClose, clientToEdit }: ClientFormModalProps) {
+export default function ClientFormModal({ isOpen, onClose, clientToEdit, onSuccess }: ClientFormModalProps) {
   const { addClient, updateClient } = useClientStore();
   
   const [type, setType] = useState<ClientFormType>('PERSON');
@@ -78,9 +79,11 @@ export default function ClientFormModal({ isOpen, onClose, clientToEdit }: Clien
 
     if (clientToEdit) {
       updateClient(clientToEdit.id, clientData);
+      onSuccess?.({ ...clientToEdit, ...clientData });
       toast.success('اطلاعات با موفقیت به‌روزرسانی شد!');
     } else {
-      addClient(clientData);
+      const newClient = addClient(clientData);
+      onSuccess?.(newClient);
       toast.success('شخص جدید با موفقیت ثبت شد!');
     }
     

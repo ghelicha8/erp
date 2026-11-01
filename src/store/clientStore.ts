@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { generateUUID } from '../core/utils/uuid';
 
 export type ClientType = 'PERSON' | 'COMPANY';
 
@@ -40,7 +41,7 @@ export interface Client {
 
 interface ClientState {
   clients: Client[];
-  addClient: (client: Omit<Client, 'id' | 'isPinned' | 'creditScore' | 'archive'>) => void;
+  addClient: (client: Omit<Client, 'id' | 'isPinned' | 'creditScore' | 'archive'>) => Client;
   updateClient: (id: string, data: Partial<Client>) => void;
   deleteClient: (id: string) => void;
   
@@ -72,15 +73,20 @@ export const useClientStore = create<ClientState>()(
         }
       ],
       
-      addClient: (clientData) => set((state) => ({
-        clients: [{
-          ...clientData, 
-          id: crypto.randomUUID(),
-          isPinned: false,
-          creditScore: 5, 
-          archive: []
-        }, ...state.clients]
-      })),
+      addClient: (clientData: any) => {
+        let newClient: any;
+        set((state) => {
+          newClient = {
+            ...clientData,
+            id: clientData.id || generateUUID(),
+            isPinned: false,
+            creditScore: 5,
+            archive: []
+          };
+          return { clients: [newClient, ...state.clients] };
+        });
+        return newClient;
+      },
       
       updateClient: (id, data) => set((state) => ({
         clients: state.clients.map(c => c.id === id ? { ...c, ...data } : c)
@@ -112,7 +118,7 @@ export const useClientStore = create<ClientState>()(
       addClientDocument: (clientId, documentData) => set((state) => ({
         clients: state.clients.map(c => {
           if (c.id === clientId) {
-            const newDoc = { ...documentData, id: crypto.randomUUID() };
+            const newDoc = { ...documentData, id: generateUUID() };
             return { ...c, archive: [...(c.archive || []), newDoc] };
           }
           return c;

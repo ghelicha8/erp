@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, Camera, Save, Activity, Ban, Handshake, Wrench, PenTool, Hash, Calendar, Barcode, ShieldAlert
+  X, Camera, Save, Activity, Ban, Handshake, Wrench, PenTool, Hash, Calendar, Barcode, ShieldAlert, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,6 +28,9 @@ const TOOL_STATUS_OPTIONS = [
 export default function ToolFormModal({ isOpen, onClose, editToolId }: ToolFormModalProps) {
   const { tools, addTool, updateTool } = useLogisticsStore();
   const editData = editToolId ? tools.find(t => t.id === editToolId) : null;
+
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const serialPhotoInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -57,13 +60,45 @@ export default function ToolFormModal({ isOpen, onClose, editToolId }: ToolFormM
         serialNumber: editData.serialNumber || '',
         status: editData.status || 'ACTIVE',
         photo: editData.photo || '',
-        serialPhoto: (editData as any).serialPhoto || '',
-        purchaseDate: (editData as any).purchaseDate || '',
-        warrantyStart: (editData as any).warrantyStart || '',
-        warrantyEnd: (editData as any).warrantyEnd || ''
+        serialPhoto: editData.serialPhoto || '',
+        purchaseDate: editData.purchaseDate || '',
+        warrantyStart: editData.warrantyStart || '',
+        warrantyEnd: editData.warrantyEnd || ''
+      });
+    } else if (isOpen) {
+      setFormData({
+        name: '',
+        serialNumber: '',
+        status: 'ACTIVE',
+        photo: '',
+        serialPhoto: '',
+        purchaseDate: '',
+        warrantyStart: '',
+        warrantyEnd: ''
       });
     }
-  }, [editData]);
+  }, [editData, isOpen]);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'photo' | 'serialPhoto') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('لطفاً یک فایل تصویری معتبر انتخاب کنید.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم تصویر نباید بیشتر از ۵ مگابایت باشد.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setFormData(prev => ({ ...prev, [field]: base64String }));
+      toast.success(field === 'photo' ? 'تصویر دستگاه بارگذاری شد.' : 'تصویر سریال / پلاک بارگذاری شد.');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,11 +143,6 @@ export default function ToolFormModal({ isOpen, onClose, editToolId }: ToolFormM
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-0" 
         />
         
-        {/* 
-          💡 کانتینر تنظیم موقعیت: 
-          pt-[8vh] برای فاصله از بالا
-          pb-[50vh] برای ایجاد فضای خالی عظیم در پایین تا کاربر بتواند اسکرول کند و تقویم را کامل ببیند 
-        */}
         <div className="relative min-h-[120vh] flex flex-col items-center justify-start pt-[8vh] pb-[50vh] px-4 sm:px-6 z-10 pointer-events-none">
           
           {/* کادر اصلی مودال (بازگشت به سایز بزرگ max-w-2xl) */}
@@ -144,25 +174,77 @@ export default function ToolFormModal({ isOpen, onClose, editToolId }: ToolFormM
 
             <form id="tool-form" onSubmit={handleSubmit} className="flex flex-col gap-6 w-full !overflow-visible">
               
-              {/* بخش آپلود تصاویر - سایز استاندارد */}
-              <div className="grid grid-cols-2 gap-4">
-                <button 
-                  type="button" 
-                  onClick={() => toast.info('آپلود عکس دستگاه به زودی فعال می‌شود.')} 
-                  className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-blue-300 dark:border-blue-700/50 bg-blue-50/50 dark:bg-blue-900/20 text-blue-500 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors gap-3"
-                >
-                  <Camera className="w-8 h-8 opacity-80" />
-                  <span className="text-xs font-black">تصویر دستگاه</span>
-                </button>
+              {/* اینپوت‌های مخفی آپلود فایل */}
+              <input
+                type="file"
+                ref={photoInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, 'photo')}
+              />
+              <input
+                type="file"
+                ref={serialPhotoInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, 'serialPhoto')}
+              />
 
-                <button 
-                  type="button" 
-                  onClick={() => toast.info('آپلود عکس سریال به زودی فعال می‌شود.')} 
-                  className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-purple-300 dark:border-purple-700/50 bg-purple-50/50 dark:bg-purple-900/20 text-purple-500 rounded-2xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors gap-3"
-                >
-                  <Barcode className="w-8 h-8 opacity-80" />
-                  <span className="text-xs font-black">تصویر سریال / پلاک</span>
-                </button>
+              {/* بخش آپلود تصاویر - سایز استاندارد با پیش‌نمایش زنده */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative group h-32">
+                  <button 
+                    type="button" 
+                    onClick={() => photoInputRef.current?.click()} 
+                    className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-blue-300 dark:border-blue-700/50 bg-blue-50/50 dark:bg-blue-900/20 text-blue-500 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors gap-3 overflow-hidden cursor-pointer"
+                  >
+                    {formData.photo ? (
+                      <img src={formData.photo} alt="تصویر دستگاه" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Camera className="w-8 h-8 opacity-80" />
+                        <span className="text-xs font-black">تصویر دستگاه</span>
+                      </>
+                    )}
+                  </button>
+                  {formData.photo && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, photo: '' })); }}
+                      className="absolute top-2 left-2 p-1.5 bg-rose-500 text-white rounded-xl shadow-lg hover:bg-rose-600 transition-colors cursor-pointer"
+                      title="حذف تصویر دستگاه"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="relative group h-32">
+                  <button 
+                    type="button" 
+                    onClick={() => serialPhotoInputRef.current?.click()} 
+                    className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-purple-300 dark:border-purple-700/50 bg-purple-50/50 dark:bg-purple-900/20 text-purple-500 rounded-2xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors gap-3 overflow-hidden cursor-pointer"
+                  >
+                    {formData.serialPhoto ? (
+                      <img src={formData.serialPhoto} alt="تصویر سریال" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Barcode className="w-8 h-8 opacity-80" />
+                        <span className="text-xs font-black">تصویر سریال / پلاک</span>
+                      </>
+                    )}
+                  </button>
+                  {formData.serialPhoto && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, serialPhoto: '' })); }}
+                      className="absolute top-2 left-2 p-1.5 bg-rose-500 text-white rounded-xl shadow-lg hover:bg-rose-600 transition-colors cursor-pointer"
+                      title="حذف تصویر سریال"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* گرید فیلدها - بازگشت به ساختار اصلی */}

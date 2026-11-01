@@ -5,9 +5,11 @@ import {
   FileUp, X, CheckCircle, Database, LayoutTemplate, AlertTriangle, 
   CheckSquare, Banknote, HardHat, ShoppingCart, Truck, Sparkles, Shuffle, Ban, Eye,
   Activity, ShieldAlert, Check, FileWarning, Search, Info, UserSquare, FolderGit2,
-  BrainCircuit, CreditCard, Phone, Fingerprint, Receipt, Building2, Layers, ChevronDown, Download, FileSpreadsheet, CalendarClock, Coffee
+  BrainCircuit, CreditCard, Phone, Fingerprint, Receipt, Building2, Layers, ChevronDown, Download, FileSpreadsheet, CalendarClock, Coffee, Copy,
+  Wrench, Handshake, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
+import moment from 'moment-jalaali';
 
 import * as ExcelJS from 'exceljs';
 import Papa from 'papaparse';
@@ -29,11 +31,13 @@ export interface ImportBuilderProps {
   projectId?: string; 
   clientId?: string;
   workerId?: string;
-  context?: 'PROJECT' | 'CLIENT' | 'LABOR' | 'GLOBAL';
+  vehicleId?: string;
+  toolId?: string;
+  context?: 'PROJECT' | 'CLIENT' | 'LABOR' | 'VEHICLE' | 'TOOL' | 'SUPPLIER' | 'INVENTORY' | 'GLOBAL';
   onClose: () => void;
 }
 
-type ImportModule = 'FINANCE' | 'LABOR' | 'PURCHASES' | 'LOGISTICS' | 'MIXED' | 'LABOR_MONTHLY' | 'LABOR_MISC' | null;
+type ImportModule = 'FINANCE' | 'LABOR' | 'PURCHASES' | 'LOGISTICS' | 'MIXED' | 'LABOR_MONTHLY' | 'LABOR_MISC' | 'VEHICLE_FREIGHT' | 'TOOL_RENTALS' | 'LOGISTICS_REPAIRS' | 'LOGISTICS_MISC' | null;
 
 const MODULE_FIELDS = [
   { id: 'date', label: 'تاریخ / زمانبندی' },
@@ -74,7 +78,7 @@ const safeNum = (val: any): number => {
   return Number(String(val).replace(/\D/g, "")) || 0;
 };
 
-export default function ImportBuilder({ projectId, clientId, workerId, context, onClose }: ImportBuilderProps) {
+export default function ImportBuilder({ projectId, clientId, workerId, vehicleId, toolId, context, onClose }: ImportBuilderProps) {
   const allProjects = useProjectStore(state => state.projects) || [];
   const allClients = useClientStore(state => state.clients) || [];
   const allTransactions = useFinanceStore(state => state.transactions) || [];
@@ -85,20 +89,32 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
 
   const allPurchases = usePurchaseStore(state => state.purchases) || [];
   const allLogistics = useLogisticsStore(state => state.logs) || [];
+  const allVehicles = useLogisticsStore(state => state.vehicles) || [];
+  const allTools = useLogisticsStore(state => state.tools) || [];
+  const addLogisticsStoreLog = useLogisticsStore(state => state.addLog);
+  const addToolRental = useLogisticsStore(state => state.addToolRental);
+  const addRepair = useLogisticsStore(state => state.addRepair);
+  const addMiscExpense = useLogisticsStore(state => state.addMiscExpense);
 
   const addLaborRecord = useProjectStore(state => state.addLaborRecord);
   const addPurchaseRecord = useProjectStore(state => state.addPurchaseRecord);
   const addLogisticsRecord = useProjectStore(state => state.addLogisticsRecord);
   const addTransaction = useFinanceStore(state => state.addTransaction);
 
-  const derivedContext = context || (projectId ? 'PROJECT' : clientId ? 'CLIENT' : workerId ? 'LABOR' : 'GLOBAL');
+  const derivedContext = context || (vehicleId ? 'VEHICLE' : toolId ? 'TOOL' : projectId ? 'PROJECT' : clientId ? 'CLIENT' : workerId ? 'LABOR' : 'GLOBAL');
   
   const [localWorkerId, setLocalWorkerId] = useState<string>(workerId || '');
+  const [localVehicleId, setLocalVehicleId] = useState<string>(vehicleId || '');
+  const [localToolId, setLocalToolId] = useState<string>(toolId || '');
   useEffect(() => {
     if (workerId) setLocalWorkerId(workerId);
-  }, [workerId]);
+    if (vehicleId) setLocalVehicleId(vehicleId);
+    if (toolId) setLocalToolId(toolId);
+  }, [workerId, vehicleId, toolId]);
 
   const targetWorker = localWorkerId ? allWorkers.find(w => String(w.id) === String(localWorkerId)) : null;
+  const targetVehicle = localVehicleId ? allVehicles.find(v => String(v.id) === String(localVehicleId)) : null;
+  const targetTool = localToolId ? allTools.find(t => String(t.id) === String(localToolId)) : null;
 
   const targetProject = projectId ? allProjects.find(p => String(p.id) === String(projectId)) : null;
   const targetClient = targetProject?.clientId ? allClients.find(c => String(c.id) === String(targetProject.clientId)) : clientId ? allClients.find(c => String(c.id) === String(clientId)) : null;
@@ -176,6 +192,8 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!activeProjectId && derivedContext === 'PROJECT') return toast.error('ابتدا پروژه مقصد را انتخاب کنید.');
     if (derivedContext === 'LABOR' && !localWorkerId) return toast.error('ابتدا نیروی کار مورد نظر را انتخاب کنید.');
+    if (derivedContext === 'VEHICLE' && !localVehicleId) return toast.error('ابتدا خودروی مورد نظر را انتخاب کنید.');
+    if (derivedContext === 'TOOL' && !localToolId) return toast.error('ابتدا ابزار مورد نظر را انتخاب کنید.');
     
     const file = e.target.files?.[0];
     if (!file) return;
@@ -358,13 +376,13 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
         if (r._targetModule === 'FINANCE') {
           isDuplicate = allTransactions.some(t => t.date === r.date && safeNum(t.amount) === r.amount);
         } else if (r._targetModule === 'LABOR') {
-          isDuplicate = allLabor.some(l => (l.date === r.date || l.startDate === r.date) && (safeNum(l.wage) === r.amount || safeNum(l.amount) === r.amount));
+          isDuplicate = allLabor.some(l => ((l.date || (l as any).startDate) === r.date) && (safeNum((l as any).wage || (l as any).amount || (l as any).internalCost) === r.amount));
         } else if (r._targetModule === 'LABOR_MONTHLY' || r._targetModule === 'LABOR_MISC') {
-          isDuplicate = allLabor.some(l => (l.date === r.date || l.startDate === r.date) && (safeNum(l.amount) === r.amount || safeNum(l.bonus) === r.amount || safeNum(l.foodDeduction) === r.amount));
+          isDuplicate = allLabor.some(l => ((l.date || (l as any).startDate) === r.date) && (safeNum(l.amount) === r.amount || safeNum((l as any).bonus) === r.amount || safeNum((l as any).foodDeduction) === r.amount));
         } else if (r._targetModule === 'PURCHASES') {
-          isDuplicate = allPurchases.some(p => p.date === r.date && (safeNum(p.totalCost) === r.amount || safeNum(p.amount) === r.amount || safeNum(p.billedCost) === r.amount));
+          isDuplicate = allPurchases.some(p => p.date === r.date && (safeNum((p as any).totalCost || p.amount || (p as any).billedCost || (p as any).internalCost) === r.amount));
         } else if (r._targetModule === 'LOGISTICS') {
-          isDuplicate = allLogistics.some(l => l.date === r.date && (safeNum(l.totalCost) === r.amount || safeNum(l.amount) === r.amount || safeNum(l.fee) === r.amount || safeNum(l.billedCost) === r.amount));
+          isDuplicate = allLogistics.some(l => ((l.date || (l as any).startDate) === r.date) && (safeNum((l as any).totalCost || (l as any).amount || (l as any).fee || (l as any).billedCost || (l as any).internalCost) === r.amount));
         }
 
         const newActions = [...r.needsUserAction];
@@ -479,7 +497,7 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
     const dataToImport = parsedRows.filter(r => selectedRowIndexes.includes(r._index));
     
     const missingProjects = dataToImport.filter(r => !r.selectedProjectId && r._targetModule !== 'UNKNOWN' && r._targetModule !== 'IGNORE');
-    if (missingProjects.length > 0 && derivedContext !== 'LABOR') {
+    if (missingProjects.length > 0 && derivedContext !== 'LABOR' && derivedContext !== 'VEHICLE' && derivedContext !== 'TOOL') {
       return toast.error(`تعداد ${missingProjects.length} ردیف، پروژه‌ای برای تخصیص ندارند! لطفاً مشخص کنید.`);
     }
 
@@ -593,6 +611,128 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
           continue; 
         }
 
+        if (derivedContext === 'VEHICLE' && targetVehicle) {
+          const mod = row._targetModule as string;
+          if (mod === 'VEHICLE_FREIGHT' || mod === 'LOGISTICS') {
+            addLogisticsStoreLog({
+              type: 'VEHICLE',
+              source: 'COMPANY',
+              vehicleId: targetVehicle.id,
+              vehicleInfo: targetVehicle.plateNumber || targetVehicle.name,
+              provider: targetVehicle.driverName || targetVehicle.name,
+              title: row.typeDetail || row.title || 'سرویس باربری ایمپورتی',
+              date: baseData.date,
+              projectId: pId || 'FREE',
+              billedCost: billedAmt || row.amount,
+              internalCost: row.amount,
+              paidAmount: 0,
+              paymentStatus: 'UNPAID',
+              description: richNotes
+            } as any);
+          } else if (mod === 'LOGISTICS_REPAIRS') {
+            addRepair({
+              vehicleId: targetVehicle.id,
+              vehicleName: targetVehicle.name,
+              date: baseData.date,
+              type: 'ENGINE_GEARBOX',
+              mechanicName: row.title || 'تعمیرگاه عمومی',
+              description: row.typeDetail || richNotes || 'تعمیر ایمپورتی',
+              totalCost: row.amount,
+              paidAmount: 0,
+              paymentStatus: 'UNPAID',
+              repairStatus: 'COMPLETED'
+            } as any);
+          } else if (mod === 'LOGISTICS_MISC') {
+            addMiscExpense({
+              vehicleId: targetVehicle.id,
+              vehicleName: targetVehicle.name,
+              date: baseData.date,
+              category: row.typeDetail || row.title || 'هزینه جانبی ایمپورتی',
+              amount: row.amount,
+              paidAmount: 0,
+              paymentStatus: 'UNPAID',
+              description: richNotes
+            } as any);
+          } else if (mod === 'FINANCE') {
+            addTransaction({
+              referenceId: targetVehicle.id,
+              type: 'CASH',
+              direction: 'OUT',
+              amount: row.amount,
+              description: row.title || row.typeDetail || 'پرداختی ایمپورتی ناوگان',
+              date: baseData.date,
+              textReceipt: richNotes
+            } as any);
+          } else {
+            errorsCount++;
+            continue;
+          }
+          successCount++;
+          continue;
+        }
+
+        if (derivedContext === 'TOOL' && targetTool) {
+          const mod = row._targetModule as string;
+          if (mod === 'TOOL_RENTALS' || mod === 'LOGISTICS') {
+            addToolRental({
+              toolId: targetTool.id,
+              toolName: targetTool.name,
+              title: row.typeDetail || row.title || 'اجاره ابزار ایمپورتی',
+              projectId: pId || 'FREE',
+              clientName: row.title || 'پروژه / کارفرما',
+              startDate: baseData.date,
+              rentalUnit: 'DAILY',
+              quantity: row.qty || 1,
+              unitPrice: (row.unitPrice && row.unitPrice > 0) ? row.unitPrice : row.amount,
+              totalPrice: row.amount,
+              hasOperator: false,
+              paidAmount: 0,
+              paymentStatus: 'UNPAID',
+              status: 'RETURNED',
+              description: richNotes
+            });
+          } else if (mod === 'LOGISTICS_REPAIRS') {
+            addRepair({
+              vehicleId: targetTool.id,
+              vehicleName: targetTool.name,
+              date: baseData.date,
+              type: 'ENGINE_GEARBOX',
+              mechanicName: row.title || 'تعمیرگاه ابزار',
+              description: row.typeDetail || richNotes || 'تعمیر ایمپورتی ابزار',
+              totalCost: row.amount,
+              paidAmount: 0,
+              paymentStatus: 'UNPAID',
+              repairStatus: 'COMPLETED'
+            } as any);
+          } else if (mod === 'LOGISTICS_MISC') {
+            addMiscExpense({
+              vehicleId: targetTool.id,
+              vehicleName: targetTool.name,
+              date: baseData.date,
+              category: row.typeDetail || row.title || 'هزینه جانبی ایمپورتی ابزار',
+              amount: row.amount,
+              paidAmount: 0,
+              paymentStatus: 'UNPAID',
+              description: richNotes
+            } as any);
+          } else if (mod === 'FINANCE') {
+            addTransaction({
+              referenceId: targetTool.id,
+              type: 'CASH',
+              direction: 'OUT',
+              amount: row.amount,
+              description: row.title || row.typeDetail || 'پرداختی ایمپورتی ابزار',
+              date: baseData.date,
+              textReceipt: richNotes
+            } as any);
+          } else {
+            errorsCount++;
+            continue;
+          }
+          successCount++;
+          continue;
+        }
+
         if (row._targetModule === 'FINANCE') {
           const isOut = String(row.typeDetail).includes('پرداخت') || String(row.typeDetail).toLowerCase() === 'out';
           addTransaction({
@@ -698,9 +838,8 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
                   <Database className="w-4 h-4 text-indigo-500"/> ۱. انتخاب مقصد داده‌ها
                 </h3>
                 
-                <div className={`grid grid-cols-1 md:grid-cols-${derivedContext === 'LABOR' ? '4' : '3'} gap-5`}>
+                <div className={`grid grid-cols-1 md:grid-cols-${(derivedContext === 'LABOR' || derivedContext === 'VEHICLE' || derivedContext === 'TOOL') ? '4' : '3'} gap-5`}>
                   
-                  {/* 💡 هوشمندسازی UI برای نیروی کار (قفل مطلق با پشتیبانی از PortalSelect استاندارد در صورت عدم وجود آیدی) */}
                   {derivedContext === 'LABOR' && (
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-500 flex items-center gap-1"><HardHat className="w-4 h-4"/> نیروی کار (مقصد)</label>
@@ -709,7 +848,37 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
                         value={localWorkerId} 
                         onChange={setLocalWorkerId} 
                         placeholder="-- انتخاب کارگر --" 
-                        disabled={!!workerId} // 💡 اگر آیدی پاس داده شده باشد کاملاً قفل می‌شود
+                        disabled={!!workerId}
+                        searchable={true}
+                        className="!h-[46px] !min-h-[46px]"
+                      />
+                    </div>
+                  )}
+
+                  {derivedContext === 'VEHICLE' && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 flex items-center gap-1"><Truck className="w-4 h-4"/> خودرو / ماشین (مقصد)</label>
+                      <PortalSelect 
+                        options={allVehicles.map(v => ({id: v.id, value: v.id, label: `${v.name} (${v.plateNumber || 'بدون پلاک'})`}))} 
+                        value={localVehicleId} 
+                        onChange={setLocalVehicleId} 
+                        placeholder="-- انتخاب خودرو --" 
+                        disabled={!!vehicleId}
+                        searchable={true}
+                        className="!h-[46px] !min-h-[46px]"
+                      />
+                    </div>
+                  )}
+
+                  {derivedContext === 'TOOL' && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 flex items-center gap-1"><Wrench className="w-4 h-4"/> ابزار / تجهیزات (مقصد)</label>
+                      <PortalSelect 
+                        options={allTools.map(t => ({id: t.id, value: t.id, label: `${t.name} (${t.serialNumber || 'بدون سریال'})`}))} 
+                        value={localToolId} 
+                        onChange={setLocalToolId} 
+                        placeholder="-- انتخاب ابزار --" 
+                        disabled={!!toolId}
                         searchable={true}
                         className="!h-[46px] !min-h-[46px]"
                       />
@@ -755,9 +924,9 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
               <div className={`transition-all duration-500 ${!activeProjectId && derivedContext === 'PROJECT' ? 'opacity-30 pointer-events-none grayscale blur-[1px]' : 'opacity-100'}`}>
                 <h3 className="text-center font-black text-slate-700 dark:text-slate-200 mb-6 text-lg">۲. ساختار فایل اکسل شما چگونه است؟</h3>
                 
-                {/* 💡 ساختار هوشمند برای نیروی کار و سایر بخش‌ها */}
+                {/* 💡 ساختار هوشمند برای نیروی کار، ناوگان، ابزار و سایر بخش‌ها */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                  {derivedContext !== 'LABOR' && (
+                  {derivedContext !== 'LABOR' && derivedContext !== 'VEHICLE' && derivedContext !== 'TOOL' && (
                     <button onClick={() => setSelectedModule('MIXED')} className={`col-span-2 lg:col-span-4 p-5 rounded-3xl border-2 transition-all flex items-center gap-5 ${selectedModule === 'MIXED' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 bg-white dark:bg-slate-800'}`}>
                       <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg"><BrainCircuit className="w-8 h-8 text-white animate-pulse" /></div>
                       <div className="text-right flex-1">
@@ -777,6 +946,26 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
                     </button>
                   )}
 
+                  {derivedContext === 'VEHICLE' && (
+                    <button onClick={() => setSelectedModule('MIXED')} className={`col-span-2 lg:col-span-4 p-5 rounded-3xl border-2 transition-all flex items-center gap-5 ${selectedModule === 'MIXED' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 bg-white dark:bg-slate-800'}`}>
+                      <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg"><BrainCircuit className="w-8 h-8 text-white animate-pulse" /></div>
+                      <div className="text-right flex-1">
+                        <span className="font-black text-lg text-indigo-700 dark:text-indigo-400 block mb-1">فایل ترکیبی ناوگان و هزینه‌ها (تشخیص AI)</span>
+                        <span className="text-xs font-bold text-slate-500 leading-relaxed">این گزینه را انتخاب کنید اگر در اکسل شما بارنامه، تعمیرات، هزینه‌های جانبی و تراکنش‌های مالی به صورت ترکیبی یا چند شیتی است. سیستم همه را هوشمندانه تفکیک می‌کند.</span>
+                      </div>
+                    </button>
+                  )}
+
+                  {derivedContext === 'TOOL' && (
+                    <button onClick={() => setSelectedModule('MIXED')} className={`col-span-2 lg:col-span-4 p-5 rounded-3xl border-2 transition-all flex items-center gap-5 ${selectedModule === 'MIXED' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 bg-white dark:bg-slate-800'}`}>
+                      <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg"><BrainCircuit className="w-8 h-8 text-white animate-pulse" /></div>
+                      <div className="text-right flex-1">
+                        <span className="font-black text-lg text-indigo-700 dark:text-indigo-400 block mb-1">فایل ترکیبی کارکرد، اجاره و هزینه‌های ابزار (تشخیص AI)</span>
+                        <span className="text-xs font-bold text-slate-500 leading-relaxed">این گزینه را انتخاب کنید اگر در اکسل شما اجاره‌ها، اپراتور، تعمیرات و پرداختی‌های ابزار ترکیبی است. سیستم هوشمند همه را تفکیک می‌کند.</span>
+                      </div>
+                    </button>
+                  )}
+
                   {derivedContext === 'LABOR' ? (
                     <>
                       <button onClick={() => setSelectedModule('FINANCE')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'FINANCE' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300 text-slate-600 dark:text-slate-400'}`}>
@@ -790,6 +979,36 @@ export default function ImportBuilder({ projectId, clientId, workerId, context, 
                       </button>
                       <button onClick={() => setSelectedModule('LABOR_MISC')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'LABOR_MISC' ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-pink-300 text-slate-600 dark:text-slate-400'}`}>
                         <Coffee className="w-8 h-8" /><span className="font-black text-sm">متفرقه (رفاهی/کسر)</span>
+                      </button>
+                    </>
+                  ) : derivedContext === 'VEHICLE' ? (
+                    <>
+                      <button onClick={() => setSelectedModule('VEHICLE_FREIGHT')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'VEHICLE_FREIGHT' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-amber-300 text-slate-600 dark:text-slate-400'}`}>
+                        <Truck className="w-8 h-8" /><span className="font-black text-sm">سرویس‌های باربری</span>
+                      </button>
+                      <button onClick={() => setSelectedModule('LOGISTICS_REPAIRS')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'LOGISTICS_REPAIRS' ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20 text-rose-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-rose-300 text-slate-600 dark:text-slate-400'}`}>
+                        <Wrench className="w-8 h-8" /><span className="font-black text-sm">تاریخچه تعمیرات</span>
+                      </button>
+                      <button onClick={() => setSelectedModule('LOGISTICS_MISC')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'LOGISTICS_MISC' ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-orange-300 text-slate-600 dark:text-slate-400'}`}>
+                        <FileText className="w-8 h-8" /><span className="font-black text-sm">هزینه‌های جانبی</span>
+                      </button>
+                      <button onClick={() => setSelectedModule('FINANCE')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'FINANCE' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300 text-slate-600 dark:text-slate-400'}`}>
+                        <Banknote className="w-8 h-8" /><span className="font-black text-sm">پرداختی و تسویه</span>
+                      </button>
+                    </>
+                  ) : derivedContext === 'TOOL' ? (
+                    <>
+                      <button onClick={() => setSelectedModule('TOOL_RENTALS')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'TOOL_RENTALS' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-purple-300 text-slate-600 dark:text-slate-400'}`}>
+                        <Handshake className="w-8 h-8" /><span className="font-black text-sm">تاریخچه اجاره ابزار</span>
+                      </button>
+                      <button onClick={() => setSelectedModule('LOGISTICS_REPAIRS')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'LOGISTICS_REPAIRS' ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20 text-rose-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-rose-300 text-slate-600 dark:text-slate-400'}`}>
+                        <Wrench className="w-8 h-8" /><span className="font-black text-sm">تاریخچه تعمیرات ابزار</span>
+                      </button>
+                      <button onClick={() => setSelectedModule('LOGISTICS_MISC')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'LOGISTICS_MISC' ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-orange-300 text-slate-600 dark:text-slate-400'}`}>
+                        <FileText className="w-8 h-8" /><span className="font-black text-sm">هزینه‌های جانبی</span>
+                      </button>
+                      <button onClick={() => setSelectedModule('FINANCE')} className={`p-5 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 bg-white dark:bg-slate-800 ${selectedModule === 'FINANCE' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 shadow-md' : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300 text-slate-600 dark:text-slate-400'}`}>
+                        <Banknote className="w-8 h-8" /><span className="font-black text-sm">پرداختی و تسویه</span>
                       </button>
                     </>
                   ) : (

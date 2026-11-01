@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import moment from 'moment-jalaali';
+import { generateUUID } from '../core/utils/uuid';
 
 // ==========================================
 // 💡 ENUMS & TYPES
@@ -71,7 +72,34 @@ export interface LaborMonthlyContract {
   internalMonthlyWage: number; 
   billedMonthlyWage: number;   
   isActive: boolean;
+  // 💡 تنظیمات کسورات و سهم بیمه تأمین اجتماعی
+  employeeInsuranceRate?: number; // سهم بیمه کارگر (درصد، پیش‌فرض 7٪)
+  employerInsuranceRate?: number; // سهم بیمه کارفرما (درصد، پیش‌فرض 23٪)
+  settledAt?: string;             // تاریخ تسویه و صدور فیش
+  settledNetPayable?: number;     // مبلغ خالص پرداختی ثبت‌شده
+  settledEmployerCost?: number;   // بهای تمام‌شده نهایی ثبت‌شده شرکت
+  financeTransactionId?: string;  // شناسه سند ثبت‌شده در دفاتر مالی
 }
+
+// 💡 تابع کمکی محاسبه تفکیک بیمه تأمین اجتماعی
+export const calculateInsuranceBreakdown = (
+  grossWage: number,
+  employeeRate: number = 7,
+  employerRate: number = 23
+) => {
+  const employeeShare = Math.round(grossWage * (employeeRate / 100));
+  const employerShare = Math.round(grossWage * (employerRate / 100));
+  const netPayable = grossWage - employeeShare;
+  const totalCompanyCost = grossWage + employerShare;
+  return {
+    employeeRate,
+    employerRate,
+    employeeShare,
+    employerShare,
+    netPayable,
+    totalCompanyCost
+  };
+};
 
 export interface WorkerProfile {
   id: string;
@@ -85,6 +113,8 @@ export interface WorkerProfile {
   phone1: string;         
   phone2: string;         
   insuranceCode?: string; 
+  defaultEmployeeInsuranceRate?: number; // سهم پیش‌فرض بیمه کارگر (7)
+  defaultEmployerInsuranceRate?: number; // سهم پیش‌فرض بیمه کارفرما (23) 
   
   bloodType?: string;          
   emergencyContactName?: string; 
@@ -346,7 +376,7 @@ export const useLaborStore = create<LaborState>()(
         
         const newWorker: WorkerProfile = {
           ...data,
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           status: 'ACTIVE',
           trustScore: 5, 
           issuedTools: [],
@@ -383,7 +413,7 @@ export const useLaborStore = create<LaborState>()(
 
       addToolToWorker: (workerId, tool) => set((state) => ({
         workers: state.workers.map(w => 
-          w.id === workerId ? { ...w, issuedTools: [...w.issuedTools, { ...tool, id: crypto.randomUUID() }] } : w
+          w.id === workerId ? { ...w, issuedTools: [...w.issuedTools, { ...tool, id: generateUUID() }] } : w
         )
       })),
 
@@ -398,13 +428,13 @@ export const useLaborStore = create<LaborState>()(
 
       addDocumentToWorker: (workerId, doc) => set((state) => ({
         workers: state.workers.map(w => 
-          w.id === workerId ? { ...w, documents: [...(w.documents || []), { ...doc, id: crypto.randomUUID(), uploadDate: moment().format('jYYYY/jMM/jDD') }] } : w
+          w.id === workerId ? { ...w, documents: [...(w.documents || []), { ...doc, id: generateUUID(), uploadDate: moment().format('jYYYY/jMM/jDD') }] } : w
         )
       })),
 
       addLoanToWorker: (workerId, loan) => set((state) => ({
         workers: state.workers.map(w => 
-          w.id === workerId ? { ...w, loans: [...(w.loans || []), { ...loan, id: crypto.randomUUID(), isActive: true }] } : w
+          w.id === workerId ? { ...w, loans: [...(w.loans || []), { ...loan, id: generateUUID(), isActive: true }] } : w
         )
       })),
 
@@ -413,7 +443,7 @@ export const useLaborStore = create<LaborState>()(
         const newLog: LaborLog = { 
           ...log, 
           recordType: log.recordType || 'WAGE',
-          id: crypto.randomUUID(), 
+          id: generateUUID(), 
           ...financials 
         };
         
@@ -428,7 +458,7 @@ export const useLaborStore = create<LaborState>()(
           return {
             ...log,
             recordType: log.recordType || 'WAGE',
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             ...financials
           };
         });

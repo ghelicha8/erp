@@ -18,6 +18,7 @@ import { useInvoiceStore, type Invoice, type InvoiceItem } from '../../../store/
 import { useSettingsStore } from '../../../store/settingsStore';
 import { useProjectStore } from '../../projects/store/projectStore'; 
 import { useClientStore } from '../../../store/clientStore';
+import { generateUUID } from '../../../core/utils/uuid';
 
 import { useInventoryStore } from '../../../store/inventoryStore';
 import { useFinanceStore } from '../../../store/financeStore';
@@ -122,7 +123,7 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
   const deductStock = useInventoryStore?.(state => state.deductStock);
   const addTransactionDB = useFinanceStore?.(state => state.addTransaction);
 
-  const isRial = userSettings?.currency === 'RIAL';
+  const isRial = userSettings?.currency === 'rial' || (userSettings as any)?.currency === 'RIAL';
   const currencyLabel = isRial ? 'ریال' : 'تومان';
   const currencyMultiplier = isRial ? 10 : 1; 
 
@@ -271,7 +272,7 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
   const handleAddItem = (category: ItemCategory) => {
     const defaultDate = new Date().toLocaleDateString('fa-IR');
     const newItem: any = {
-      id: crypto.randomUUID(), type: 'CUSTOM', category,
+      id: generateUUID(), type: 'CUSTOM', category,
       title: '', quantity: 1, 
       unit: category === 'LABOR' ? 'روز' : category === 'LOGISTICS' ? 'سرویس' : 'عدد', 
       unitPrice: 0, costPrice: 0, 
@@ -364,7 +365,7 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
 
   const addCheque = () => {
     const today = new Date().toLocaleDateString('fa-IR');
-    const newCheque = { id: crypto.randomUUID(), bank: '', amount: 0, issuer: '', issueDate: today, dueDate: today, sayyadId: '', serialNumber: '', hasImage: false };
+    const newCheque = { id: generateUUID(), bank: '', amount: 0, issuer: '', issueDate: today, dueDate: today, sayyadId: '', serialNumber: '', hasImage: false };
     setDraft((p: any) => ({ ...p, payment: { ...p.payment, cheques: [...(p.payment.cheques || []), newCheque] } }));
   };
   
@@ -501,14 +502,14 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
                   serialNumber: chq.serialNumber || '',
                   status: 'PENDING',
                   history: [{
-                    id: crypto.randomUUID(),
+                    id: generateUUID(),
                     date: new Date().toLocaleDateString('fa-IR'),
                     previousStatus: 'PENDING',
                     newStatus: 'PENDING',
                     description: 'ثبت اولیه چک در سیستم هنگام صدور فاکتور'
                   }]
                 },
-                allocations: finalDraft.projectId ? [{ id: crypto.randomUUID(), amount: chq.amount, allocationType: 'PROJECT', projectId: finalDraft.projectId }] : []
+                allocations: finalDraft.projectId ? [{ id: generateUUID(), amount: chq.amount, allocationType: 'PROJECT', projectId: finalDraft.projectId }] : []
               });
             });
             financeSynced = true;
@@ -533,7 +534,7 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
 
   const handleQuickCreateClient = () => {
     if (!newClientData.name) return toast.error('وارد کردن نام الزامی است.');
-    const newId = crypto.randomUUID();
+    const newId = generateUUID();
     if (addClientDB) {
       addClientDB({
         id: newId,
@@ -563,7 +564,7 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
     if (!draft.clientId) return toast.error('ابتدا یک کارفرما انتخاب کنید.');
     if (!newProjectName) return toast.error('نام پروژه را وارد کنید.');
     
-    const newId = crypto.randomUUID();
+    const newId = generateUUID();
     if (addProjectDB) {
       addProjectDB({
         id: newId,
@@ -572,7 +573,7 @@ export default function InvoiceBuilder({ projectId, clientId, onClose, existingI
         status: 'IN_PROGRESS',
         startDate: new Date().toLocaleDateString('fa-IR'),
         phases: [{ 
-          id: crypto.randomUUID(), 
+          id: generateUUID(), 
           name: 'فاز اول (پیش‌فرض)', 
           contractType: 'CONTRAT', 
           fixedPrice: 0, 

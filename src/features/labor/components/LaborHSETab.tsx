@@ -91,10 +91,8 @@ export default function LaborHSETab({ workerId }: { workerId: string }) {
     }
   }, [selectedDoc]);
 
-  if (!worker) return null;
-
   const visaStatus = useMemo(() => {
-    if (!worker.workPermitExpiry) return null;
+    if (!worker?.workPermitExpiry) return null;
     moment.loadPersian({ dialect: 'persian-modern' });
     const today = moment();
     const expiry = moment(worker.workPermitExpiry, 'jYYYY/jMM/jDD');
@@ -104,7 +102,9 @@ export default function LaborHSETab({ workerId }: { workerId: string }) {
     if (diffDays <= 30) return { status: 'DANGER', text: `${diffDays} روز مانده`, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30' };
     if (diffDays <= 90) return { status: 'WARNING', text: `${diffDays} روز مانده`, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30' };
     return { status: 'SAFE', text: `${diffDays} روز مانده`, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30' };
-  }, [worker.workPermitExpiry]);
+  }, [worker?.workPermitExpiry]);
+
+  if (!worker) return null;
 
   // مدارکی که در لیست انتظار حذف نیستند
   const displayedDocs = (worker.documents || []).map((doc, idx) => ({

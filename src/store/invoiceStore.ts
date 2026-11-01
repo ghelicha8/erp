@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { generateUUID } from '../core/utils/uuid';
 
 // ==========================================
 // 💡 تایپ‌ها و اینترفیس‌های ماژول فاکتور
@@ -18,6 +19,7 @@ export interface InvoiceItem {
   id: string;
   type: InvoiceItemType;
   title: string;          
+  description?: string;
   quantity: number;
   unit: string;           
   unitPrice: number;      
@@ -26,6 +28,7 @@ export interface InvoiceItem {
   
   isSyncedWithSystem: boolean; 
   referenceRecordId?: string;  
+  [key: string]: any;
 }
 
 export interface InvoicePaymentDetails {
@@ -41,6 +44,9 @@ export interface InvoicePaymentDetails {
   taxAmount: number;          
   
   cheques: any[];             
+  method?: string;
+  paidAmount?: number;
+  [key: string]: any;
 }
 
 export interface EditHistory {
@@ -61,12 +67,20 @@ export interface Invoice {
   clientId?: string;          
   clientName: string;         
   clientPhone: string;
+  clientNationalId?: string;
+  clientAddress?: string;
   
   status: InvoiceStatus;
   items: InvoiceItem[];
   
   subTotal: number;           
   grandTotal: number;         
+  totalAmount?: number;
+  finalAmount?: number;
+  discountAmount?: number;
+  taxAmount?: number;
+  terms?: string;
+  signatures?: string[];
   
   payment: InvoicePaymentDetails;
   
@@ -77,6 +91,7 @@ export interface Invoice {
   
   shareToken: string;         
   notes?: string;             
+  [key: string]: any;
 }
 
 interface InvoiceState {
@@ -104,10 +119,10 @@ export const useInvoiceStore = create<InvoiceState>()(
       invoiceCounter: 1000, 
 
       addInvoice: (invoiceData) => {
-        const id = crypto.randomUUID();
+        const id = generateUUID();
         const currentCounter = get().invoiceCounter + 1;
         const invoiceNumber = `INV-${currentCounter}`;
-        const shareToken = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+        const shareToken = generateUUID().replace(/-/g, '').substring(0, 12);
 
         const newInvoice: Invoice = {
           ...invoiceData,
@@ -136,7 +151,7 @@ export const useInvoiceStore = create<InvoiceState>()(
           if (editReason) {
             const d = new Date();
             newHistory.push({
-              id: crypto.randomUUID(),
+              id: generateUUID(),
               date: d.toLocaleDateString('fa-IR'),
               time: d.toLocaleTimeString('fa-IR'),
               reason: editReason,
@@ -171,9 +186,9 @@ export const useInvoiceStore = create<InvoiceState>()(
         const oldInvoice = get().invoices.find((inv) => inv.id === id);
         if (!oldInvoice) return '';
 
-        const newId = crypto.randomUUID();
+        const newId = generateUUID();
         const currentCounter = get().invoiceCounter + 1;
-        const newShareToken = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+        const newShareToken = generateUUID().replace(/-/g, '').substring(0, 12);
 
         const clonedInvoice: Invoice = {
           ...oldInvoice,

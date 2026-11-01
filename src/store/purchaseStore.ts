@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { generateUUID } from '../core/utils/uuid';
 
 // 💡 ریزترین جزئیات برای آیتم‌های هر فاکتور خرید
 export interface PurchaseItem {
@@ -34,6 +35,41 @@ export interface PurchaseRecord {
   // 💰 اطلاعات مالی و حسابداری (هسته اصلی محاسبات شما)
   internalCost: number;     // بهای تمام شده واقعی (خروج از جیب پیمانکار)
   billedCost?: number;      // مبلغ فاکتور شده برای کارفرما (همراه با سود/بالاسری)
+  paidAmount?: number;      // مبلغ پرداخت‌شده
+  settlementStatus?: 'PENDING' | 'PARTIAL' | 'SETTLED'; // وضعیت تسویه فاکتور خرید
+  supplierId?: string;      // شناسه تأمین‌کننده در سیستم تدارکات
+  
+  // 🎯 مقصد و نوع محاسبه (شبکه عنکبوتی تدارکات)
+  destinationType?: 'PROJECT' | 'INVENTORY' | 'INTERNAL';
+  calculationMode?: 'MATERIAL_ONLY' | 'FREIGHT_ONLY' | 'COMBINED';
+  
+  // 🚚 تفکیک حمل و نقل و ناوگان داخلی
+  freightPricingMode?: 'SEPARATE' | 'LUMP_SUM';
+  transportSource?: 'EXTERNAL' | 'INTERNAL';
+  internalVehicleId?: string;
+  driverName?: string;
+  
+  // 🔄 فرمولاسیون تبدیل واحد و بهای تمام‌شده (Internal Cost)
+  internalQty?: number;
+  internalUnit?: string;
+  internalUnitPrice?: number;
+  internalMaterialCost?: number;
+  internalFreightCost?: number;
+  totalInternalCost?: number;
+  
+  // 📈 فاکتور و تبدیل واحد کارفرما (Billed Cost)
+  billedQty?: number;
+  billedUnit?: string;
+  billedUnitPrice?: number;
+  billedMaterialCost?: number;
+  billedFreightCost?: number;
+  totalBilledAmount?: number;
+  
+  // 💎 سود پنهان (آربیتراژ)
+  arbitrageProfit?: number;
+  materialProfit?: number;
+  freightProfit?: number;
+  unitCostForUs?: number;
   
   // 🚚 اطلاعات حمل و نقل (درون‌فاکتوری)
   hasTransport?: boolean;           // آیا کرایه روی همین فاکتور کشیده شده؟
@@ -75,7 +111,7 @@ export const usePurchaseStore = create<PurchaseStore>()(
       addPurchase: (record) => {
         const newRecord: PurchaseRecord = {
           ...record,
-          id: Date.now().toString(),
+          id: generateUUID(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };

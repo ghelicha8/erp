@@ -10,11 +10,30 @@ import { toast } from 'sonner';
 import { useProjectStore } from '../../../projects/store/projectStore';
 import { useLogisticsStore } from '../../../../store/logisticsStore';
 import { useBulkSelection } from '../../../../hooks/useBulkSelection';
-// 💡 استور نیروی کار برای پیدا کردن اسم راننده‌ها اضافه شد
 import { useLaborStore } from '../../../../store/laborStore';
 
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../../components/ui/GlassSelect';
+import { AppSearchInput } from '../../../../components/ui/SharedLaborUI';
+
+const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+  <div 
+    onClick={onChange}
+    className={`w-6 h-6 mx-auto rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm ${
+      checked 
+        ? 'bg-gradient-to-tr from-indigo-500 to-blue-500 border-blue-400 shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105' 
+        : 'bg-white/80 dark:bg-slate-800/80 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+    }`}
+  >
+    <AnimatePresence>
+      {checked && (
+        <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
+          <CheckCircle className="w-4 h-4 text-white stroke-[3]" />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
 
 interface ClientLogisticsTabProps {
   clientId: string;
@@ -34,21 +53,12 @@ const getTodayDate = () => {
   const d = new Date().toLocaleDateString('fa-IR');
   const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
   return d.split('').map(c => {
-    let pIdx = persianNumbers.indexOf(c);
+    const pIdx = persianNumbers.indexOf(c);
     return pIdx >= 0 ? pIdx : c;
-  }).join('').split('/').map(p => p.padStart(2, '0')).join('/');
+  }).join('').split('/').map(p => String(p).padStart(2, '0')).join('/');
 };
 
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center">{children}</div>
-  </div>
-);
-
-const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
+const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`relative rounded-xl bg-white/60 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm focus-within:border-indigo-500/60 transition-all duration-300 overflow-hidden flex items-center ${className}`}>
     {children}
   </div>
@@ -64,14 +74,16 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
   const addLog = useLogisticsStore(state => state.addLog);
   const deleteMultipleLogs = useLogisticsStore(state => state.deleteMultipleLogs);
 
-  // 💡 استخراج لیست ماشین‌ها، ابزارها و راننده‌ها برای جایگزینی UUID با نام واقعی
   const allWorkers = useLaborStore(state => state.workers) || [];
   const internalVehicles = useLogisticsStore(state => state.vehicles) || [];
   const internalTools = useLogisticsStore(state => state.tools) || [];
 
   const clientLogs = useMemo(() => {
-    return allLogs.filter(log => log.projectId && clientProjectIds.includes(log.projectId));
-  }, [allLogs, clientProjectIds]);
+    return allLogs.filter(log => 
+      (log.clientId && log.clientId === clientId) || 
+      (log.projectId && clientProjectIds.includes(log.projectId))
+    );
+  }, [allLogs, clientProjectIds, clientId]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -95,7 +107,6 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
   const mockDrivers = [{ value: 'علی احمدی', label: 'علی احمدی' }, { value: 'رضا کریمی', label: 'رضا کریمی' }];
   const mockEquipments = [{ value: 'بیل مکانیکی', label: 'بیل مکانیکی' }, { value: 'موتور برق', label: 'موتور برق' }];
 
-  // اتصال امن به ایونت سراسری مادر برای هماهنگی با دکمه بالا
   useEffect(() => {
     const handleOpenModal = () => {
       document.dispatchEvent(new CustomEvent('open-new-logistics-modal', { detail: { clientId, targetContext: 'CLIENT' } }));
@@ -180,7 +191,6 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
       .filter((r: any) => {
         if (pendingDeleteIds.includes(r.id)) return false;
         
-        // 💡 پیدا کردن نام راننده و خودرو برای جستجوی دقیق‌تر
         let driverName = r.provider || '';
         const driver = allWorkers.find(w => w.id === r.provider);
         if (driver) driverName = `${driver.name} ${driver.lastName}`;
@@ -270,11 +280,13 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
       </div>
 
       <div className="flex flex-wrap items-center gap-4 bg-white/10 dark:bg-slate-900/10 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-[2rem] px-6 py-4 z-[90] relative">
-        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]">
-          <Search className="w-5 h-5 text-slate-400 shrink-0 ml-3" />
-          <input placeholder="جستجوی عنوان بار، ماشین یا راننده..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold transition-colors placeholder:text-slate-500" />
-          {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
-        </NeonSearchWrapper>
+        <div className="flex-1 w-full xl:w-auto min-w-[250px]">
+          <AppSearchInput
+            placeholder="جستجوی عنوان بار، ماشین یا راننده..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </div>
         
         <div className="w-full xl:w-px h-px xl:h-8 bg-slate-300 dark:bg-slate-700 hidden xl:block" />
         
@@ -310,7 +322,6 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
                 const projectName = getProjectName(record.projectId);
                 const actualCost = record.source === 'INTERNAL' ? (record.driverWage || 0) : (record.internalCost || 0);
                 
-                // 💡 استخراج نام راننده و خودرو برای نمایش در جدول
                 let displayDeviceName = record.vehicleInfo || '---';
                 if (record.source === 'INTERNAL') {
                    if (record.type === 'TRANSPORT') {
@@ -327,8 +338,9 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
 
                 return (
                   <motion.tr key={record.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`border-b border-slate-100 dark:border-slate-800 transition-colors group ${selectedIds.includes(record.id) ? 'bg-indigo-500/10' : 'hover:bg-white dark:hover:bg-slate-800/50'}`}>
+                    {/* 💡 استفاده از چک‌باکس گرافیکی به جای چک‌باکس ساده */}
                     <td className="p-5 text-center w-12">
-                      <input type="checkbox" checked={selectedIds.includes(record.id)} onChange={() => toggleSelection(record.id)} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                      <AnimatedCheckbox checked={selectedIds.includes(record.id)} onChange={() => toggleSelection(record.id)} />
                     </td>
                     
                     <td className="p-5">
@@ -493,17 +505,19 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
         document.body
       )}
 
+      {/* 💡 پاپ‌آپ حذف گروهی با استایل شیشه‌ای لوکس */}
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {selectedIds.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[999999] shadow-2xl px-6 py-4 rounded-full backdrop-blur-2xl bg-slate-900/80 border border-slate-700 flex items-center gap-6">
-              <span className="text-white font-bold text-sm bg-white/10 px-3 py-1.5 rounded-full">{selectedIds.length} مورد انتخاب شده</span>
-              <button onClick={() => triggerDelete(selectedIds)} className="flex items-center gap-2 text-rose-500 hover:text-rose-400 font-bold text-sm"><Trash2 className="w-5 h-5" /> حذف موقت گروهی</button>
+            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[999999] shadow-[0_30px_60px_rgba(0,0,0,0.3)] px-6 py-4 rounded-[2rem] backdrop-blur-3xl bg-slate-900/95 dark:bg-white/95 border border-slate-700/50 dark:border-white/50 flex items-center gap-6">
+              <span className="text-white dark:text-slate-800 font-black text-sm bg-white/10 dark:bg-slate-900/10 px-4 py-2 rounded-xl">{selectedIds.length} مورد انتخاب شده</span>
+              <button onClick={() => triggerDelete(selectedIds)} className="flex items-center gap-2 text-rose-400 dark:text-rose-500 hover:text-rose-300 dark:hover:text-rose-600 bg-rose-500/20 dark:bg-rose-50 px-4 py-2 rounded-xl transition-colors font-black text-sm"><Trash2 className="w-5 h-5" /> حذف موقت گروهی</button>
             </motion.div>
           )}
         </AnimatePresence>, document.body
       )}
 
+      {/* 💡 پاپ‌آپ استرداد (Undo) با استایل شیشه‌ای لوکس */}
       {typeof document !== 'undefined' && createPortal(
         <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[9999999] flex flex-col gap-3 pointer-events-none w-[90%] max-w-sm">
           <AnimatePresence>
@@ -513,7 +527,7 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl backdrop-saturate-150 border border-white/50 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] rounded-[2rem] p-3 flex items-center gap-4 pointer-events-auto"
+                className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl backdrop-saturate-150 border border-white/50 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-[2rem] p-3 flex items-center gap-4 pointer-events-auto"
                 dir="rtl"
               >
                 <div className="p-2.5 bg-rose-100 dark:bg-rose-500/20 rounded-xl shrink-0">
@@ -535,7 +549,7 @@ export default function ClientLogisticsTab({ clientId }: ClientLogisticsTabProps
                     setUndoItems(prev => prev.filter(u => u.id !== undo.id));
                     toast.success('عملیات لغو شد');
                   }}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-xs font-black transition-colors shrink-0 shadow-sm"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-colors shrink-0"
                 >
                   انصراف
                 </button>

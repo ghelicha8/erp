@@ -9,16 +9,16 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// 💡 آدرس‌ها تصحیح شد (سه سطح برگشت به عقب برای دسترسی به store)
 import { useFinanceStore } from '../../../store/financeStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../components/ui/GlassSelect';
-import NewTransactionModal from '../../projects/components/NewTransactionModal';
+import UniversalTransactionModal from '../../../components/shared/UniversalTransactionModal';
 import type { Transaction } from '../../../store/financeStore';
+import { AppSearchInput } from '../../../components/ui/SharedLaborUI';
 
-const safeNum = (val: any): number => {
+const safeNum = (val: unknown): number => {
   if (!val) return 0;
   if (typeof val === 'number') return val;
   const parsed = Number(String(val).replace(/\D/g, ''));
@@ -30,7 +30,7 @@ const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR
 // 💡 استفاده از چک‌باکس انیمیشنی و گرافیکی با تم بنفش/نیلی یکپارچه
 const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
   <div 
-    onClick={(e) => { e.stopPropagation(); onChange(); }}
+    onClick={(e) => { e.stopPropagation(); onChange(); }} 
     className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-sm ${
       checked 
         ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 border-purple-400 shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105' 
@@ -44,15 +44,6 @@ const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: (
         </motion.div>
       )}
     </AnimatePresence>
-  </div>
-);
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
   </div>
 );
 
@@ -159,8 +150,6 @@ export default function ClientFinanceTab({ clientId }: { clientId: string }) {
 
   useEffect(() => { setSelectedPhaseFilter('ALL'); }, [selectedProjectFilter]);
 
-  if (!client) return null;
-
   const calculatedWallet = useMemo(() => {
     const directTxs = allTransactions.filter(t => t.clientId === clientId && t.direction === 'IN');
     return directTxs.reduce((sum, t) => {
@@ -242,6 +231,8 @@ export default function ClientFinanceTab({ clientId }: { clientId: string }) {
     return labels[status] || status;
   };
 
+  if (!client) return null;
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full flex flex-col gap-6 relative overflow-visible">
       
@@ -265,11 +256,13 @@ export default function ClientFinanceTab({ clientId }: { clientId: string }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 bg-white/30 dark:bg-slate-900/30 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-sm rounded-[2rem] px-4 sm:px-6 py-4 z-[50] relative overflow-visible mt-2">
-        <NeonSearchWrapper className="flex-[1_1_250px] h-[46px]">
-          <Search className="w-5 h-5 text-slate-400 shrink-0" />
-          <input placeholder="جستجو در تراکنش‌ها..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-sm font-bold text-slate-800 dark:text-white pl-2 pr-4 transition-colors placeholder:text-slate-500" />
-          {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
-        </NeonSearchWrapper>
+        <div className="flex-[1_1_250px]">
+          <AppSearchInput
+            placeholder="جستجو در تراکنش‌ها..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </div>
         
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 flex-[1_1_auto] relative z-[10000] overflow-visible">
           <div className="w-[calc(50%-0.5rem)] sm:w-[110px] shrink-0 h-[46px] relative z-[10005]">
@@ -355,10 +348,10 @@ export default function ClientFinanceTab({ clientId }: { clientId: string }) {
                             
                             <div className="flex flex-wrap gap-1.5 mt-1">
                               {trx.chequeDetails?.issuer && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">صاحب: {trx.chequeDetails.issuer}</span>}
-                              {trx.chequeDetails?.receiver && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">در وجه: {trx.chequeDetails.receiver}</span>}
+                              {(trx.chequeDetails as any)?.receiver && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">در وجه: {(trx.chequeDetails as any).receiver}</span>}
                               {trx.chequeDetails?.bank && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">بانک: {trx.chequeDetails.bank}</span>}
-                              {trx.chequeDetails?.branch && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">شعبه: {trx.chequeDetails.branch}</span>}
-                              {trx.chequeDetails?.accountNumber && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">حساب: {trx.chequeDetails.accountNumber}</span>}
+                              {(trx.chequeDetails as any)?.branch && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">شعبه: {(trx.chequeDetails as any).branch}</span>}
+                              {(trx.chequeDetails as any)?.accountNumber && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">حساب: {(trx.chequeDetails as any).accountNumber}</span>}
                               {trx.chequeDetails?.sayyadId && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">صیاد: {trx.chequeDetails.sayyadId}</span>}
                               {trx.chequeDetails?.series && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">سری: {trx.chequeDetails.series}</span>}
                               {trx.chequeDetails?.serialNumber && <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">سریال: {trx.chequeDetails.serialNumber}</span>}
@@ -578,15 +571,14 @@ export default function ClientFinanceTab({ clientId }: { clientId: string }) {
       </AnimatePresence>
 
       {/* 💡 پورتال مرکزی مودال ویرایش/ثبت تراکنش برای جلوگیری از گیر کردن زیر انیمیشن‌ها */}
-      {typeof document !== 'undefined' && createPortal(
-        <NewTransactionModal 
-          projectId={selectedProjectFilter !== 'ALL' ? selectedProjectFilter : ''} 
-          isOpen={isTransactionModalOpen} 
-          onClose={() => { setIsTransactionModalOpen(false); setEditTransactionData(null); }} 
-          editData={editTransactionData} 
-        />,
-        document.body
-      )}
+      <UniversalTransactionModal 
+        clientId={clientId}
+        projectId={selectedProjectFilter !== 'ALL' ? selectedProjectFilter : undefined}
+        isOpen={isTransactionModalOpen} 
+        onClose={() => { setIsTransactionModalOpen(false); setEditTransactionData(null); }} 
+        context="CLIENT"
+        editTransaction={editTransactionData} 
+      />
 
       {/* 💡 لایت‌باکس قدرتمند برای نمایش بزرگ تصاویر با دکمه دانلود */}
       {typeof document !== 'undefined' && createPortal(

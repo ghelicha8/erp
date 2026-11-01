@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search, Plus } from 'lucide-react';
@@ -34,27 +34,50 @@ export default function GlassSelect({
 }: GlassSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const [coords, setCoords] = useState<{ top: number; bottom: number; left: number; width: number }>({ top: 0, bottom: 0, left: 0, width: 0 });
+  const [openUpward, setOpenUpward] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const showSearch = hasSearch ?? options.length > 5; 
 
+  const updateCoords = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth) {
+      setIsOpen(false);
+      return;
+    }
+    const isUp = rect.bottom + 300 > window.innerHeight;
+    setOpenUpward(isUp);
+    setCoords({
+      top: rect.top,
+      bottom: rect.bottom,
+      left: rect.left,
+      width: Math.max(rect.width, 240)
+    });
+  }, []);
+
   const openDropdown = () => {
     if (disabled) return;
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      // 💡 عرض را کمی بیشتر می‌گیریم تا محتوا مثل عکس شما (کادر قرمز) جا بشود
-      setCoords({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX, width: Math.max(rect.width, 300) });
-      setIsOpen(true);
-    }
+    updateCoords();
+    setIsOpen(true);
   };
 
-  // 💡 لیسنر اسکرول حذف شد تا کاربر بتواند راحت در مودال اسکرول کند و منو بسته نشود!
   useEffect(() => {
-    const handleResize = () => setIsOpen(false);
-    if (isOpen) window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isOpen]);
+    const handleScroll = (e: Event) => {
+      if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) return;
+      updateCoords();
+    };
+    if (isOpen) {
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleScroll);
+    }
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [isOpen, updateCoords]);
 
   const filteredOptions = options.filter(o => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
   const selectedOption = options.find(o => o.value === value);
@@ -83,10 +106,20 @@ export default function GlassSelect({
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0" style={{ zIndex: 2147483647 }} onClick={() => setIsOpen(false)}>
           <motion.div 
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }}
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: openUpward ? 10 : -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: openUpward ? 10 : -10 }} 
+            transition={{ duration: 0.15 }}
             onClick={(e) => e.stopPropagation()}
-            style={{ position: 'absolute', top: coords.top + 8, left: coords.left, width: coords.width }}
-            className="backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden flex flex-col"
+            style={{ 
+              position: 'fixed', 
+              top: !openUpward ? coords.bottom + 6 : undefined,
+              bottom: openUpward ? (window.innerHeight - coords.top + 6) : undefined,
+              left: coords.left, 
+              width: coords.width 
+            }}
+            className="backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden flex flex-col z-[2147483647]"
           >
             {showSearch && (
               <div className="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80">
@@ -97,7 +130,11 @@ export default function GlassSelect({
               </div>
             )}
             
-            <div className="max-h-[280px] overflow-y-auto modal-scrollbar p-1.5">
+            <div 
+              onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              className="max-h-[280px] overflow-y-auto modal-scrollbar p-1.5"
+            >
               {filteredOptions.map((opt) => (
                 <div 
                   key={opt.value} 

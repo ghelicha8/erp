@@ -8,7 +8,7 @@ import { useClientStore } from '../../../store/clientStore';
 import ProjectCard from './ProjectCard';
 import NewProjectModal from './NewProjectModal';
 import ProjectDashboard from './ProjectDashboard';
-import type { ProjectStatus, ContractType } from '../types/project.types';
+import { AppSearchInput, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const getStatusBadge = (status: ProjectStatus) => {
   switch (status) {
@@ -121,54 +121,26 @@ export default function ProjectList() {
               <span>افزودن پروژه جدید</span>
             </button>
 
-            <div className="relative w-full lg:max-w-md group flex-1">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-              <input 
-                type="text"
+            <div className="w-full lg:max-w-md flex-1">
+              <AppSearchInput
                 placeholder="جستجو در پروژه‌ها یا کارفرمایان..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/60 dark:bg-black/20 border border-white/40 dark:border-slate-700/50 rounded-2xl pr-12 pl-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-400 backdrop-blur-sm focus-within:scale-[1.02]"
+                onChange={setSearchQuery}
               />
             </div>
 
             <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
-              <div className="relative" ref={limitDropdownRef}>
-                <div 
-                  onClick={() => setShowLimitDropdown(!showLimitDropdown)}
-                  className="flex items-center gap-2 bg-white/50 dark:bg-black/20 px-4 py-2 rounded-2xl border border-white/40 dark:border-slate-700/50 backdrop-blur-sm cursor-pointer hover:bg-white/60 dark:hover:bg-white/10 transition-colors"
-                >
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">نمایش:</span>
-                  <div className="font-bold text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                    {displayLimit}
-                    <ChevronDown className={`w-3.5 h-3.5 text-emerald-500 transition-transform duration-300 ${showLimitDropdown ? 'rotate-180' : ''}`} />
-                  </div>
-                </div>
-
-                <AnimatePresence>
-                  {showLimitDropdown && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                      className="absolute top-full left-0 mt-2 w-full min-w-[80px] backdrop-blur-2xl bg-white/90 dark:bg-slate-800/95 border border-white/50 dark:border-slate-700/50 shadow-xl rounded-2xl overflow-hidden z-50 py-1"
-                    >
-                      {[10, 20, 50].map((limit) => (
-                        <div
-                          key={limit}
-                          onClick={() => {
-                            setDisplayLimit(limit);
-                            setShowLimitDropdown(false);
-                          }}
-                          className={`px-4 py-2.5 text-center text-sm font-bold cursor-pointer transition-colors ${displayLimit === limit ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
-                        >
-                          {limit}
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              <div className="w-32 h-[42px]">
+                <PortalSelect
+                  options={[
+                    { value: 10, label: '۱۰ مورد' },
+                    { value: 20, label: '۲۰ مورد' },
+                    { value: 50, label: '۵۰ مورد' },
+                  ]}
+                  value={displayLimit}
+                  onChange={(val) => setDisplayLimit(Number(val))}
+                  placeholder="تعداد نمایش"
+                />
               </div>
 
               <div className="flex bg-white/50 dark:bg-black/20 p-1 rounded-2xl border border-white/40 dark:border-slate-700/50 backdrop-blur-sm">

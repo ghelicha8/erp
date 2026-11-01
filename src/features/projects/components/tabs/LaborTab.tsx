@@ -12,8 +12,7 @@ import { useBulkSelection } from '../../../../hooks/useBulkSelection';
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../../components/ui/GlassSelect';
 
-// 💡 ایمپورت پاپ‌آپ‌های یکپارچه از فایل مشترک
-import { FloatingUndoToast, BulkSelectionToast } from '../../../../components/ui/SharedLaborUI';
+import { FloatingUndoToast, BulkSelectionToast, AppSearchInput } from '../../../../components/ui/SharedLaborUI';
 
 // 💡 آدرس‌دهی دقیق و اصلاح‌شده (۳ لایه برگشت به عقب)
 import UniversalLaborModal from '../../../labor/components/UniversalLaborModal';
@@ -64,15 +63,6 @@ const AnimatedCheckbox = ({ checked, onChange, theme = 'amber' }: { checked: boo
     </div>
   );
 };
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 export default function LaborTab({ projectId }: LaborTabProps) {
   const allProjects = useProjectStore((state) => state.projects);
@@ -321,11 +311,12 @@ export default function LaborTab({ projectId }: LaborTabProps) {
         <AnimatePresence mode="wait">
           {viewMode === 'LIST' && (
             <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} className="flex-1 flex flex-col lg:flex-row items-center justify-end gap-3 w-full">
-              <NeonSearchWrapper className="flex-1 w-full lg:max-w-xs h-[46px]">
-                <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                <input placeholder="جستجوی نام نیرو..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 text-xs placeholder:text-slate-500" />
-                {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1 hover:bg-black/10 rounded-full"><X className="w-3 h-3 text-slate-400" /></button>}
-              </NeonSearchWrapper>
+              <AppSearchInput
+                placeholder="جستجوی نام نیرو..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+                className="flex-1 w-full lg:max-w-xs h-[46px]"
+              />
               
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
                 <div className="w-full sm:w-36 h-[46px]"><GlassSelect options={phaseOptions} value={selectedPhaseFilter} onChange={setSelectedPhaseFilter} placeholder="فازها" /></div>

@@ -181,7 +181,7 @@ export default function LaborAnalyticsTab({ workerId }: { workerId: string }) {
 
     if (result.length === 1) {
       const firstDate = result[0].date;
-      const prevDate = moment(firstDate, 'jYYYY/jMM/jDD').subtract(1, 'days').format('jYYYY/jMM/jDD');
+      const prevDate = (moment as any)(firstDate, 'jYYYY/jMM/jDD').subtract(1, 'days').format('jYYYY/jMM/jDD');
       result.unshift({ date: prevDate, internal: 0, billed: 0, profit: 0 });
     } else if (result.length === 0) {
       result = [

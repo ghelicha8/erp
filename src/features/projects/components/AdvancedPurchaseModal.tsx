@@ -5,13 +5,15 @@ import {
   X, ShoppingCart, Store, PackageSearch, Truck, 
   User, HardHat, ChevronRight, ChevronLeft, CheckCircle, 
   Plus, Trash2, ArrowRight, ShieldCheck, Search, Banknote, 
-  ChevronDown, Lock, Wallet, Users, Layers, AlertCircle, CheckSquare, Briefcase
+  ChevronDown, Lock, Wallet, Users, Layers, AlertCircle, CheckSquare, Briefcase, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useProjectStore } from '../store/projectStore';
 import { useInventoryStore } from '../../../store/inventoryStore';
 import { usePurchaseStore } from '../../../store/purchaseStore';
+import { useProcurementStore } from '../../../store/procurementStore';
+import { generateUUID } from '../../../core/utils/uuid';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 
 const toEnglishDigits = (str: string) => {
@@ -150,8 +152,14 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
   
   const addPurchase = usePurchaseStore(state => state.addPurchase);
   const deletePurchase = usePurchaseStore(state => state.deletePurchase);
+  const suppliers = useProcurementStore(state => state.suppliers) || [];
 
-  const mockVendors = [{ value: 'v1', label: 'آهن آلات برادران' }, { value: 'v2', label: 'سیمان سپاهان' }];
+  const vendorOptions = useMemo(() => {
+    const fromSuppliers = suppliers.map(s => ({ value: s.name, label: s.name }));
+    const fallbackList = [{ value: 'آهن آلات برادران', label: 'آهن آلات برادران' }, { value: 'سیمان سپاهان', label: 'سیمان سپاهان' }];
+    return fromSuppliers.length > 0 ? fromSuppliers : fallbackList;
+  }, [suppliers]);
+
   const mockMarketMaterials = [{ value: 'm1', label: 'سیمان تیپ 2', units: ['پاکت', 'تن', 'فله'] }, { value: 'm2', label: 'میلگرد 16', units: ['شاخه', 'کیلوگرم', 'تن'] }];
   const mockMarketEquipments = [{ value: 'e1', label: 'اجاره موتور برق', units: ['روز', 'ساعت'] }, { value: 'e2', label: 'اجاره هیلتی', units: ['روز', 'ساعت'] }];
   
@@ -214,7 +222,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
         setSource(editData.source || 'MARKET');
         setPhaseId(editData.phaseId || 'GENERAL');
         
-        const existingVendor = mockVendors.find(v => v.label === editData.vendor) || mockVendors.find(v => v.value === editData.vendor);
+        const existingVendor = vendorOptions.find(v => v.label === editData.vendor) || vendorOptions.find(v => v.value === editData.vendor);
         setVendorName(existingVendor ? existingVendor.value : editData.vendor || '');
         
         setDate(editData.date || getTodayDate());
@@ -253,7 +261,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
         }
 
         setDate(getTodayDate());
-        setVendorName(''); 
+        setVendorName(editData?.vendor || ''); 
         setPhaseId('GENERAL');
         setItems([{ id: Date.now().toString(), name: '', qty: 1, unit: 'عدد', internalCost: 0, billedCost: 0, availableUnits: ['عدد'] }]);
         setNeedsTransport(false); setVehicleName(''); setDriverName(''); setTransportInternalCost(0); setTransportBilledCost(0); setDriverWage(0);
@@ -410,7 +418,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
       
       if (paymentIntent === 'PAY_NOW') {
         const transactionDetail = {
-          id: crypto.randomUUID(), 
+          id: generateUUID(), 
           linkedPurchaseId: newPurchaseIdForTransaction, 
           amount: totalBilled, 
           direction: payer === 'CONTRACTOR' ? 'OUT' : 'IN', 
@@ -489,7 +497,7 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
                     {source === 'MARKET' ? (
                       <div className="space-y-2 relative">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400">جستجوی پروفایل فروشگاه / شخص *</label>
-                        <SearchableGlassSelect options={mockVendors} value={vendorName} onChange={setVendorName} placeholder="انتخاب پروفایل..." onAddNew={(val: string) => handleCreateProfile('vendor', val)} />
+                        <SearchableGlassSelect options={vendorOptions} value={vendorName} onChange={setVendorName} placeholder="انتخاب پروفایل..." onAddNew={(val: string) => handleCreateProfile('vendor', val)} />
                       </div>
                     ) : (
                       <div className="space-y-2 flex flex-col justify-center">
@@ -613,6 +621,48 @@ export default function AdvancedPurchaseModal({ projectId: propProjectId }: { pr
                           <button onClick={() => setTransportSource('INTERNAL')} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all ${transportSource === 'INTERNAL' ? 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-emerald-600 shadow-sm' : 'text-slate-500'}`}>ناوگان اختصاصی پیمانکار</button>
                         </div>
                       </div>
+
+                      {transportSource === 'INTERNAL' && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -10 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          className="flex flex-wrap items-center justify-between gap-3 p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border border-emerald-500/30 rounded-2xl shadow-sm"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-emerald-500 text-white shadow-md shadow-emerald-500/25 shrink-0 animate-pulse">
+                              <Truck className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5">
+                                <span>ثبت مستقیم بارنامه در ناوگان داخلی مادر</span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono">LIVE SYNC</span>
+                              </h4>
+                              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+                                قفل خودکار پروژه و کارفرما و صدور بارنامه رسمی خودرو/ماشین‌آلات
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const proj = allProjects.find(p => p.id === localProjectId);
+                              window.dispatchEvent(new CustomEvent('open-logistics-modal', {
+                                detail: {
+                                  projectId: localProjectId,
+                                  clientId: lockedClientId || proj?.clientId || '',
+                                  source: 'INTERNAL',
+                                  type: purchaseType === 'EQUIPMENT' ? 'EQUIPMENT' : 'TRANSPORT',
+                                  title: `حمل اقلام فاکتور خرید: ${items.map(i => i.name).filter(Boolean).slice(0, 2).join('، ') || 'مصالح'}`,
+                                }
+                              }));
+                            }}
+                            className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-500/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>باز کردن مودال بارنامه مادر</span>
+                          </button>
+                        </motion.div>
+                      )}
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 border border-slate-200 dark:border-slate-700 rounded-2xl bg-white/50 dark:bg-slate-900/50 relative z-50">
                         <div className="space-y-2 relative">

@@ -4,214 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BellRing, AlertTriangle, CheckCircle, Info, Archive, Plus, 
   Search, CalendarClock, CreditCard, Package, ArrowLeft, Trash2, X, Clock,
-  Settings, Volume2, VolumeX
+  LayoutList, LayoutGrid, ShieldCheck, Mail, MailOpen, RotateCcw, ChevronDown, ChevronUp,
+  ShieldAlert
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import GlassDatePicker from '../../components/ui/GlassDatePicker';
-
-// ============================================================================
-// کامپوننت‌های پایه و استاندارد (الزام UI سیستم)
-// ============================================================================
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
-
-// ============================================================================
-// 💎 ساعت کرونوگراف هوشمند (حل مشکل چپ‌چین اعداد و رنگ خط‌چین‌ها)
-// ============================================================================
-const LuxuryTimePicker = ({ value, onChange, placeholder = "انتخاب ساعت..." }: { value: string, onChange: (v: string) => void, placeholder?: string }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<'h' | 'm'>('h');
-  const [isDragging, setIsDragging] = useState(false);
-  const clockRef = useRef<HTMLDivElement>(null);
-
-  const currentHour = value ? parseInt(value.split(':')[0]) : 12;
-  const currentMinute = value ? parseInt(value.split(':')[1]) : 0;
-  
-  const isPM = currentHour >= 12;
-  const displayHour = currentHour % 12 || 12;
-
-  const handRotation = view === 'h' ? displayHour * 30 : currentMinute * 6;
-  const numbers = view === 'h' ? [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] : [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
-
-  const updateTimeFromEvent = (clientX: number, clientY: number, forceSwitchView = false) => {
-    if (!clockRef.current) return;
-    const rect = clockRef.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    
-    let angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) + 90;
-    if (angle < 0) angle += 360;
-
-    if (view === 'h') {
-      let h = Math.round(angle / 30) % 12;
-      if (h === 0) h = 12;
-      const newHour = isPM ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h);
-      onChange(`${newHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`);
-      if (forceSwitchView) setTimeout(() => setView('m'), 300);
-    } else {
-      let m = Math.round(angle / 6) % 60;
-      onChange(`${currentHour.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-      if (forceSwitchView) setTimeout(() => setIsOpen(false), 400);
-    }
-  };
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    setIsDragging(true);
-    updateTimeFromEvent(e.clientX, e.clientY);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (isDragging) updateTimeFromEvent(e.clientX, e.clientY);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (isDragging) {
-      setIsDragging(false);
-      updateTimeFromEvent(e.clientX, e.clientY, true);
-    }
-  };
-
-  return (
-    <div className="relative w-full h-full">
-      <motion.button whileTap={{ scale: 0.98 }} type="button" onClick={() => setIsOpen(true)} className="w-full h-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 flex items-center justify-between outline-none font-bold text-sm text-slate-700 dark:text-slate-300 hover:border-indigo-500 transition-colors shadow-inner z-[50]">
-        <span style={{ direction: 'ltr' }} className="tracking-widest">{value || placeholder}</span>
-        <Clock className={`w-4 h-4 transition-colors ${isOpen ? 'text-indigo-500' : 'text-slate-400'}`} />
-      </motion.button>
-
-      {typeof document !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {isOpen && (
-            <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-4" dir="rtl">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setIsOpen(false); setView('h'); }} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
-              
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, filter: 'blur(10px)', y: 20 }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, filter: 'blur(10px)', y: 20 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                className="relative p-6 rounded-[2.5rem] bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border border-white/50 dark:border-indigo-500/30 shadow-[0_30px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_30px_80px_rgba(99,102,241,0.25)] flex flex-col items-center gap-6 w-[340px]"
-              >
-                {/* 💡 حل مشکل جابه‌جا بودن ساعت و دقیقه (استفاده از direction: ltr اجباری) */}
-                <div style={{ direction: 'ltr' }} className="flex items-center gap-3 text-5xl font-black text-slate-800 dark:text-white">
-                  <button onClick={() => setView('h')} className={`transition-all duration-300 ${view === 'h' ? 'text-indigo-500 drop-shadow-md scale-110' : 'text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400'}`}>
-                    {displayHour.toString().padStart(2, '0')}
-                  </button>
-                  <span className="text-slate-300 dark:text-slate-700 pb-2">:</span>
-                  <button onClick={() => setView('m')} className={`transition-all duration-300 ${view === 'm' ? 'text-indigo-500 drop-shadow-md scale-110' : 'text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400'}`}>
-                    {currentMinute.toString().padStart(2, '0')}
-                  </button>
-                </div>
-
-                <div 
-                  ref={clockRef}
-                  onPointerDown={handlePointerDown}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerLeave={handlePointerUp}
-                  className="relative w-64 h-64 rounded-full bg-slate-50 dark:bg-slate-800/80 shadow-[inset_0_5px_15px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_10px_30px_rgba(0,0,0,0.5)] border border-slate-200 dark:border-slate-700/50 flex items-center justify-center cursor-pointer select-none touch-none"
-                >
-                  {/* 💡 خط‌چین‌ها: مشکی در لایت‌مود، سفید در دارک‌مود */}
-                  {[...Array(60)].map((_, i) => (
-                    <div key={i} className="absolute inset-0 flex justify-center pointer-events-none z-10" style={{ transform: `rotate(${i * 6}deg)` }}>
-                      <div className={`rounded-full mt-2 transition-colors ${i % 5 === 0 ? 'bg-indigo-600 dark:bg-indigo-400 w-[3px] h-[14px]' : 'bg-slate-900 dark:bg-white w-[2px] h-[8px]'}`} />
-                    </div>
-                  ))}
-
-                  <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-md z-30" />
-                  
-                  <motion.div
-                    className="absolute w-1 bg-indigo-500 origin-bottom rounded-full z-10 pointer-events-none"
-                    style={{ height: 75, bottom: '50%' }}
-                    animate={{ rotate: handRotation }}
-                    transition={isDragging ? { type: 'tween', duration: 0 } : { type: 'spring', stiffness: 250, damping: 20 }}
-                  />
-                  
-                  <motion.div
-                    className="absolute inset-0 z-20 pointer-events-none"
-                    animate={{ rotate: handRotation }}
-                    transition={isDragging ? { type: 'tween', duration: 0 } : { type: 'spring', stiffness: 250, damping: 20 }}
-                  >
-                    <div className="absolute top-[13px] left-1/2 -translate-x-1/2 w-10 h-10 border-[3px] border-indigo-500 rounded-full shadow-lg bg-white dark:bg-slate-900 flex items-center justify-center">
-                      <motion.span 
-                        className="text-sm font-black text-indigo-500"
-                        animate={{ rotate: -handRotation }}
-                        transition={isDragging ? { type: 'tween', duration: 0 } : { type: 'spring', stiffness: 250, damping: 20 }}
-                      >
-                        {view === 'h' ? displayHour : currentMinute}
-                      </motion.span>
-                    </div>
-                  </motion.div>
-
-                  {numbers.map(num => {
-                    const angle = (num / (view === 'h' ? 12 : 60)) * 2 * Math.PI - Math.PI / 2;
-                    const x = Math.cos(angle) * 95;
-                    const y = Math.sin(angle) * 95;
-                    
-                    return (
-                      <div
-                        key={num}
-                        className="absolute w-10 h-10 flex items-center justify-center text-sm font-bold z-0 pointer-events-none text-slate-800 dark:text-slate-300"
-                        style={{ left: `calc(50% + ${x}px)`, top: `calc(50% + ${y}px)`, transform: 'translate(-50%, -50%)' }}
-                      >
-                        {num === 0 && view === 'h' ? 12 : num}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex gap-4 w-full">
-                  <button 
-                    onClick={() => { if (isPM) onChange(`${(currentHour - 12).toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`); }} 
-                    className={`flex-1 py-3 rounded-2xl text-xs font-black transition-all duration-300 border ${!isPM ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/30 scale-105' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-                  >
-                    AM (قبل از ظهر)
-                  </button>
-                  <button 
-                    onClick={() => { if (!isPM) onChange(`${(currentHour + 12).toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`); }} 
-                    className={`flex-1 py-3 rounded-2xl text-xs font-black transition-all duration-300 border ${isPM ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/30 scale-105' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-                  >
-                    PM (بعد از ظهر)
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
-    </div>
-  );
-};
-
-// ============================================================================
-// Types & Mock Data
-// ============================================================================
-type AlertType = 'CRITICAL' | 'WARNING' | 'INFO';
-type AlertCategory = 'CHEQUE' | 'INVENTORY' | 'CUSTOM';
-
-interface Alert {
-  id: string;
-  type: AlertType;
-  category: AlertCategory;
-  title: string;
-  description: string;
-  date: string;
-  isRead: boolean;
-  actionText?: string;
-}
-
-const INITIAL_ALERTS: Alert[] = [
-  { id: '1', type: 'CRITICAL', category: 'CHEQUE', title: 'سررسید چک پرداختی (فردا)', description: 'چک شماره ۱۲۳۴۵ بانک ملی به مبلغ ۵۰,۰۰۰,۰۰۰ تومان فردا سررسید می‌شود. گیرنده: آهن‌آلات رحیمی.', date: '۱۴۰۳/۰۸/۱۵ - ۰۸:۰۰', isRead: false, actionText: 'مشاهده تراکنش' },
-  { id: '2', type: 'WARNING', category: 'CHEQUE', title: 'یادآوری چک دریافتی (۵ روز دیگر)', description: 'چک شماره ۹۸۷۶۵ بانک ملت به مبلغ ۱۲۰,۰۰۰,۰۰۰ تومان ۵ روز دیگر سررسید می‌شود.', date: '۱۴۰۳/۰۸/۱۹ - ۱۰:۳۰', isRead: false },
-  { id: '3', type: 'WARNING', category: 'INVENTORY', title: 'کاهش موجودی سیمان تیپ ۲', description: 'موجودی سیمان تیپ ۲ به زیر خط هشدار (۴۰ پاکت) رسیده است. لطفاً جهت جلوگیری از توقف کارگاه اقدام کنید.', date: '۱۴۰۳/۰۸/۱۴ - ۱۴:۱۵', isRead: false, actionText: 'ثبت فاکتور خرید' },
-];
+import { AppSearchInput, LuxuryTimePicker } from '../../components/ui/SharedLaborUI';
+import { useAlertStore, type Alert } from '../../store/useAlertStore';
+import { useSettingsStore } from '../../store/settingsStore';
+import { generateUUID } from '../../core/utils/uuid';
+import ArchivingEnvelope from './components/ArchivingEnvelope';
 
 const CONFIG_COLORS = {
   CRITICAL: { icon: AlertTriangle, color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20', gradient: 'from-rose-500 to-pink-600' },
@@ -219,19 +22,32 @@ const CONFIG_COLORS = {
   INFO: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20', gradient: 'from-blue-400 to-indigo-500' },
 };
 
-const CATEGORY_ICONS = {
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
   CHEQUE: CreditCard,
   INVENTORY: Package,
   CUSTOM: CalendarClock,
+  PROJECT: ShieldCheck,
+  INSURANCE: ShieldAlert,
 };
 
-// ============================================================================
-// Main Notification Center Component
-// ============================================================================
+const getCategoryLabel = (category: string) => {
+  switch (category) {
+    case 'CHEQUE': return 'چک و مالی';
+    case 'INVENTORY': return 'انبار و متریال';
+    case 'PROJECT': return 'پروژه و کارگاه';
+    case 'INSURANCE': return 'بیمه خودرو و اقساط';
+    default: return 'یادآور سیستم';
+  }
+};
+
 export default function AlertsCenter() {
-  const [alerts, setAlerts] = useState<Alert[]>(INITIAL_ALERTS);
+  const { alerts, addCustomAlert, archiveAlert, unarchiveAlert, deleteAlert, scanSystemAlerts } = useAlertStore();
+  const { settings } = useSettingsStore();
+
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'ARCHIVE'>('ACTIVE');
+  const [layoutView, setLayoutView] = useState<'LIST' | 'GRID'>('LIST');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedArchivedIds, setExpandedArchivedIds] = useState<string[]>([]);
   
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
   const [reminderTitle, setReminderTitle] = useState('');
@@ -239,35 +55,86 @@ export default function AlertsCenter() {
   const [reminderDate, setReminderDate] = useState('');
   const [reminderTime, setReminderTime] = useState('');
 
-  const [undoItems, setUndoItems] = useState<{ id: string, items: string[], expireAt: number, action: 'ARCHIVE' | 'DELETE' }[]>([]);
-  const [pendingActionIds, setPendingActionIds] = useState<string[]>([]);
+  // حالت‌های انیمیشن پاکت و کرکره بایگانی
+  const [animatingAlert, setAnimatingAlert] = useState<Alert | null>(null);
+  const [isArchiveShutterOpen, setIsArchiveShutterOpen] = useState(false);
+  const archiveButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Undo Capsule
+  const [undoItems, setUndoItems] = useState<{ id: string, alertId: string, expireAt: number, action: 'DELETE' }[]>([]);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
+
+  // اجرای اسکنر هوشمند سیستم در اولین اجرا
+  useEffect(() => {
+    scanSystemAlerts();
+  }, [scanSystemAlerts]);
+
+  // مدیریت صف Undo برای حذف دائمی
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
       setUndoItems(prev => {
-         const expired = prev.filter(u => u.expireAt <= now);
-         const active = prev.filter(u => u.expireAt > now);
-         if (expired.length > 0) {
-            expired.forEach(u => {
-              if (u.action === 'ARCHIVE') {
-                setAlerts(curr => curr.map(a => u.items.includes(a.id) ? { ...a, isRead: true } : a));
-              } else {
-                setAlerts(curr => curr.filter(a => !u.items.includes(a.id)));
-              }
-            });
-            setTimeout(() => setPendingActionIds(curr => curr.filter(id => !expired.flatMap(e=>e.items).includes(id))), 0);
-         }
-         return active;
+        const expired = prev.filter(u => u.expireAt <= now);
+        const active = prev.filter(u => u.expireAt > now);
+        if (expired.length > 0) {
+          expired.forEach(u => {
+            deleteAlert(u.alertId);
+          });
+          setTimeout(() => {
+            setPendingDeleteIds(curr => curr.filter(id => !expired.map(e => e.alertId).includes(id)));
+          }, 0);
+        }
+        return active;
       });
     }, 500);
     return () => clearInterval(interval);
-  }, []);
+  }, [deleteAlert]);
 
-  const triggerAction = (id: string, action: 'ARCHIVE' | 'DELETE') => {
+  // مدیریت اکشن بایگانی (با انیمیشن پاکت یا بدون آن)
+  const handleArchive = (alert: Alert) => {
+    if (animatingAlert) return; // جلوگیری قطعی از تکرار یا تداخل همزمان
+    const shouldAnimate = settings.enableEnvelopeAnimation ?? true;
+
+    if (shouldAnimate) {
+      setAnimatingAlert(alert);
+      setIsArchiveShutterOpen(true);
+    } else {
+      archiveAlert(alert.id);
+      toast.success('اعلان به بایگانی منتقل شد.');
+    }
+  };
+
+  // پایان انیمیشن پاکت بایگانی و بسته شدن کرکره دریافت
+  const handleEnvelopeComplete = () => {
+    if (animatingAlert) {
+      const alertId = animatingAlert.id;
+      archiveAlert(alertId);
+      toast.success('اعلان با موفقیت در بایگانی ذخیره شد.');
+      setAnimatingAlert(null);
+      setTimeout(() => {
+        setIsArchiveShutterOpen(false);
+      }, 250);
+    } else {
+      setIsArchiveShutterOpen(false);
+    }
+  };
+
+  // مدیریت حذف دائمی با امکان لغو (Undo)
+  const handleDelete = (id: string) => {
     const undoId = Date.now().toString();
-    setUndoItems(prev => [...prev, { id: undoId, items: [id], expireAt: Date.now() + 5000, action }]);
-    setPendingActionIds(prev => [...prev, id]);
+    setUndoItems(prev => [...prev, { id: undoId, alertId: id, expireAt: Date.now() + 5000, action: 'DELETE' }]);
+    setPendingDeleteIds(prev => [...prev, id]);
+  };
+
+  const toggleArchivedExpand = (id: string) => {
+    setExpandedArchivedIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleUnarchive = (id: string) => {
+    unarchiveAlert(id);
+    toast.success('اعلان به کارتابل فعال بازگردانده شد.');
   };
 
   const handleCreateReminder = () => {
@@ -275,144 +142,426 @@ export default function AlertsCenter() {
       toast.error('عنوان، تاریخ و ساعت یادآور الزامی است.');
       return;
     }
-    const newAlert: Alert = {
-      id: crypto.randomUUID(),
+
+    addCustomAlert({
       type: 'INFO',
       category: 'CUSTOM',
       title: reminderTitle,
       description: reminderDesc,
       date: `${reminderDate} - ${reminderTime}`,
-      isRead: false,
-    };
-    setAlerts(prev => [newAlert, ...prev]);
+    });
+
     toast.success('یادآور دستی با موفقیت تنظیم شد.');
     setIsReminderModalOpen(false);
-    setReminderTitle(''); setReminderDesc(''); setReminderDate(''); setReminderTime('');
+    setReminderTitle('');
+    setReminderDesc('');
+    setReminderDate('');
+    setReminderTime('');
   };
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter(a => {
-      if (pendingActionIds.includes(a.id)) return false;
-      const matchTab = activeTab === 'ACTIVE' ? !a.isRead : a.isRead;
+      if (pendingDeleteIds.includes(a.id)) return false;
+      if (animatingAlert && a.id === animatingAlert.id) return false;
+      const matchTab = activeTab === 'ACTIVE' ? !a.isArchived : a.isArchived;
       const matchSearch = a.title.includes(searchQuery) || a.description.includes(searchQuery);
       return matchTab && matchSearch;
     });
-  }, [alerts, activeTab, searchQuery, pendingActionIds]);
+  }, [alerts, activeTab, searchQuery, pendingDeleteIds, animatingAlert]);
 
-  const activeCount = alerts.filter(a => !a.isRead && !pendingActionIds.includes(a.id)).length;
+  const activeCount = alerts.filter(a => !a.isArchived && !pendingDeleteIds.includes(a.id)).length;
+  const archivedCount = alerts.filter(a => a.isArchived && !pendingDeleteIds.includes(a.id)).length;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full space-y-6 pb-24 relative">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full space-y-6 pb-24 relative" dir="rtl">
       
+      {/* کامپوننت انیمیشن پاکت بایگانی */}
+      <AnimatePresence>
+        {animatingAlert && (
+          <ArchivingEnvelope
+            alert={animatingAlert}
+            onComplete={handleEnvelopeComplete}
+            archiveButtonRef={archiveButtonRef}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ================= HEADER & ACTION BAR ================= */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white/10 dark:bg-slate-900/10 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-[2rem] px-6 py-4 z-[90] relative">
         
-        <div className="flex bg-slate-200/50 dark:bg-slate-800/80 p-1.5 rounded-2xl w-full xl:w-auto shrink-0 shadow-inner border border-white/50 dark:border-slate-700/50">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }} onClick={() => setActiveTab('ACTIVE')} className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-black rounded-xl transition-colors ${activeTab === 'ACTIVE' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+        {/* دکمه‌های سوئیچ تب (فعال / بایگانی) با انیمیشن کرکره کشویی */}
+        <div className="flex bg-slate-200/50 dark:bg-slate-800/80 p-1.5 rounded-2xl w-full sm:w-auto shrink-0 shadow-inner border border-white/50 dark:border-slate-700/50">
+          <motion.button 
+            whileHover={{ scale: 1.02 }} 
+            whileTap={{ scale: 0.95 }} 
+            onClick={() => setActiveTab('ACTIVE')} 
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-black rounded-xl transition-all ${
+              activeTab === 'ACTIVE' 
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-md' 
+                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
             <BellRing className="w-4 h-4" /> فعال ({activeCount})
           </motion.button>
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }} onClick={() => setActiveTab('ARCHIVE')} className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-black rounded-xl transition-colors ${activeTab === 'ARCHIVE' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
-            <Archive className="w-4 h-4" /> بایگانی
+
+          <motion.button 
+            ref={archiveButtonRef}
+            whileHover={{ scale: 1.02 }} 
+            whileTap={{ scale: 0.95 }} 
+            onClick={() => setActiveTab('ARCHIVE')} 
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-black rounded-xl transition-all relative overflow-hidden ${
+              activeTab === 'ARCHIVE' 
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-md' 
+                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            } ${
+              isArchiveShutterOpen 
+                ? 'ring-4 ring-indigo-500/50 shadow-[0_0_25px_rgba(99,102,241,0.6)] animate-pulse text-indigo-600 dark:text-indigo-300' 
+                : ''
+            }`}
+          >
+            <Archive className={`w-4 h-4 transition-transform duration-200 ${isArchiveShutterOpen ? 'scale-125 text-indigo-500 animate-bounce' : ''}`} />
+            <span className="flex items-center gap-1.5">
+              <span>بایگانی</span>
+              <motion.span 
+                key={archivedCount}
+                initial={{ scale: 1.4 }}
+                animate={{ scale: 1 }}
+                className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-bold"
+              >
+                {archivedCount}
+              </motion.span>
+            </span>
+
+            {/* انیمیشن کشویی / کرکره‌ای مکش پاکت به داخل تب بایگانی */}
+            {isArchiveShutterOpen && (
+              <motion.div
+                initial={{ scaleX: 0, opacity: 0 }}
+                animate={{ scaleX: 1, opacity: 1 }}
+                exit={{ scaleX: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="absolute inset-0 bg-gradient-to-r from-indigo-500/25 via-purple-500/35 to-indigo-500/25 border-b-2 border-indigo-500 pointer-events-none flex items-center justify-center"
+              >
+                <div className="w-full h-0.5 bg-white shadow-[0_0_8px_#fff] animate-pulse" />
+              </motion.div>
+            )}
           </motion.button>
         </div>
 
-        <div className="flex-1 flex flex-col xl:flex-row items-center justify-end gap-4 w-full">
-          <NeonSearchWrapper className="flex-1 w-full max-w-md h-[46px] sm:h-[48px]">
-            <Search className="w-5 h-5 text-slate-400 shrink-0" />
-            <input 
-              placeholder="جستجو در هشدارها..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 placeholder:text-slate-500 transition-colors" 
+        {/* بخش جستجو، سوئیچ چیدمان (List/Grid) و دکمه یادآور */}
+        <div className="flex-1 flex flex-wrap items-center justify-end gap-3 w-full">
+          
+          {/* اینپوت جستجوی یکپارچه */}
+          <div className="flex-1 min-w-[220px] max-w-md">
+            <AppSearchInput
+              placeholder="جستجو در هشدارها و پیام‌ها..."
+              value={searchQuery}
+              onChange={setSearchQuery}
+              className="w-full h-[46px] sm:h-[48px]"
             />
-            <AnimatePresence>
-              {searchQuery && (
-                <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
-                  <X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </NeonSearchWrapper>
+          </div>
 
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }} onClick={() => setIsReminderModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white rounded-xl font-black shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all">
-            <Plus className="w-5 h-5"/> یادآور جدید
+          {/* دکمه گرافیکی سوئیچ چیدمان دوحالته (سطری / کارتی) */}
+          <div className="flex items-center bg-slate-200/50 dark:bg-slate-800/80 p-1 rounded-2xl border border-white/50 dark:border-slate-700/50 shadow-inner">
+            <button
+              type="button"
+              onClick={() => setLayoutView('LIST')}
+              className={`p-2.5 rounded-xl transition-all ${
+                layoutView === 'LIST'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+              }`}
+              title="نمایش سطری (List View)"
+            >
+              <LayoutList className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayoutView('GRID')}
+              className={`p-2.5 rounded-xl transition-all ${
+                layoutView === 'GRID'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+              }`}
+              title="نمایش کارتی (Grid View)"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* دکمه یادآور جدید */}
+          <motion.button 
+            whileHover={{ scale: 1.02 }} 
+            whileTap={{ scale: 0.95 }} 
+            onClick={() => setIsReminderModalOpen(true)} 
+            className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white rounded-xl font-black shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all shrink-0 text-sm"
+          >
+            <Plus className="w-4 h-4"/> یادآور جدید
           </motion.button>
         </div>
       </div>
 
-      {/* --- Main Alerts List --- */}
-      <div className="space-y-4 relative z-10 min-h-[400px]">
+      {/* ================= MAIN ALERTS CONTAINER ================= */}
+      <div className="relative z-10 min-h-[400px]">
         <AnimatePresence mode="popLayout">
-          {filteredAlerts.length > 0 ? filteredAlerts.map(alert => {
-            const config = CONFIG_COLORS[alert.type];
-            const CategoryIcon = CATEGORY_ICONS[alert.category];
-            
-            return (
-              <motion.div 
-                layout
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, x: activeTab === 'ACTIVE' ? 100 : -100 }}
-                transition={{ duration: 0.3 }}
-                key={alert.id} 
-                className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 rounded-3xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col sm:flex-row gap-5 items-start sm:items-center relative overflow-hidden group hover:shadow-[0_15px_40px_rgba(0,0,0,0.08)] transition-shadow"
-              >
-                <div className={`absolute right-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${config.gradient}`} />
+          {filteredAlerts.length > 0 ? (
+            <div className={layoutView === 'GRID' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5' : 'space-y-4'}>
+              {filteredAlerts.map(alert => {
+                const config = CONFIG_COLORS[alert.type] || CONFIG_COLORS.INFO;
+                const CategoryIcon = CATEGORY_ICONS[alert.category] || BellRing;
                 
-                <motion.div whileHover={{ rotate: [0, -10, 10, -10, 0] }} className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center shrink-0 border shadow-sm ${config.bg} ${config.color} ${config.border}`}>
-                  <config.icon className="w-7 h-7" />
-                </motion.div>
+                const isArchivedTab = activeTab === 'ARCHIVE';
+                const isExpanded = expandedArchivedIds.includes(alert.id);
+                const shouldAnimateEnvelope = settings.enableEnvelopeAnimation ?? true;
 
-                <div className="flex-1 flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black tracking-wider text-slate-500 dark:text-slate-400 bg-slate-200/50 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 border border-slate-300 dark:border-slate-700">
-                      <CategoryIcon className="w-3 h-3" />
-                      {alert.category === 'CHEQUE' ? 'امور مالی و چک' : alert.category === 'INVENTORY' ? 'انبار و مصالح' : 'یادآور سیستم'}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" /> <span style={{ direction: 'ltr' }}>{alert.date}</span></span>
-                  </div>
-                  <h3 className={`text-lg font-black ${alert.type === 'CRITICAL' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-white'}`}>
-                    {alert.title}
-                  </h3>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
-                    {alert.description}
-                  </p>
-                </div>
+                /* ================= حالت تب بایگانی: کارت‌های پاکت‌نامه‌ای مینیمال ================= */
+                if (isArchivedTab) {
+                  return (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -15 }}
+                      transition={{ duration: 0.25 }}
+                      key={alert.id}
+                      onClick={() => toggleArchivedExpand(alert.id)}
+                      className={`w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border transition-all cursor-pointer rounded-3xl relative overflow-hidden group shadow-md hover:shadow-xl ${
+                        isExpanded
+                          ? 'border-indigo-400 dark:border-indigo-500/60 ring-2 ring-indigo-500/20'
+                          : 'border-slate-200 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      {/* نوار گرادیانت نشانگر دسته‌بندی در لبه بالای پاکت */}
+                      <div className={`h-1.5 w-full bg-gradient-to-r ${config.gradient}`} />
 
-                <div className="w-full sm:w-auto flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-r border-slate-200 dark:border-slate-700 pt-4 sm:pt-0 sm:pr-5 mt-2 sm:mt-0">
-                  {alert.actionText && activeTab === 'ACTIVE' && (
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex-1 sm:flex-none px-4 py-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-indigo-200 dark:border-indigo-500/20 shadow-sm">
-                      {alert.actionText} <ArrowLeft className="w-3.5 h-3.5" />
-                    </motion.button>
-                  )}
-                  {activeTab === 'ACTIVE' ? (
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => triggerAction(alert.id, 'ARCHIVE')} title="انتقال به بایگانی (فهمیدم)" className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-colors shadow-sm border border-slate-200 dark:border-slate-700">
-                      <CheckCircle className="w-5 h-5" />
-                    </motion.button>
-                  ) : (
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => triggerAction(alert.id, 'DELETE')} title="حذف دائمی" className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-colors shadow-sm border border-slate-200 dark:border-slate-700">
-                      <Trash2 className="w-5 h-5" />
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
-            );
-          }) : (
+                      <div className="p-5">
+                        {/* سربرگ پاکت نامه: مهر مومی/آیکون، عنوان و کپسول وضعیت (چیدمان استاندارد بدون تداخل) */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800/60">
+                          {/* بخش راست: آیکون، برچسب‌ها و عنوان */}
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {/* نشان مهر پاکت */}
+                            <motion.div
+                              whileHover={{ rotate: 12, scale: 1.05 }}
+                              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border shadow-sm transition-all ${
+                                isExpanded
+                                  ? 'bg-indigo-500 text-white border-indigo-400'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              {isExpanded ? <MailOpen className="w-5 h-5" /> : <Mail className="w-5 h-5 text-indigo-500" />}
+                            </motion.div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className="text-[10px] font-black tracking-wider text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md flex items-center gap-1 border border-slate-200 dark:border-slate-700 shrink-0">
+                                  <CategoryIcon className="w-3 h-3 text-indigo-500" />
+                                  {getCategoryLabel(alert.category)}
+                                </span>
+                                <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1 shrink-0">
+                                  <Clock className="w-3 h-3" /> <span dir="ltr">{alert.date}</span>
+                                </span>
+                              </div>
+                              <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-white truncate">
+                                {alert.title}
+                              </h3>
+                            </div>
+                          </div>
+
+                          {/* بخش چپ: وضعیت کپسول مهر و موم و دکمه باز/بسته شدن */}
+                          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/40">
+                            <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-xl border border-indigo-200 dark:border-indigo-800/50 whitespace-nowrap">
+                              {isExpanded ? 'نامه باز است' : 'پاکت مهر و موم شده'}
+                            </span>
+                            <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:text-indigo-600 transition-colors shrink-0">
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* محتوای نامه در حال باز شدن (Unfolding Letter) */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={shouldAnimateEnvelope ? { opacity: 0, height: 0, y: -10 } : false}
+                              animate={shouldAnimateEnvelope ? { opacity: 1, height: 'auto', y: 0 } : {}}
+                              exit={shouldAnimateEnvelope ? { opacity: 0, height: 0, y: -10 } : {}}
+                              transition={{ duration: 0.25, ease: 'easeOut' }}
+                              className="overflow-hidden pt-4"
+                            >
+                              <div className="p-4 bg-slate-50/80 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 mt-2 space-y-4">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-black text-indigo-500">متن کامل اعلان بایگانی‌شده:</span>
+                                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                    {alert.description}
+                                  </p>
+                                </div>
+
+                                {/* دکمه‌های اقدام روی نامه */}
+                                <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
+                                  <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUnarchive(alert.id);
+                                    }}
+                                    className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-xs font-bold rounded-xl flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-500/30 transition-colors"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    <span>بازگردانی به کارتابل فعال</span>
+                                  </motion.button>
+
+                                  <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(alert.id);
+                                    }}
+                                    className="px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl flex items-center gap-1.5 border border-rose-200 dark:border-rose-500/30 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>حذف دائمی</span>
+                                  </motion.button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  );
+                }
+
+                /* ================= حالت تب فعال: نمایش سطری یا کارتی ================= */
+                return layoutView === 'LIST' ? (
+                  /* ================= نمای سطری فعال (LIST VIEW) ================= */
+                  <motion.div 
+                    layout
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, x: 100 }}
+                    transition={{ duration: 0.3 }}
+                    key={alert.id} 
+                    className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 rounded-3xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col sm:flex-row gap-5 items-start sm:items-center relative overflow-hidden group hover:shadow-[0_15px_40px_rgba(0,0,0,0.08)] transition-shadow"
+                  >
+                    <div className={`absolute right-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${config.gradient}`} />
+                    
+                    <motion.div whileHover={{ rotate: [0, -10, 10, -10, 0] }} className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center shrink-0 border shadow-sm ${config.bg} ${config.color} ${config.border}`}>
+                      <config.icon className="w-7 h-7" />
+                    </motion.div>
+
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black tracking-wider text-slate-500 dark:text-slate-400 bg-slate-200/50 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 border border-slate-300 dark:border-slate-700">
+                          <CategoryIcon className="w-3 h-3" />
+                          {getCategoryLabel(alert.category)}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> <span dir="ltr">{alert.date}</span>
+                        </span>
+                      </div>
+                      <h3 className={`text-lg font-black ${alert.type === 'CRITICAL' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-white'}`}>
+                        {alert.title}
+                      </h3>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {alert.description}
+                      </p>
+                    </div>
+
+                    <div className="w-full sm:w-auto flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-r border-slate-200 dark:border-slate-700 pt-4 sm:pt-0 sm:pr-5 mt-2 sm:mt-0">
+                      {alert.actionText && (
+                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex-1 sm:flex-none px-4 py-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-indigo-200 dark:border-indigo-500/20 shadow-sm">
+                          {alert.actionText} <ArrowLeft className="w-3.5 h-3.5" />
+                        </motion.button>
+                      )}
+                      
+                      <motion.button 
+                        whileHover={{ scale: 1.1 }} 
+                        whileTap={{ scale: 0.9 }} 
+                        onClick={() => handleArchive(alert)} 
+                        title="انتقال به بایگانی" 
+                        className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-colors shadow-sm border border-slate-200 dark:border-slate-700"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  /* ================= نمای کارتی فعال (GRID VIEW) ================= */
+                  <motion.div 
+                    layout
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    key={alert.id} 
+                    className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 rounded-3xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col justify-between gap-5 relative overflow-hidden group hover:shadow-[0_15px_40px_rgba(0,0,0,0.08)] transition-all hover:-translate-y-1"
+                  >
+                    <div className={`absolute right-0 top-0 left-0 h-1.5 bg-gradient-to-r ${config.gradient}`} />
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <motion.div whileHover={{ rotate: [0, -10, 10, -10, 0] }} className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-sm ${config.bg} ${config.color} ${config.border}`}>
+                            <config.icon className="w-6 h-6" />
+                          </motion.div>
+                          <span className="text-[10px] font-black tracking-wider text-slate-500 dark:text-slate-400 bg-slate-200/50 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 border border-slate-300 dark:border-slate-700">
+                            <CategoryIcon className="w-3 h-3" />
+                            {getCategoryLabel(alert.category)}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> <span dir="ltr">{alert.date}</span>
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h3 className={`text-base font-black ${alert.type === 'CRITICAL' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-white'}`}>
+                          {alert.title}
+                        </h3>
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3">
+                          {alert.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-4 border-t border-slate-200/60 dark:border-slate-700/60 mt-auto">
+                      {alert.actionText ? (
+                        <button className="px-3 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl flex items-center gap-1 border border-indigo-200 dark:border-indigo-500/20 shadow-sm">
+                          {alert.actionText} <ArrowLeft className="w-3.5 h-3.5" />
+                        </button>
+                      ) : <div />}
+
+                      <motion.button 
+                        whileHover={{ scale: 1.1 }} 
+                        whileTap={{ scale: 0.9 }} 
+                        onClick={() => handleArchive(alert)} 
+                        title="انتقال به بایگانی" 
+                        className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-colors shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-1 text-xs font-bold"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>بایگانی</span>
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-20 text-center">
               <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity }} className="w-24 h-24 bg-slate-200/50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-4 shadow-inner border border-white/50 dark:border-slate-700">
                 <CheckCircle className="w-10 h-10 text-emerald-500 opacity-60" />
               </motion.div>
               <h3 className="text-xl font-black text-slate-700 dark:text-slate-300 drop-shadow-sm">همه چیز مرتب است!</h3>
-              <p className="text-sm font-bold text-slate-500 mt-2">هیچ هشدار خوانده‌نشده‌ای در سیستم وجود ندارد.</p>
+              <p className="text-sm font-bold text-slate-500 mt-2">
+                {activeTab === 'ACTIVE' ? 'هیچ هشدار فعالی در سیستم وجود ندارد.' : 'هیچ هشداری در بایگانی یافت نشد.'}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* ======================================================== */}
-      {/* MODALS & UNDO CAPSULE */}
-      {/* ======================================================== */}
-      
+      {/* ================= MODALS & UNDO CAPSULE ================= */}
       {typeof document !== 'undefined' && createPortal(
         <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[9999999] flex flex-col gap-3 pointer-events-none w-[90%] max-w-sm">
           <AnimatePresence>
@@ -422,25 +571,25 @@ export default function AlertsCenter() {
                 initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl backdrop-saturate-150 border border-white/50 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-[2rem] p-3 flex items-center gap-4 pointer-events-auto" dir="rtl"
               >
-                <div className={`p-2.5 rounded-xl shrink-0 ${undo.action === 'ARCHIVE' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600'}`}>
-                  {undo.action === 'ARCHIVE' ? <Archive className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
+                <div className="p-2.5 rounded-xl shrink-0 bg-rose-100 dark:bg-rose-500/20 text-rose-600">
+                  <Trash2 className="w-5 h-5" />
                 </div>
                 <div className="flex flex-col flex-1">
-                  <span className="text-sm font-black text-slate-800 dark:text-white">{undo.action === 'ARCHIVE' ? 'انتقال به بایگانی' : 'حذف دائمی'}</span>
+                  <span className="text-sm font-black text-slate-800 dark:text-white">حذف دائمی اعلان</span>
                   <span className="text-[10px] font-medium text-slate-500 mt-0.5">تا چند ثانیه دیگر اعمال می‌شود...</span>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   onClick={() => {
-                    setPendingActionIds(prev => prev.filter(id => !undo.items.includes(id)));
+                    setPendingDeleteIds(prev => prev.filter(id => id !== undo.alertId));
                     setUndoItems(prev => prev.filter(u => u.id !== undo.id));
-                    toast.success('عملیات لغو شد');
+                    toast.success('عملیات حذف لغو شد.');
                   }}
                   className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black shadow-sm border border-slate-200 dark:border-slate-700"
                 >
                   انصراف
                 </motion.button>
-                <motion.div initial={{ width: '100%' }} animate={{ width: '0%' }} transition={{ duration: 5, ease: 'linear' }} className={`absolute bottom-0 right-0 h-1 ${undo.action === 'ARCHIVE' ? 'bg-emerald-500' : 'bg-rose-500'}`} style={{ transformOrigin: 'right' }} />
+                <motion.div initial={{ width: '100%' }} animate={{ width: '0%' }} transition={{ duration: 5, ease: 'linear' }} className="absolute bottom-0 right-0 h-1 bg-rose-500" style={{ transformOrigin: 'right' }} />
               </motion.div>
             ))}
           </AnimatePresence>

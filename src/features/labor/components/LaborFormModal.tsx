@@ -27,7 +27,7 @@ const nationalityOptions = [
 // ==========================================
 // 💡 MAIN FORM MODAL (تک‌مرحله‌ای، سریع و مینیمال)
 // ==========================================
-export default function LaborFormModal({ isOpen, onClose, editWorkerId }: any) {
+export default function LaborFormModal({ isOpen, onClose, editWorkerId, onSuccess }: any) {
   const { workers, specialtyTags, addWorker, updateWorker } = useLaborStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -105,7 +105,8 @@ export default function LaborFormModal({ isOpen, onClose, editWorkerId }: any) {
       updateWorker(existingWorker.id, formData);
       toast.success('پروفایل با موفقیت بروزرسانی شد.');
     } else {
-      addWorker(formData);
+      const newWorker = addWorker(formData);
+      onSuccess?.(newWorker);
       toast.success('نیروی جدید با موفقیت در سیستم ثبت شد.');
     }
     onClose();

@@ -32,7 +32,7 @@ import PettyCashTab from './tabs/PettyCashTab';
 import ArchiveTab from './tabs/ArchiveTab';
 import InvoiceTab from './tabs/InvoiceTab';
 
-import NewTransactionModal from './NewTransactionModal';
+import UniversalTransactionModal from '../../../components/shared/UniversalTransactionModal';
 import NewLaborModal from './NewLaborModal';
 import NewProjectModal from './NewProjectModal';
 import AdvancedPurchaseModal from './AdvancedPurchaseModal';
@@ -43,9 +43,10 @@ import GlassSelect from '../../../components/ui/GlassSelect';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import InvoiceBuilder from './InvoiceBuilder'; 
 
-// 💡 آدرس‌ها به پوشه shared تنظیم شد
 import ImportBuilder from '../../../components/shared/ImportBuilder';
 import ExportBuilder from '../../../components/shared/ExportBuilder';
+import { formatCurrency, getCurrencyUnit } from '../../../core/utils/currency';
+import ThreeDTabs from '../../../components/ui/ThreeDTabs';
 
 
 interface ProjectDashboardProps {
@@ -366,8 +367,8 @@ export default function ProjectDashboard({ projectId, onBack }: ProjectDashboard
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className={`text-xl sm:text-2xl font-black tracking-tight ${kpi.color}`} dir="ltr">{Math.round(kpi.value || 0).toLocaleString('fa-IR')}</span>
-                  <span className={`text-[10px] font-bold mt-1 ${kpi.color}`}>تومان</span>
+                  <span className={`text-xl sm:text-2xl font-black tracking-tight ${kpi.color}`} dir="ltr">{formatCurrency(kpi.value || 0, { includeUnit: false })}</span>
+                  <span className={`text-[10px] font-bold mt-1 ${kpi.color}`}>{getCurrencyUnit()}</span>
                 </div>
               </div>
             </motion.div>
@@ -376,18 +377,14 @@ export default function ProjectDashboard({ projectId, onBack }: ProjectDashboard
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="w-full relative z-[20] px-4">
-        <div className="flex overflow-x-auto gap-2 p-2 backdrop-blur-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 shadow-sm rounded-2xl w-full mb-6 modal-scrollbar sticky top-[100px] z-[50]">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative px-4 py-3 text-[13px] font-bold rounded-xl transition-colors whitespace-nowrap flex items-center gap-2 shrink-0 ${isActive ? tab.activeClass : 'text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40'}`}>
-                {isActive && <motion.div layoutId="dashboardTab" className="absolute inset-0 bg-white dark:bg-slate-800 shadow-md rounded-xl border border-slate-100 dark:border-slate-700" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
-                <Icon className={`w-4 h-4 relative z-10 transition-colors ${isActive ? tab.activeClass : tab.color}`} />
-                <span className="relative z-10">{tab.label}</span>
-              </button>
-            )
-          })}
+        <div className="w-full mb-6 sticky top-[100px] z-[50]">
+          <ThreeDTabs
+            tabs={TABS}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            theme="blue"
+            layoutId="dashboardProjectTab"
+          />
         </div>
 
         <div className="w-full relative">
@@ -408,7 +405,7 @@ export default function ProjectDashboard({ projectId, onBack }: ProjectDashboard
       </motion.div>
 
       <NewProjectModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} editData={project} />
-      <NewTransactionModal projectId={projectId} isOpen={isTransactionModalOpen} onClose={() => { setIsTransactionModalOpen(false); setEditTransactionData(null); }} editData={editTransactionData} />
+      <UniversalTransactionModal projectId={projectId} isOpen={isTransactionModalOpen} onClose={() => { setIsTransactionModalOpen(false); setEditTransactionData(null); }} context="PROJECT" editTransaction={editTransactionData} />
       <NewLaborModal projectId={projectId} isOpen={isLaborModalOpen} onClose={() => setIsLaborModalOpen(false)} />
       <AdvancedPurchaseModal projectId={projectId} />
       {/* 💡 مودال لجستیک اینجا اضافه شد */}

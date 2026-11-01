@@ -4,13 +4,17 @@ import moment from 'moment-jalaali';
 import { 
   CalendarDays, Wallet, TrendingDown, TrendingUp, 
   Clock, AlertTriangle, UserX, ShieldAlert, BadgeInfo, 
-  Coins, CheckCircle2, FileText, ChevronLeft
+  Coins, CheckCircle2, FileText, ChevronLeft, ShieldCheck, 
+  Percent, Printer, Receipt, Building, Check, ArrowDownRight,
+  Layers, User, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // استورهای گلوبال (ارتباط لاجیک کارگر و مالی)
 import { useLaborStore } from '../../../store/laborStore';
 import { useFinanceStore } from '../../../store/financeStore';
+import { useSettingsStore } from '../../../store/settingsStore';
+import { generateUUID } from '../../../core/utils/uuid';
 
 // کامپوننت‌های گرافیکی یکپارچه
 import { PortalSelect, GlassScrollStyles } from '../../../components/ui/SharedLaborUI';
@@ -19,19 +23,35 @@ const formatAmount = (amount: number) => new Intl.NumberFormat('fa-IR').format(a
 
 export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
   const { workers, logs, addLog, updateWorker } = useLaborStore();
-  const { transactions } = useFinanceStore();
+  const { transactions, addTransaction } = useFinanceStore();
+  const { currency } = useSettingsStore(state => state.settings);
+  const isRial = currency === 'rial' || (currency as any) === 'RIAL';
+  const currencyLabel = isRial ? 'ریال' : 'تومان';
+  const multiplier = isRial ? 10 : 1;
   
   const worker = workers.find(w => w.id === workerId);
   const activeContracts = worker?.activeContracts?.filter(c => c.isActive) || [];
 
-  // 💡 انتخابگر قرارداد فعال (اگر چند قرارداد ماهانه همزمان داشت)
+  // انتخابگر قرارداد فعال
   const [selectedContractId, setSelectedContractId] = useState<string | null>(activeContracts[0]?.id || null);
-  
+  const [isPaySlipOpen, setIsPaySlipOpen] = useState(false);
+  const [isEditingRates, setIsEditingRates] = useState(false);
+  const [tempEmpRate, setTempEmpRate] = useState<number>(7);
+  const [tempEmplyrRate, setTempEmplyrRate] = useState<number>(23);
+
   const currentContract = useMemo(() => {
     return activeContracts.find(c => c.id === selectedContractId) || activeContracts[0];
   }, [activeContracts, selectedContractId]);
 
-  // 💡 موتور محاسبات هوشمند قرارداد و مالی
+  // هماهنگی استیت موقت با قرارداد جاری
+  React.useEffect(() => {
+    if (currentContract) {
+      setTempEmpRate(currentContract.employeeInsuranceRate ?? 7);
+      setTempEmplyrRate(currentContract.employerInsuranceRate ?? 23);
+    }
+  }, [currentContract?.id, currentContract?.employeeInsuranceRate, currentContract?.employerInsuranceRate]);
+
+  // موتور محاسبات هوشمند قرارداد و مالی با احتساب کسورات و سهم بیمه
   const contractStats = useMemo(() => {
     if (!currentContract) return null;
 
@@ -40,16 +60,16 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
     const today = moment();
 
     // محاسبه بازه زمانی
-    const totalDays = Math.max(1, end.diff(start, 'days') + 1); // +1 برای اینکه روز اول هم حساب بشه
+    const totalDays = Math.max(1, end.diff(start, 'days') + 1);
     const elapsedDays = Math.max(0, Math.min(totalDays, today.diff(start, 'days')));
-    const remainingDays = totalDays - elapsedDays;
+    const remainingDays = Math.max(0, totalDays - elapsedDays);
     const progress = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
 
-    // محاسبه حقوق پایه (تناسبی - Prorated)
+    // نرخ موظفی روزانه و حقوق پایه کل دوره
     const dailyWage = Math.round(currentContract.internalMonthlyWage / 30);
-    const totalExpectedWage = dailyWage * totalDays; // اگه قرارداد 45 روزه باشه، حقوق 45 روز رو حساب میکنه
+    const totalExpectedWage = dailyWage * totalDays;
 
-    // استخراج تراکنش‌های مالی این کارگر تو این بازه (مساعده، جریمه، پاداش)
+    // استخراج تراکنش‌های مالی این کارگر در این بازه (مساعده، جریمه، پاداش)
     let totalAdvances = 0;
     let totalPenalties = 0;
     let totalBonuses = 0;
@@ -83,24 +103,60 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
     // کسر غیبت‌ها از حقوق پایه
     const deductionForAbsence = (absentDays + unpaidLeaves) * dailyWage;
 
-    // خالص پرداختی (Net Payable)
-    const netPayable = totalExpectedWage + totalBonuses - totalAdvances - totalPenalties - deductionForAbsence;
+    // 💡 حقوق ناخالص مشمول بیمه (Gross Wage)
+    const grossWage = Math.max(0, totalExpectedWage + totalBonuses - deductionForAbsence);
+
+    // 💡 محاسبات قانونی بیمه تأمین اجتماعی
+    const employeeInsuranceRate = currentContract.employeeInsuranceRate ?? 7;
+    const employerInsuranceRate = currentContract.employerInsuranceRate ?? 23;
+
+    // کسر سهم بیمه کارگر (۷٪ از حقوق ناخالص)
+    const employeeInsuranceAmount = Math.round(grossWage * (employeeInsuranceRate / 100));
+
+    // سهم بیمه کارفرما (۲۳٪ از حقوق ناخالص - هزینه سربار شرکت)
+    const employerInsuranceAmount = Math.round(grossWage * (employerInsuranceRate / 100));
+
+    // مجموع کل کسورات از کارگر
+    const totalDeductions = employeeInsuranceAmount + totalAdvances + totalPenalties;
+
+    // خالص پرداختی نهایی به کارگر (Net Take-home)
+    const netPayable = Math.max(0, grossWage - employeeInsuranceAmount - totalAdvances - totalPenalties);
+
+    // بهای تمام‌شده و هزینه قطعی شرکت در دفاتر حسابداری
+    const companyTotalCost = grossWage + employerInsuranceAmount;
 
     return {
       totalDays, elapsedDays, remainingDays, progress,
-      dailyWage, totalExpectedWage,
+      dailyWage, totalExpectedWage, grossWage,
       totalAdvances, totalPenalties, totalBonuses,
       absentDays, unpaidLeaves, deductionForAbsence,
-      netPayable
+      employeeInsuranceRate, employerInsuranceRate,
+      employeeInsuranceAmount, employerInsuranceAmount,
+      totalDeductions,
+      netPayable, companyTotalCost
     };
   }, [currentContract, transactions, logs, workerId]);
+
+  // ثبت سریع نرخ‌های جدید بیمه
+  const handleSaveInsuranceRates = () => {
+    if (!worker || !currentContract) return;
+    const updatedContracts = worker.activeContracts?.map(c => 
+      c.id === currentContract.id ? { 
+        ...c, 
+        employeeInsuranceRate: Number(tempEmpRate), 
+        employerInsuranceRate: Number(tempEmplyrRate) 
+      } : c
+    );
+    updateWorker(workerId, { activeContracts: updatedContracts });
+    setIsEditingRates(false);
+    toast.success('درصدهای بیمه برای این قرارداد به‌روزرسانی شد.');
+  };
 
   // اکشن‌های سریع: ثبت غیبت یا مرخصی بدون حقوق
   const handleQuickLog = (type: 'ABSENT' | 'UNPAID_LEAVE') => {
     if (!worker) return;
     const today = moment().format('jYYYY/jMM/jDD');
     
-    // جلوگیری از ثبت تکراری
     const exists = logs.some(l => l.workerId === workerId && l.date === today);
     if (exists) {
       toast.error('برای امروز قبلاً وضعیت حضور ثبت شده است!');
@@ -128,14 +184,51 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
     toast.success(type === 'ABSENT' ? 'غیبت ثبت شد و از حقوق کسر می‌گردد.' : 'مرخصی بدون حقوق ثبت شد.');
   };
 
-  // تسویه و بستن قرارداد
+  // تسویه و بستن حساب این ماه و ثبت خودکار در دفاتر مالی
   const handleSettleContract = () => {
-    if (!worker || !currentContract) return;
+    if (!worker || !currentContract || !contractStats) return;
+
+    const today = moment().format('jYYYY/jMM/jDD');
+    const txId = generateUUID();
+
+    // ثبت تراکنش در استور مالی
+    addTransaction({
+      referenceId: `LABOR-SETTLE-${Date.now().toString().slice(-6)}`,
+      amount: contractStats.netPayable,
+      date: today,
+      direction: 'OUT',
+      type: 'CASH',
+      description: `تسویه حقوق ماهانه ${worker.name} ${worker.lastName} (${currentContract.title}) - ناخالص: ${formatAmount(contractStats.grossWage)} | بیمه کارگر: ${formatAmount(contractStats.employeeInsuranceAmount)} | سهم کارفرما: ${formatAmount(contractStats.employerInsuranceAmount)}`,
+      allocations: [{
+        id: generateUUID(),
+        amount: contractStats.netPayable,
+        allocationType: currentContract.projectId !== 'FREE' ? 'PROJECT' : 'FREELANCE',
+        projectId: currentContract.projectId !== 'FREE' ? currentContract.projectId : undefined,
+        recordType: 'LABOR',
+        recordId: workerId,
+        description: `حقوق ماهانه تسویه‌شده - ${currentContract.title}`
+      }]
+    });
+
+    // بستن وضعیت قرارداد و ثبت اطلاعات تسویه
     const updatedContracts = worker.activeContracts?.map(c => 
-      c.id === currentContract.id ? { ...c, isActive: false } : c
+      c.id === currentContract.id ? { 
+        ...c, 
+        isActive: false,
+        settledAt: today,
+        settledNetPayable: contractStats.netPayable,
+        settledEmployerCost: contractStats.companyTotalCost,
+        financeTransactionId: txId
+      } : c
     );
+
     updateWorker(workerId, { activeContracts: updatedContracts });
-    toast.success('قرارداد ماهانه با موفقیت بسته و تسویه شد.');
+    toast.success('قرارداد ماهانه تسویه شد و سند مالی به دفاتر حسابداری ارسال گردید.');
+  };
+
+  // پرینت فیش حقوقی
+  const handlePrintSlip = () => {
+    window.print();
   };
 
   if (!worker) return null;
@@ -166,16 +259,18 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
               </div>
             )}
 
-            {/* نوار پیشرفت زمان (Progress Bar) */}
+            {/* نوار پیشرفت زمان */}
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 shadow-sm rounded-3xl p-5 relative overflow-hidden">
               <div className="flex justify-between items-end mb-3 relative z-10">
                 <div className="flex flex-col">
-                  <span className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-2"><Clock className="w-4 h-4 text-indigo-500"/> زمان سپری شده از قرارداد</span>
+                  <span className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-indigo-500"/> زمان سپری شده از قرارداد: {currentContract.title}
+                  </span>
                   <span className="text-[10px] font-bold text-slate-500 mt-1">{currentContract.startDate} تا {currentContract.endDate}</span>
                 </div>
                 <div className="text-right">
                   <span className={`text-xl font-black ${contractStats.remainingDays <= 3 ? 'text-rose-500 animate-pulse' : 'text-indigo-600 dark:text-indigo-400'}`}>
-                    {contractStats.remainingDays > 0 ? `${contractStats.remainingDays} روز مانده` : 'پایان قرارداد!'}
+                    {contractStats.remainingDays > 0 ? `${contractStats.remainingDays} روز مانده` : 'پایان دوره قرارداد!'}
                   </span>
                 </div>
               </div>
@@ -198,54 +293,335 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
             </div>
           </div>
 
-          {/* داشبورد ۴ تکه‌ی مالی */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-            {/* حقوق پایه موظفی */}
-            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-700 shadow-sm rounded-3xl p-5 flex flex-col justify-between hover:shadow-md transition-all">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl"><Wallet className="w-5 h-5" /></div>
-                <span className="text-xs font-black text-slate-700 dark:text-slate-300">حقوق کل دوره</span>
-              </div>
-              <div className="text-lg font-black font-mono text-slate-800 dark:text-white" dir="ltr">
-                {formatAmount(contractStats.totalExpectedWage)} <span className="text-[10px] text-slate-400">تومان</span>
-              </div>
-            </div>
-
-            {/* کسورات و مساعده‌ها */}
-            <div className="bg-rose-50/50 dark:bg-rose-900/10 backdrop-blur-xl border border-rose-200 dark:border-rose-800/50 shadow-sm rounded-3xl p-5 flex flex-col justify-between hover:shadow-md transition-all group">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl group-hover:scale-110 transition-transform"><TrendingDown className="w-5 h-5" /></div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-black text-rose-700 dark:text-rose-400">مجموع کسورات</span>
-                  <span className="text-[9px] font-bold text-rose-500/70 dark:text-rose-500/70">مساعده، غیبت، جریمه</span>
+          {/* کارت تنظیم سریع درصدهای بیمه (Quick Adjust Bar) */}
+          <div className="bg-slate-50/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-3xl p-5 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-2">
+                    تنظیمات کسورات و سهم بیمه تأمین اجتماعی
+                    <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                      محاسبه خودکار
+                    </span>
+                  </h4>
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+                    سهم کارگر از حقوق کسر شده و سهم کارفرما به عنوان هزینه سربار دفاتر مالی ثبت می‌شود.
+                  </p>
                 </div>
               </div>
-              <div className="text-lg font-black font-mono text-rose-600 dark:text-rose-400" dir="ltr">
-                {formatAmount(contractStats.totalAdvances + contractStats.deductionForAbsence + contractStats.totalPenalties)} <span className="text-[10px] text-rose-400">تومان</span>
+
+              {!isEditingRates ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/40 text-xs font-black text-rose-600 dark:text-rose-400">
+                    <span>سهم کارگر:</span>
+                    <span className="font-mono">{contractStats.employeeInsuranceRate}٪</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40 text-xs font-black text-indigo-600 dark:text-indigo-400">
+                    <span>سهم کارفرما:</span>
+                    <span className="font-mono">{contractStats.employerInsuranceRate}٪</span>
+                  </div>
+                  <button 
+                    onClick={() => setIsEditingRates(true)}
+                    className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-xs font-black text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition-all shadow-sm"
+                  >
+                    تغییر درصدها
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-500">کارگر:</span>
+                    <input 
+                      type="number" 
+                      min={0} 
+                      max={100} 
+                      step={0.5}
+                      value={tempEmpRate} 
+                      onChange={e => setTempEmpRate(Number(e.target.value))}
+                      className="w-16 h-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono font-black"
+                    />
+                    <span className="text-xs font-bold text-slate-400">٪</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-500">کارفرما:</span>
+                    <input 
+                      type="number" 
+                      min={0} 
+                      max={100} 
+                      step={0.5}
+                      value={tempEmplyrRate} 
+                      onChange={e => setTempEmplyrRate(Number(e.target.value))}
+                      className="w-16 h-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono font-black"
+                    />
+                    <span className="text-xs font-bold text-slate-400">٪</span>
+                  </div>
+
+                  <button 
+                    onClick={handleSaveInsuranceRates}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-black hover:bg-emerald-600 shadow-sm transition-all"
+                  >
+                    ذخیره
+                  </button>
+                  <button 
+                    onClick={() => setIsEditingRates(false)}
+                    className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-300 transition-all"
+                  >
+                    انصراف
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* داشبورد ۵ تکه‌ی مالی و بیمه */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            
+            {/* ناخالص کل دوره */}
+            <div className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-700 shadow-sm rounded-3xl p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl">
+                  <Wallet className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-black text-slate-700 dark:text-slate-300">حقوق ناخالص دوره</span>
+              </div>
+              <div>
+                <div className="text-lg font-black font-mono text-slate-800 dark:text-white" dir="ltr">
+                  {formatAmount(contractStats.grossWage * multiplier)} <span className="text-[10px] text-slate-400">{currencyLabel}</span>
+                </div>
+                <span className="text-[9px] font-bold text-slate-400 block mt-1">
+                  پایه موظفی + پاداش‌ها - غیبت
+                </span>
               </div>
             </div>
 
-            {/* اضافات و پاداش */}
-            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 backdrop-blur-xl border border-emerald-200 dark:border-emerald-800/50 shadow-sm rounded-3xl p-5 flex flex-col justify-between hover:shadow-md transition-all group">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl group-hover:scale-110 transition-transform"><TrendingUp className="w-5 h-5" /></div>
-                <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">پاداش و اضافات</span>
+            {/* کسر سهم بیمه کارگر */}
+            <div className="bg-rose-50/50 dark:bg-rose-950/20 backdrop-blur-xl border border-rose-200 dark:border-rose-900/40 shadow-sm rounded-3xl p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="p-2 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl">
+                  <Percent className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-black text-rose-700 dark:text-rose-400">کسر بیمه کارگر ({contractStats.employeeInsuranceRate}٪)</span>
               </div>
-              <div className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400" dir="ltr">
-                {formatAmount(contractStats.totalBonuses)} <span className="text-[10px] text-emerald-400">تومان</span>
+              <div>
+                <div className="text-lg font-black font-mono text-rose-600 dark:text-rose-400" dir="ltr">
+                  - {formatAmount(contractStats.employeeInsuranceAmount * multiplier)} <span className="text-[10px]">{currencyLabel}</span>
+                </div>
+                <span className="text-[9px] font-bold text-rose-500/70 block mt-1">
+                  کسر از دریافتی پرسنل
+                </span>
               </div>
             </div>
 
-            {/* مانده قابل پرداخت (Net Payable) */}
-            <div className="bg-gradient-to-br from-indigo-500 to-fuchsia-600 shadow-[0_15px_30px_rgba(99,102,241,0.3)] rounded-3xl p-5 flex flex-col justify-between relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-              <div className="flex items-center gap-3 mb-4 relative z-10">
-                <div className="p-2.5 bg-white/20 text-white rounded-xl"><Coins className="w-5 h-5" /></div>
-                <span className="text-xs font-black text-white/90">خالص قابل پرداخت</span>
+            {/* سایر کسورات (مساعده، جریمه) */}
+            <div className="bg-slate-50 dark:bg-slate-800/40 backdrop-blur-xl border border-slate-200 dark:border-slate-700 shadow-sm rounded-3xl p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="p-2 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl">
+                  <TrendingDown className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-black text-amber-700 dark:text-amber-400">مساعده و جریمه</span>
               </div>
-              <div className="text-2xl font-black font-mono text-white relative z-10 drop-shadow-md" dir="ltr">
-                {formatAmount(contractStats.netPayable)} <span className="text-xs text-white/70 font-bold">تومان</span>
+              <div>
+                <div className="text-lg font-black font-mono text-amber-600 dark:text-amber-400" dir="ltr">
+                  - {formatAmount((contractStats.totalAdvances + contractStats.totalPenalties) * multiplier)} <span className="text-[10px]">{currencyLabel}</span>
+                </div>
+                <span className="text-[9px] font-bold text-slate-400 block mt-1">
+                  مساعده: {formatAmount(contractStats.totalAdvances * multiplier)} | جریمه: {formatAmount(contractStats.totalPenalties * multiplier)}
+                </span>
               </div>
+            </div>
+
+            {/* خالص دریافتی پرسنل (Net Payable) */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/20 rounded-3xl p-5 flex flex-col justify-between text-white relative overflow-hidden">
+              <div className="flex items-center gap-2.5 mb-3 relative z-10">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <Coins className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-black text-white/95">خالص پرداختی به کارگر</span>
+              </div>
+              <div className="relative z-10">
+                <div className="text-xl font-black font-mono" dir="ltr">
+                  {formatAmount(contractStats.netPayable * multiplier)} <span className="text-xs text-white/80">{currencyLabel}</span>
+                </div>
+                <span className="text-[9px] font-bold text-white/75 block mt-1">
+                  دریافتی نهایی پرسنل
+                </span>
+              </div>
+            </div>
+
+            {/* سهم بیمه کارفرما و بهای تمام‌شده شرکت */}
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md shadow-indigo-500/20 rounded-3xl p-5 flex flex-col justify-between text-white relative overflow-hidden">
+              <div className="flex items-center gap-2.5 mb-3 relative z-10">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <Building className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-black text-white/95">هزینه تمام‌شده شرکت</span>
+              </div>
+              <div className="relative z-10">
+                <div className="text-xl font-black font-mono" dir="ltr">
+                  {formatAmount(contractStats.companyTotalCost * multiplier)} <span className="text-xs text-white/80">{currencyLabel}</span>
+                </div>
+                <span className="text-[9px] font-bold text-white/75 block mt-1">
+                  شامل {contractStats.employerInsuranceRate}٪ سهم کارفرما ({formatAmount(contractStats.employerInsuranceAmount * multiplier)})
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* بخش پیش‌نمایش و صدور فیش حقوقی رسمی (Pay Slip) */}
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 dark:text-white">
+                    فیش رسمی حقوق و دستمزد پرسنلی
+                  </h3>
+                  <span className="text-xs font-bold text-slate-500">
+                    شناسه قرارداد: {currentContract.id.slice(0, 8)} | بازه: {currentContract.startDate} تا {currentContract.endDate}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrintSlip}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 text-xs font-black transition-all shadow-sm"
+                >
+                  <Printer className="w-4 h-4" /> چاپ فیش
+                </button>
+              </div>
+            </div>
+
+            {/* برگه فیش حقوقی شیشه‌ای استاندارد */}
+            <div className="mt-5 p-6 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 print:border-black">
+              
+              {/* هدر فیش */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-dashed border-slate-300 dark:border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-black">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800 dark:text-white">
+                      {worker.name} {worker.lastName}
+                    </h4>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      کد ملی: {worker.nationalId || 'ثبت‌نشده'} | شماره بیمه: {worker.insuranceCode || 'دارای قرارداد کاری'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-left text-xs font-bold text-slate-500">
+                  <span>سیستم یکپارچه پیمان ERP</span>
+                  <div className="text-[10px] font-mono mt-0.5 text-slate-400">تاریخ صدور: {moment().format('jYYYY/jMM/jDD')}</div>
+                </div>
+              </div>
+
+              {/* جدول دو ستونه درآمدها و کسورات */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
+                
+                {/* ستون راست: درآمدها و مزایا */}
+                <div className="space-y-3">
+                  <h5 className="text-xs font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 pb-2 border-b border-emerald-200 dark:border-emerald-900/40">
+                    <TrendingUp className="w-4 h-4" /> درآمدها و مزایای کارکرد
+                  </h5>
+
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+                    <span>حقوق پایه موظفی ({contractStats.totalDays} روز):</span>
+                    <span className="font-mono font-black" dir="ltr">{formatAmount(contractStats.totalExpectedWage * multiplier)} {currencyLabel}</span>
+                  </div>
+
+                  {contractStats.totalBonuses > 0 && (
+                    <div className="flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      <span>پاداش و اضافات کارگاهی:</span>
+                      <span className="font-mono font-black" dir="ltr">+ {formatAmount(contractStats.totalBonuses * multiplier)} {currencyLabel}</span>
+                    </div>
+                  )}
+
+                  {contractStats.deductionForAbsence > 0 && (
+                    <div className="flex items-center justify-between text-xs font-bold text-rose-500">
+                      <span>کسر غیبت ({contractStats.absentDays + contractStats.unpaidLeaves} روز):</span>
+                      <span className="font-mono font-black" dir="ltr">- {formatAmount(contractStats.deductionForAbsence * multiplier)} {currencyLabel}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs font-black text-slate-800 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <span>مجموع ناخالص حقوق مشمول:</span>
+                    <span className="font-mono text-sm text-blue-600 dark:text-blue-400" dir="ltr">
+                      {formatAmount(contractStats.grossWage * multiplier)} {currencyLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* ستون چپ: کسورات قانونی و مالی */}
+                <div className="space-y-3">
+                  <h5 className="text-xs font-black text-rose-700 dark:text-rose-400 flex items-center gap-1.5 pb-2 border-b border-rose-200 dark:border-rose-900/40">
+                    <TrendingDown className="w-4 h-4" /> کسورات قانونی، بیمه و مساعده
+                  </h5>
+
+                  <div className="flex items-center justify-between text-xs font-bold text-rose-600 dark:text-rose-400">
+                    <span>کسر حق بیمه سهم کارگر ({contractStats.employeeInsuranceRate}٪):</span>
+                    <span className="font-mono font-black" dir="ltr">- {formatAmount(contractStats.employeeInsuranceAmount * multiplier)} {currencyLabel}</span>
+                  </div>
+
+                  {contractStats.totalAdvances > 0 && (
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+                      <span>مساعده‌های دریافتی بین ماه:</span>
+                      <span className="font-mono font-black" dir="ltr">- {formatAmount(contractStats.totalAdvances * multiplier)} {currencyLabel}</span>
+                    </div>
+                  )}
+
+                  {contractStats.totalPenalties > 0 && (
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+                      <span>جریمه یا سایر کسورات:</span>
+                      <span className="font-mono font-black" dir="ltr">- {formatAmount(contractStats.totalPenalties * multiplier)} {currencyLabel}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs font-black text-slate-800 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <span>مجموع کل کسورات از پرسنل:</span>
+                    <span className="font-mono text-sm text-rose-600 dark:text-rose-400" dir="ltr">
+                      - {formatAmount(contractStats.totalDeductions * multiplier)} {currencyLabel}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* باکس جمع‌بندی نهایی فیش حقوقی */}
+              <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* کارت سبز: خالص پرداختی به پرسنل */}
+                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 block">خالص قابل پرداخت به نیرو:</span>
+                    <span className="text-[9px] font-medium text-emerald-600 dark:text-emerald-400">حقوق ناخالص منهای ۷٪ بیمه و مساعده</span>
+                  </div>
+                  <div className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-400" dir="ltr">
+                    {formatAmount(contractStats.netPayable * multiplier)} <span className="text-xs">{currencyLabel}</span>
+                  </div>
+                </div>
+
+                {/* کارت بنفش: بهای تمام‌شده و سهم کارفرما برای شرکت */}
+                <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-indigo-800 dark:text-indigo-300 block">هزینه قطعی دفاتر شرکت:</span>
+                    <span className="text-[9px] font-medium text-indigo-600 dark:text-indigo-400">ناخالص + {contractStats.employerInsuranceRate}٪ سهم کارفرما ({formatAmount(contractStats.employerInsuranceAmount * multiplier)})</span>
+                  </div>
+                  <div className="text-lg font-black font-mono text-indigo-700 dark:text-indigo-400" dir="ltr">
+                    {formatAmount(contractStats.companyTotalCost * multiplier)} <span className="text-xs">{currencyLabel}</span>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           </div>
 
@@ -256,7 +632,7 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
                  <UserX className="w-8 h-8 text-rose-400" />
                  <div className="flex flex-col">
                    <span className="text-sm font-black text-slate-800 dark:text-slate-200">ثبت غیبت امروز</span>
-                   <span className="text-[10px] font-bold text-slate-500 mt-0.5">کسر {formatAmount(contractStats.dailyWage)} تومان از حقوق</span>
+                   <span className="text-[10px] font-bold text-slate-500 mt-0.5">کسر {formatAmount(contractStats.dailyWage * multiplier)} {currencyLabel} از حقوق</span>
                  </div>
                </div>
                <button onClick={() => handleQuickLog('ABSENT')} className="px-4 py-2 bg-rose-100 hover:bg-rose-200 dark:bg-rose-500/20 dark:hover:bg-rose-500/30 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-black transition-colors shadow-sm">ثبت غیبت</button>
@@ -276,7 +652,7 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
             </div>
           </div>
 
-          {/* دکمه تسویه نهایی (فقط روزهای آخر فعال و بولد می‌شه) */}
+          {/* دکمه تسویه نهایی و ثبت سند مالی */}
           <div className="pt-4">
             <button 
               onClick={handleSettleContract}
@@ -288,7 +664,7 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
               }`}
             >
               <CheckCircle2 className="w-6 h-6" />
-              بستن حساب این ماه و صدور فیش حقوقی
+              بستن حساب این ماه، صدور فیش و ثبت سند مالی ({formatAmount(contractStats.netPayable * multiplier)} {currencyLabel})
             </button>
             {contractStats.remainingDays > 5 && (
               <p className="text-center text-[10px] font-bold text-slate-500 mt-3">دکمه تسویه حساب، ۵ روز مانده به پایان قرارداد فعال خواهد شد.</p>
@@ -298,4 +674,4 @@ export default function LaborMonthlyTab({ workerId }: { workerId: string }) {
       )}
     </motion.div>
   );
-}LaborMonthlyTab.tsx
+}

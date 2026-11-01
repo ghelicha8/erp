@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileDown, X, Layers, Wallet, Users, ShoppingCart, Truck, 
   Filter, Merge, FileSpreadsheet, FileText, Activity, Bookmark, 
-  ListChecks, Check, Loader2, Settings2, PenTool, Edit3, Palette, ArrowUpDown, Calculator, EyeOff, Wand2, ArrowLeftRight, FolderGit2, ChevronDown, CalendarClock, Coffee
+  ListChecks, Check, Loader2, Settings2, PenTool, Edit3, Palette, ArrowUpDown, Calculator, EyeOff, Wand2, ArrowLeftRight, FolderGit2, ChevronDown, CalendarClock, Coffee,
+  Wrench, ShieldAlert, Settings, Handshake, FileSignature
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
@@ -13,9 +14,10 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useFinanceStore } from '../../store/financeStore';
 import { useProjectStore } from '../../features/projects/store/projectStore';
 import { usePurchaseStore } from '../../store/purchaseStore';
-import { useLogisticsStore } from '../../store/logisticsStore';
+import { useLogisticsStore, REPAIR_TYPE_LABELS, INSURANCE_TYPE_LABELS, TOOL_RENTAL_UNIT_LABELS } from '../../store/logisticsStore';
 import { useLaborStore } from '../../store/laborStore';
 import { useClientStore } from '../../store/clientStore'; 
+import { useContractStore, calculateFinalContractAmount } from '../../store/contractStore';
 
 import GlassSelect from '../ui/GlassSelect';
 import GlassDatePicker from '../ui/GlassDatePicker';
@@ -27,16 +29,19 @@ export interface ExportBuilderProps {
   projectId?: string; 
   clientId?: string; 
   workerId?: string;
-  context?: 'PROJECT' | 'CLIENT' | 'LABOR' | 'GLOBAL'; 
+  vehicleId?: string;
+  toolId?: string;
+  context?: 'PROJECT' | 'CLIENT' | 'LABOR' | 'VEHICLE' | 'TOOL' | 'SUPPLIER' | 'INVENTORY' | 'GLOBAL'; 
   onClose: () => void; 
 }
 
-// 💡 آرایه‌های داینامیک برای منوهای گزارش‌گیری (Global vs Labor)
+// 💡 آرایه‌های داینامیک برای منوهای گزارش‌گیری (Global vs Labor vs Vehicle vs Tool)
 const GLOBAL_MODULES = [
   { id: 'FINANCE', label: 'تراکنش‌های مالی', icon: Wallet, color: 'text-emerald-500' },
   { id: 'PURCHASES', label: 'خرید مصالح', icon: ShoppingCart, color: 'text-rose-500' },
   { id: 'LABOR', label: 'نیروی کار', icon: Users, color: 'text-orange-500' },
-  { id: 'LOGISTICS', label: 'لجستیک و حمل', icon: Truck, color: 'text-blue-500' }
+  { id: 'LOGISTICS', label: 'لجستیک و ماشین‌آلات', icon: Truck, color: 'text-blue-500' },
+  { id: 'CONTRACTS', label: 'قراردادها و پیمان‌ها', icon: FileSignature, color: 'text-amber-500' }
 ];
 
 const LABOR_SPECIFIC_MODULES = [
@@ -46,18 +51,48 @@ const LABOR_SPECIFIC_MODULES = [
   { id: 'LABOR_MISC', label: 'متفرقه (رفاهی و کسر)', icon: Coffee, color: 'text-pink-500' }
 ];
 
+const VEHICLE_SPECIFIC_MODULES = [
+  { id: 'VEHICLE_FREIGHT', label: 'تاریخچه باربری (کرایه‌ها)', icon: Truck, color: 'text-amber-500' },
+  { id: 'LOGISTICS_REPAIRS', label: 'تاریخچه تعمیرات', icon: Wrench, color: 'text-rose-500' },
+  { id: 'LOGISTICS_INSURANCE', label: 'تاریخچه بیمه‌ها', icon: ShieldAlert, color: 'text-blue-500' },
+  { id: 'LOGISTICS_PERIODIC', label: 'خدمات دوره‌ای', icon: Settings, color: 'text-teal-500' },
+  { id: 'LOGISTICS_MISC', label: 'هزینه‌های جانبی', icon: FileText, color: 'text-orange-500' },
+  { id: 'LOGISTICS_DRIVERS', label: 'راننده‌ها و دستمزد', icon: Users, color: 'text-indigo-500' },
+  { id: 'LOGISTICS_FINANCE', label: 'تراکنش‌ها و تسویه‌ها', icon: Wallet, color: 'text-emerald-500' }
+];
+
+const TOOL_SPECIFIC_MODULES = [
+  { id: 'TOOL_RENTALS', label: 'تاریخچه اجاره و اپراتور', icon: Handshake, color: 'text-purple-500' },
+  { id: 'LOGISTICS_REPAIRS', label: 'تاریخچه تعمیرات ابزار', icon: Wrench, color: 'text-rose-500' },
+  { id: 'LOGISTICS_INSURANCE', label: 'تاریخچه بیمه‌ها', icon: ShieldAlert, color: 'text-blue-500' },
+  { id: 'LOGISTICS_PERIODIC', label: 'سرویس‌های دوره‌ای', icon: Settings, color: 'text-teal-500' },
+  { id: 'LOGISTICS_MISC', label: 'هزینه‌های جانبی', icon: FileText, color: 'text-orange-500' },
+  { id: 'LOGISTICS_FINANCE', label: 'تراکنش‌ها و تسویه‌ها', icon: Wallet, color: 'text-emerald-500' }
+];
+
 const SCHEMAS: Record<string, Record<string, string>> = {
   FINANCE: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح تراکنش', vendor: 'طرف حساب', phase: 'فاز', amount: 'مبلغ تراکنش', type: 'نوع (نقد/چک)', status: 'وضعیت', chequeDetails: 'مشخصات چک', dueDate: 'تاریخ سررسید', receiptDetails: 'رسید متنی' },
   PURCHASES: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح فاکتور', vendor: 'فروشنده', phase: 'فاز', amount: 'مبلغ فاکتور', paidAmount: 'مبلغ پرداخت‌شده', remain: 'مانده بدهی', paymentDetails: 'جزئیات پرداختی (اسناد متصل)', receiptDetails: 'یادداشت فاکتور', profit: 'سود' },
   LABOR: { date: 'تاریخ', projectName: 'پروژه', title: 'تخصص / کار', vendor: 'نام نیرو', phase: 'فاز', amount: 'دستمزد کل', paidAmount: 'پرداختی و مساعده', remain: 'بستانکاری نیرو', paymentDetails: 'جزئیات پرداختی (اسناد متصل)', receiptDetails: 'توضیحات کارکرد', profit: 'سود' },
-  LOGISTICS: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح سرویس', vendor: 'راننده / ماشین', phase: 'فاز', amount: 'مبلغ کرایه', paidAmount: 'کرایه پرداخت‌شده', remain: 'مانده بدهی', paymentDetails: 'جزئیات پرداختی (اسناد متصل)', receiptDetails: 'یادداشت', profit: 'سود' },
+  LOGISTICS: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح سرویس / اجاره', vendor: 'خودرو / ابزار / اپراتور', phase: 'فاز', amount: 'مبلغ کل', paidAmount: 'مبلغ پرداخت‌شده', remain: 'مانده تسویه', paymentDetails: 'جزئیات پرداختی (اسناد متصل)', receiptDetails: 'یادداشت', profit: 'سود' },
+  CONTRACTS: { date: 'تاریخ انعقاد', projectName: 'پروژه', title: 'موضوع قرارداد', vendor: 'طرف حساب', phase: 'شماره قرارداد', amount: 'مبلغ نهایی پیمان', paidAmount: 'مبلغ پرداخت‌شده', remain: 'مانده تعهد', status: 'وضعیت', receiptDetails: 'توضیحات و شرایط' },
   MIXED: { date: 'تاریخ', projectName: 'پروژه', module: 'بخش', title: 'شرح / عنوان', vendor: 'طرف حساب', phase: 'فاز', amount: 'مبلغ کل', paidAmount: 'کل پرداختی', remain: 'مانده حساب', paymentDetails: 'جزئیات اسناد پرداختی', receiptDetails: 'رسید متنی/یادداشت', profit: 'سود', dueDate: 'تاریخ سررسید چک' },
   
-  // 💡 شماتیک اختصاصی برای تب‌های نیروی کار (اضافه شدن سود پنهان برای ردیف‌های کارکرد)
+  // 💡 شماتیک اختصاصی برای تب‌های نیروی کار
   LABOR_WORK_LOGS: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح کار', phase: 'فاز', amount: 'دستمزد کل', profit: 'سود', receiptDetails: 'ملاحظات/توضیحات' },
   LABOR_FINANCE: { date: 'تاریخ', title: 'شرح پرداخت', amount: 'مبلغ پرداختی', receiptDetails: 'رسید متنی/ملاحظات' },
   LABOR_MONTHLY: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح قرارداد', amount: 'مبلغ دوره', profit: 'سود', receiptDetails: 'ملاحظات' },
-  LABOR_MISC: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح (رفاهی/مساعده/پاداش)', amount: 'مبلغ', profit: 'سود', receiptDetails: 'ملاحظات' }
+  LABOR_MISC: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح (رفاهی/مساعده/پاداش)', amount: 'مبلغ', profit: 'سود', receiptDetails: 'ملاحظات' },
+
+  // 💡 شماتیک اختصاصی لجستیک (خودروها و ابزارآلات)
+  VEHICLE_FREIGHT: { date: 'تاریخ', projectName: 'پروژه', title: 'شرح سرویس باربری', vendor: 'راننده / طرف حساب', amount: 'کرایه کل', paidAmount: 'تسویه شده', remain: 'مانده طلب', status: 'وضعیت تسویه', receiptDetails: 'توضیحات' },
+  TOOL_RENTALS: { date: 'تاریخ تحویل', projectName: 'پروژه / کارفرما', title: 'شرح اجاره و واحد', vendor: 'تحویل‌گیرنده / اپراتور', amount: 'مبلغ کل اجاره', paidAmount: 'دریافت شده', remain: 'مانده طلب', status: 'وضعیت تسویه', receiptDetails: 'جزئیات اپراتور و یادداشت' },
+  LOGISTICS_REPAIRS: { date: 'تاریخ تعمیر', title: 'دسته فنی / شرح خرابی', vendor: 'تعمیرکار / مکانیک', amount: 'هزینه کل تعمیر', paidAmount: 'پرداخت شده', remain: 'مانده بدهی', status: 'وضعیت تعمیرگاه', receiptDetails: 'قطعات مصرفی و توضیحات' },
+  LOGISTICS_INSURANCE: { date: 'تاریخ صدور', dueDate: 'تاریخ انقضا', title: 'نوع بیمه‌نامه', vendor: 'شرکت بیمه', amount: 'حق بیمه کل', paidAmount: 'پرداخت شده', remain: 'مانده اقساط', status: 'روش پرداخت', receiptDetails: 'شماره بیمه‌نامه / توضیحات' },
+  LOGISTICS_PERIODIC: { date: 'تاریخ سرویس', title: 'اقلام سرویس دوره‌ای', vendor: 'کیلومتر / کارکرد', amount: 'هزینه کل سرویس', paidAmount: 'پرداخت شده', remain: 'مانده بدهی', status: 'وضعیت تسویه', receiptDetails: 'یادداشت سرویس' },
+  LOGISTICS_MISC: { date: 'تاریخ', title: 'سرفصل هزینه جانبی', amount: 'مبلغ هزینه', paidAmount: 'پرداخت شده', remain: 'مانده بدهی', status: 'وضعیت تسویه', receiptDetails: 'توضیحات' },
+  LOGISTICS_DRIVERS: { date: 'تاریخ انتساب', title: 'نوع قرارداد راننده', vendor: 'نام راننده', amount: 'مجموع دستمزد', status: 'وضعیت تسویه', receiptDetails: 'یادداشت' },
+  LOGISTICS_FINANCE: { date: 'تاریخ سند', title: 'شرح تراکنش مالی', vendor: 'روش پرداخت', amount: 'مبلغ پرداختی', status: 'وضعیت چک/سند', chequeDetails: 'مشخصات چک', receiptDetails: 'رسید / توضیحات' }
 };
 
 const MASTER_DICTIONARY: Record<string, string> = {
@@ -175,20 +210,31 @@ const AnimatedMultiSelect = ({ options, selected, onChange, placeholder }: any) 
   );
 };
 
-export default function ExportBuilder({ projectId, clientId, workerId, context, onClose }: ExportBuilderProps) {
+export default function ExportBuilder({ projectId, clientId, workerId, vehicleId, toolId, context, onClose }: ExportBuilderProps) {
   const settings = useSettingsStore(state => state.settings);
   const allProjects = useProjectStore(state => state.projects) || [];
   const allTransactions = useFinanceStore(state => state.transactions) || [];
   const allPurchases = usePurchaseStore(state => state.purchases) || [];
   const allLogs = useLogisticsStore(state => state.logs) || [];
+  const allVehicles = useLogisticsStore(state => state.vehicles) || [];
+  const allTools = useLogisticsStore(state => state.tools) || [];
+  const allToolRentals = useLogisticsStore(state => state.toolRentals) || [];
+  const allRepairs = useLogisticsStore(state => state.repairs) || [];
+  const allInsurances = useLogisticsStore(state => state.insurances) || [];
+  const allPeriodicServices = useLogisticsStore(state => state.periodicServices) || [];
+  const allMiscExpenses = useLogisticsStore(state => state.miscExpenses) || [];
+  const allDriverAssignments = useLogisticsStore(state => state.driverAssignments) || [];
   const allLaborLogs = useLaborStore(state => state.logs) || [];
   const allWorkers = useLaborStore(state => state.workers) || [];
   const allClients = useClientStore(state => state.clients) || [];
+  const allContracts = useContractStore(state => state.contracts) || [];
 
-  const derivedContext = context || (projectId ? 'PROJECT' : clientId ? 'CLIENT' : workerId ? 'LABOR' : 'GLOBAL');
+  const derivedContext = context || (vehicleId ? 'VEHICLE' : toolId ? 'TOOL' : projectId ? 'PROJECT' : clientId ? 'CLIENT' : workerId ? 'LABOR' : 'GLOBAL');
   
   const targetProject = projectId ? allProjects.find(p => String(p.id) === String(projectId)) : null;
   const targetWorker = workerId ? allWorkers.find(w => String(w.id) === String(workerId)) : null;
+  const targetVehicle = vehicleId ? allVehicles.find(v => String(v.id) === String(vehicleId)) : null;
+  const targetTool = toolId ? allTools.find(t => String(t.id) === String(toolId)) : null;
   
   const rawTargetPhases = targetProject?.phases;
   const projectPhases = useMemo(() => rawTargetPhases || [], [rawTargetPhases]);
@@ -198,26 +244,45 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
   
   const autoClientName = (derivedContext === 'LABOR' && targetWorker) 
     ? `${targetWorker.name} ${targetWorker.lastName || ''}` 
+    : (derivedContext === 'VEHICLE' && targetVehicle)
+    ? `${targetVehicle.name} (${targetVehicle.plateNumber || 'بدون پلاک'})`
+    : (derivedContext === 'TOOL' && targetTool)
+    ? `${targetTool.name} (${targetTool.serialNumber || 'بدون سریال'})`
     : clientObj ? `${clientObj.name} ${clientObj.lastName || ''}` : 'عمومی / تمامی پروژه‌ها';
 
   const clientProjects = useMemo(() => {
-    if (derivedContext === 'LABOR') return allProjects;
+    if (derivedContext === 'LABOR' || derivedContext === 'VEHICLE' || derivedContext === 'TOOL') return allProjects;
     return allProjects.filter(p => String(p.clientId) === String(finalClientId));
   }, [allProjects, finalClientId, derivedContext]);
   
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>(projectId ? [String(projectId)] : clientProjects.map(p => String(p.id)));
 
   // 💡 تشخیص هوشمند ماژول‌های فعال برای چیدمان گزارش
-  const currentModulesConfig = derivedContext === 'LABOR' ? LABOR_SPECIFIC_MODULES : GLOBAL_MODULES;
+  const currentModulesConfig = derivedContext === 'LABOR' 
+    ? LABOR_SPECIFIC_MODULES 
+    : derivedContext === 'VEHICLE' 
+    ? VEHICLE_SPECIFIC_MODULES 
+    : derivedContext === 'TOOL' 
+    ? TOOL_SPECIFIC_MODULES 
+    : GLOBAL_MODULES;
 
   const [selectedModules, setSelectedModules] = useState<string[]>(
-    derivedContext === 'LABOR' ? ['LABOR_WORK_LOGS', 'LABOR_FINANCE', 'LABOR_MONTHLY', 'LABOR_MISC'] : ['FINANCE', 'PURCHASES', 'LABOR', 'LOGISTICS']
+    derivedContext === 'LABOR' 
+      ? ['LABOR_WORK_LOGS', 'LABOR_FINANCE', 'LABOR_MONTHLY', 'LABOR_MISC'] 
+      : derivedContext === 'VEHICLE'
+      ? ['VEHICLE_FREIGHT', 'LOGISTICS_REPAIRS', 'LOGISTICS_INSURANCE', 'LOGISTICS_PERIODIC', 'LOGISTICS_MISC', 'LOGISTICS_DRIVERS', 'LOGISTICS_FINANCE']
+      : derivedContext === 'TOOL'
+      ? ['TOOL_RENTALS', 'LOGISTICS_REPAIRS', 'LOGISTICS_INSURANCE', 'LOGISTICS_PERIODIC', 'LOGISTICS_MISC', 'LOGISTICS_FINANCE']
+      : ['FINANCE', 'PURCHASES', 'LABOR', 'LOGISTICS', 'CONTRACTS']
   );
   
   const [moduleGroups, setModuleGroups] = useState<Record<string, string>>({
-    FINANCE: 'گروه ۱ (مالی)', PURCHASES: 'گروه ۲ (خرید)', LABOR: 'گروه ۳ (نیرو)', LOGISTICS: 'گروه ۴ (لجستیک)',
-    LABOR_WORK_LOGS: 'گروه ۱ (کارکرد)', LABOR_FINANCE: 'گروه ۲ (پرداختی)', LABOR_MONTHLY: 'گروه ۳ (ماهانه)', LABOR_MISC: 'گروه ۴ (متفرقه)'
+    FINANCE: 'گروه ۱ (مالی)', PURCHASES: 'گروه ۲ (خرید)', LABOR: 'گروه ۳ (نیرو)', LOGISTICS: 'گروه ۴ (لجستیک)', CONTRACTS: 'گروه ۵ (قراردادها)',
+    LABOR_WORK_LOGS: 'گروه ۱ (کارکرد)', LABOR_FINANCE: 'گروه ۲ (پرداختی)', LABOR_MONTHLY: 'گروه ۳ (ماهانه)', LABOR_MISC: 'گروه ۴ (متفرقه)',
+    VEHICLE_FREIGHT: 'گروه ۱ (باربری)', TOOL_RENTALS: 'گروه ۱ (اجاره ابزار)', LOGISTICS_REPAIRS: 'گروه ۲ (تعمیرات)', LOGISTICS_INSURANCE: 'گروه ۳ (بیمه)',
+    LOGISTICS_PERIODIC: 'گروه ۴ (سرویس دوره‌ای)', LOGISTICS_MISC: 'گروه ۵ (هزینه‌های جانبی)', LOGISTICS_DRIVERS: 'گروه ۶ (رانندگان)', LOGISTICS_FINANCE: 'گروه ۷ (تسویه‌های مالی)'
   });
+
 
   const [datePreset, setDatePreset] = useState('ALL'); 
   const [startDate, setStartDate] = useState('');
@@ -228,10 +293,16 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
   const [priceStrategy, setPriceStrategy] = useState<'BILLED' | 'INTERNAL'>('BILLED');
   const [includeSignature, setIncludeSignature] = useState(true);
   
-  // 💡 مدیریت تایتل بر اساس کانتکست نیروی کار
+  // 💡 مدیریت تایتل بر اساس کانتکست
   const getDynamicTitle = () => {
     if (derivedContext === 'LABOR' && targetWorker) {
       return `گزارش جامع نیروی کار: ${targetWorker.name} ${targetWorker.lastName || ''}`;
+    }
+    if (derivedContext === 'VEHICLE' && targetVehicle) {
+      return `گزارش جامع ناوگان: ${targetVehicle.name} (${targetVehicle.plateNumber || 'بدون پلاک'})`;
+    }
+    if (derivedContext === 'TOOL' && targetTool) {
+      return `گزارش جامع ابزار و تجهیزات: ${targetTool.name} (${targetTool.serialNumber || 'بدون سریال'})`;
     }
     if (selectedProjectIds.length === 1 && derivedContext !== 'LABOR') {
       const p = allProjects.find(p => String(p.id) === String(selectedProjectIds[0]));
@@ -271,13 +342,13 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
       }
     });
     // فقط برای فایل‌های ترکیبی بیرون از نیروی کار کلیدهای Mixed را اضافه کن
-    if (derivedContext !== 'LABOR' && SCHEMAS['MIXED']) {
+    if (derivedContext !== 'LABOR' && derivedContext !== 'VEHICLE' && derivedContext !== 'TOOL' && SCHEMAS['MIXED']) {
       Object.keys(SCHEMAS['MIXED']).forEach(k => keys.add(k));
     }
     return Array.from(keys);
   }, [currentModulesConfig, derivedContext]);
 
-  const isSingleProject = selectedProjectIds.length <= 1;
+  const isSingleProject = selectedProjectIds.length <= 1 && derivedContext !== 'VEHICLE' && derivedContext !== 'TOOL';
   const allPossibleColumns = isSingleProject ? baseColumns.filter(c => c !== 'projectName') : baseColumns;
   
   const initialColumns = allPossibleColumns.filter(c => c !== 'profit' && c !== 'projectName');
@@ -300,11 +371,26 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
   const [isExporting, setIsExporting] = useState<'EXCEL' | 'PDF' | null>(null);
 
   const phaseOptions = useMemo(() => [{ value: 'ALL', label: 'تمامی فازها' }, ...projectPhases.map((p: any) => ({ value: p.id, label: p.name }))], [projectPhases]);
-  const groupOptions = [{ value: 'گروه ۱ (مالی)', label: 'گروه ۱' }, { value: 'گروه ۲ (خرید)', label: 'گروه ۲' }, { value: 'گروه ۳ (نیرو)', label: 'گروه ۳' }, { value: 'گروه ۴ (لجستیک)', label: 'گروه ۴' }, { value: 'گروه ۵ (تجمیعی)', label: 'گروه ۵' }];
+  const groupOptions = [
+    { value: 'گروه ۱ (مالی)', label: 'گروه ۱' },
+    { value: 'گروه ۲ (خرید)', label: 'گروه ۲' },
+    { value: 'گروه ۳ (نیرو)', label: 'گروه ۳' },
+    { value: 'گروه ۴ (لجستیک)', label: 'گروه ۴' },
+    { value: 'گروه ۵ (قراردادها)', label: 'گروه ۵ (قراردادها)' },
+    { value: 'گروه ۵ (تجمیعی)', label: 'گروه تجمیعی' },
+    { value: 'گروه ۱ (باربری)', label: 'گروه باربری' },
+    { value: 'گروه ۱ (اجاره ابزار)', label: 'گروه اجاره' },
+    { value: 'گروه ۲ (تعمیرات)', label: 'گروه تعمیرات' },
+    { value: 'گروه ۳ (بیمه)', label: 'گروه بیمه' },
+    { value: 'گروه ۴ (سرویس دوره‌ای)', label: 'گروه سرویس دوره‌ای' },
+    { value: 'گروه ۵ (هزینه‌های جانبی)', label: 'گروه هزینه‌های جانبی' },
+    { value: 'گروه ۶ (رانندگان)', label: 'گروه رانندگان' },
+    { value: 'گروه ۷ (تسویه‌های مالی)', label: 'گروه تسویه‌ها' }
+  ];
 
   useEffect(() => {
-    if (datePreset === 'THIS_MONTH') { setStartDate(moment().startOf('jMonth').format('jYYYY/jMM/jDD')); setEndDate(moment().endOf('jMonth').format('jYYYY/jMM/jDD')); }
-    else if (datePreset === 'THIS_YEAR') { setStartDate(moment().startOf('jYear').format('jYYYY/jMM/jDD')); setEndDate(moment().endOf('jYear').format('jYYYY/jMM/jDD')); }
+    if (datePreset === 'THIS_MONTH') { setStartDate(moment().startOf('jMonth' as any).format('jYYYY/jMM/jDD')); setEndDate(moment().endOf('jMonth' as any).format('jYYYY/jMM/jDD')); }
+    else if (datePreset === 'THIS_YEAR') { setStartDate(moment().startOf('jYear' as any).format('jYYYY/jMM/jDD')); setEndDate(moment().endOf('jYear' as any).format('jYYYY/jMM/jDD')); }
     else if (datePreset === 'ALL') { setStartDate(''); setEndDate(''); }
   }, [datePreset]);
 
@@ -347,7 +433,7 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
             if (t.type === 'CASH') {
               details.push(`نقدی: ${amt.toLocaleString('fa-IR')}`);
             } else if (t.type === 'CHEQUE') {
-              const bank = t.chequeDetails?.bank || t.chequeDetails?.bankName || 'نامشخص';
+              const bank = t.chequeDetails?.bank || (t.chequeDetails as any)?.bankName || 'نامشخص';
               details.push(`چک (${bank}): ${amt.toLocaleString('fa-IR')}`);
             }
           }
@@ -357,7 +443,7 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
     };
 
     const calcCosts = (item: any) => {
-      const internal = safeNum(item.internalCost) || safeNum(item.totalWage) || safeNum(item.totalCost) || 0;
+      const internal = safeNum(item.internalCost) || safeNum((item as any).totalWage) || safeNum((item as any).totalCost) || safeNum((item as any).wage) || safeNum((item as any).amount) || 0;
       const billed = safeNum(item.billedCost) || internal;
       return { amount: priceStrategy === 'BILLED' ? billed : internal, profit: billed - internal };
     };
@@ -408,8 +494,142 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
           });
         });
       }
-    } 
-    // 💡 بخش اصلی برنامه (پروژه و کارفرما) بدون تغییر باقی موند
+    }
+    // 💡 تفکیک هوشمند برای پروفایل خودرو و ابزارآلات (VEHICLE / TOOL CONTEXT)
+    else if (derivedContext === 'VEHICLE' || derivedContext === 'TOOL') {
+      const targetAssetId = String(vehicleId || toolId || '');
+
+      if (selectedModules.includes('VEHICLE_FREIGHT') && derivedContext === 'VEHICLE') {
+        allLogs.filter(l => String(l.vehicleId) === targetAssetId && isDateMatch(l.date || l.startDate || '')).forEach(l => {
+          const amount = safeNum(l.billedCost) || safeNum(l.internalCost);
+          const paid = safeNum(l.paidAmount);
+          const remain = Math.max(0, amount - paid);
+          raw.push({
+            _id: `vf_${l.id}`, _index: globalIndex++, _module: 'VEHICLE_FREIGHT', module: 'باربری',
+            projectName: getProjectName(l.projectId), date: l.date || l.startDate || '-',
+            title: l.title || 'سرویس باربری', vendor: l.driverName || l.provider || '-',
+            amount, paidAmount: paid, remain,
+            status: remain <= 0 ? 'تسویه شده' : paid > 0 ? 'تسویه ناقص' : 'بدهکار',
+            receiptDetails: l.description || '-'
+          });
+        });
+      }
+
+      if (selectedModules.includes('TOOL_RENTALS') && derivedContext === 'TOOL') {
+        allToolRentals.filter(r => String(r.toolId) === targetAssetId && isDateMatch(r.startDate)).forEach(r => {
+          const amount = safeNum(r.totalPrice);
+          const paid = safeNum(r.paidAmount);
+          const remain = Math.max(0, amount - paid);
+          const unitLabel = TOOL_RENTAL_UNIT_LABELS[r.rentalUnit] || r.rentalUnit;
+          const opDetails = r.hasOperator && r.operatorName
+            ? `اپراتور: ${r.operatorName} (${safeNum(r.operatorTotalWage).toLocaleString('fa-IR')} ت)`
+            : 'بدون اپراتور';
+          raw.push({
+            _id: `tr_${r.id}`, _index: globalIndex++, _module: 'TOOL_RENTALS', module: 'اجاره ابزار',
+            projectName: r.projectName || r.clientName || getProjectName(r.projectId),
+            date: r.startDate ? (r.endDate ? `${r.startDate} تا ${r.endDate}` : r.startDate) : '-',
+            title: `${r.title} (${r.quantity} ${unitLabel})`,
+            vendor: r.clientName || r.operatorName || '-',
+            amount, paidAmount: paid, remain,
+            status: r.status === 'ACTIVE' ? 'در حال اجاره' : (remain <= 0 ? 'تسویه شده' : 'مانده‌دار'),
+            receiptDetails: [opDetails, r.description].filter(Boolean).join(' | ') || '-'
+          });
+        });
+      }
+
+      if (selectedModules.includes('LOGISTICS_REPAIRS')) {
+        allRepairs.filter(r => String(r.vehicleId) === targetAssetId && isDateMatch(r.date)).forEach(r => {
+          const amount = safeNum(r.totalCost);
+          const paid = safeNum(r.paidAmount);
+          const remain = Math.max(0, amount - paid);
+          raw.push({
+            _id: `rep_${r.id}`, _index: globalIndex++, _module: 'LOGISTICS_REPAIRS', module: 'تعمیرات',
+            date: r.date, title: `${REPAIR_TYPE_LABELS[r.type] || r.type} - ${r.description}`,
+            vendor: r.mechanicName || '-', amount, paidAmount: paid, remain,
+            status: r.repairStatus === 'IN_WORKSHOP' ? 'در تعمیرگاه' : (remain <= 0 ? 'تسویه شده' : 'بدهکار'),
+            receiptDetails: (r.parts && r.parts.length > 0) ? r.parts.join('، ') : (r.description || '-')
+          });
+        });
+      }
+
+      if (selectedModules.includes('LOGISTICS_INSURANCE')) {
+        allInsurances.filter(ins => String(ins.vehicleId) === targetAssetId && isDateMatch(ins.issueDate)).forEach(ins => {
+          const amount = safeNum(ins.totalPremium);
+          const paid = safeNum(ins.paidAmount);
+          const remain = Math.max(0, amount - paid);
+          raw.push({
+            _id: `ins_${ins.id}`, _index: globalIndex++, _module: 'LOGISTICS_INSURANCE', module: 'بیمه',
+            date: ins.issueDate, dueDate: ins.expiryDate,
+            title: INSURANCE_TYPE_LABELS[ins.type] || ins.type,
+            vendor: ins.companyName || '-', amount, paidAmount: paid, remain,
+            status: ins.paymentType === 'CASH' ? 'نقدی' : ins.paymentType === 'INSTALLMENTS' ? 'اقساطی' : 'چک',
+            receiptDetails: `شماره بیمه‌نامه: ${ins.policyNumber || '-'}${ins.description ? ' | ' + ins.description : ''}`
+          });
+        });
+      }
+
+      if (selectedModules.includes('LOGISTICS_PERIODIC')) {
+        allPeriodicServices.filter(ps => String(ps.vehicleId) === targetAssetId && isDateMatch(ps.date)).forEach(ps => {
+          const amount = safeNum(ps.totalCost);
+          const paid = safeNum(ps.paidAmount);
+          const remain = Math.max(0, amount - paid);
+          raw.push({
+            _id: `ps_${ps.id}`, _index: globalIndex++, _module: 'LOGISTICS_PERIODIC', module: 'سرویس دوره‌ای',
+            date: ps.date, title: (ps.items || []).join('، ') || 'سرویس دوره‌ای',
+            vendor: ps.currentMileage ? `کیلومتر/کارکرد: ${ps.currentMileage.toLocaleString('fa-IR')}` : '-',
+            amount, paidAmount: paid, remain,
+            status: ps.paymentStatus === 'PAID' ? 'تسویه شده' : ps.paymentStatus === 'PARTIAL' ? 'تسویه ناقص' : 'بدهکار',
+            receiptDetails: ps.description || '-'
+          });
+        });
+      }
+
+      if (selectedModules.includes('LOGISTICS_MISC')) {
+        allMiscExpenses.filter(m => String(m.vehicleId) === targetAssetId && isDateMatch(m.date)).forEach(m => {
+          const amount = safeNum(m.amount);
+          const paid = safeNum(m.paidAmount);
+          const remain = Math.max(0, amount - paid);
+          raw.push({
+            _id: `misc_${m.id}`, _index: globalIndex++, _module: 'LOGISTICS_MISC', module: 'هزینه جانبی',
+            date: m.date, title: m.category || 'هزینه جانبی',
+            amount, paidAmount: paid, remain,
+            status: m.paymentStatus === 'PAID' ? 'تسویه شده' : m.paymentStatus === 'PARTIAL' ? 'تسویه ناقص' : 'بدهکار',
+            receiptDetails: m.description || '-'
+          });
+        });
+      }
+
+      if (selectedModules.includes('LOGISTICS_DRIVERS') && derivedContext === 'VEHICLE') {
+        allDriverAssignments.filter(da => String(da.vehicleId) === targetAssetId && isDateMatch(da.assignDate)).forEach(da => {
+          raw.push({
+            _id: `drv_${da.id}`, _index: globalIndex++, _module: 'LOGISTICS_DRIVERS', module: 'رانندگان',
+            date: da.assignDate, title: da.contractType, vendor: da.driverName,
+            amount: safeNum(da.totalEarned),
+            status: da.paymentStatus === 'PAID' ? 'تسویه شده' : 'در جریان',
+            receiptDetails: da.notes || '-'
+          });
+        });
+      }
+
+      if (selectedModules.includes('LOGISTICS_FINANCE')) {
+        allTransactions.filter(t => String(t.referenceId) === targetAssetId && isDateMatch(t.date)).forEach(t => {
+          let chequeStr = '-';
+          let finalStatus = 'نقدی/حواله';
+          if (t.type === 'CHEQUE' && t.chequeDetails) {
+            chequeStr = `بانک: ${t.chequeDetails.bank || '-'} | سریال: ${t.chequeDetails.serialNumber || '-'} | سررسید: ${t.chequeDetails.dueDate || '-'}`;
+            finalStatus = t.chequeDetails.status === 'PENDING' ? 'در جریان' : t.chequeDetails.status === 'BOUNCED' ? 'برگشتی' : 'پاس شده';
+          }
+          raw.push({
+            _id: `lfin_${t.id}`, _index: globalIndex++, _module: 'LOGISTICS_FINANCE', module: 'تراکنش مالی',
+            date: t.date, title: t.description || 'پرداختی مالی',
+            vendor: t.type === 'CHEQUE' ? 'چک بانکی' : 'نقدی / کارت به کارت',
+            amount: safeNum(t.amount), status: finalStatus, chequeDetails: chequeStr,
+            receiptDetails: t.textReceipt || '-'
+          });
+        });
+      }
+    }
+    // 💡 بخش اصلی برنامه (پروژه و کارفرما و جامع)
     else {
       if (selectedModules.includes('PURCHASES')) {
         allPurchases.filter(p => isMatch(p.projectId) && isDateMatch(p.date) && isPhaseMatch(p.phaseId||'GENERAL')).forEach(p => {
@@ -439,14 +659,33 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
       }
 
       if (selectedModules.includes('LOGISTICS')) {
-        allLogs.filter(l => isMatch(l.projectId) && isDateMatch(l.date) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
+        allLogs.filter(l => isMatch(l.projectId) && isDateMatch(l.date || (l as any).startDate) && isPhaseMatch(l.phaseId||'GENERAL')).forEach(l => {
           const { amount, profit } = calcCosts(l);
-          const { paid, detailsStr } = getLinkedPayments(l.id);
+          const { paid: linkedPaid, detailsStr } = getLinkedPayments(l.id);
+          const paid = Math.max(safeNum(l.paidAmount), linkedPaid);
           const remain = amount - paid;
           if (settlementFilter === 'PAID' && remain > 0) return;
           if (settlementFilter === 'UNPAID' && remain <= 0) return;
           
-          raw.push({ _id: `log_${l.id}`, _index: globalIndex++, _module: 'LOGISTICS', module: 'لجستیک', projectName: getProjectName(l.projectId), date: l.date, title: l.title || 'سرویس', vendor: l.provider || '-', phase: getPhaseName(l.phaseId), amount, paidAmount: paid, remain, paymentDetails: detailsStr, profit, dueDate: '-', receiptDetails: '-' });
+          raw.push({ _id: `log_${l.id}`, _index: globalIndex++, _module: 'LOGISTICS', module: 'لجستیک', projectName: getProjectName(l.projectId), date: l.date || (l as any).startDate, title: l.title || 'سرویس', vendor: l.provider || '-', phase: getPhaseName(l.phaseId), amount, paidAmount: paid, remain, paymentDetails: detailsStr, profit, dueDate: '-', receiptDetails: l.description || '-' });
+        });
+
+        allToolRentals.filter(r => isMatch(r.projectId) && isDateMatch(r.startDate)).forEach(r => {
+          const amount = safeNum(r.totalPrice);
+          const profit = amount - safeNum(r.operatorTotalWage);
+          const paid = safeNum(r.paidAmount);
+          const remain = Math.max(0, amount - paid);
+          if (settlementFilter === 'PAID' && remain > 0) return;
+          if (settlementFilter === 'UNPAID' && remain <= 0) return;
+
+          raw.push({
+            _id: `trent_${r.id}`, _index: globalIndex++, _module: 'LOGISTICS', module: 'اجاره ابزار',
+            projectName: r.projectName || getProjectName(r.projectId), date: r.startDate,
+            title: `${r.toolName} - ${r.title}`, vendor: r.operatorName || r.clientName || '-',
+            phase: 'عمومی', amount, paidAmount: paid, remain,
+            paymentDetails: r.hasOperator ? `اپراتور: ${r.operatorName || '-'}` : '-',
+            profit, dueDate: r.endDate || '-', receiptDetails: r.description || '-'
+          });
         });
       }
 
@@ -507,6 +746,41 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
           }
         });
       }
+
+      if (selectedModules.includes('CONTRACTS')) {
+        allContracts.filter(c => isMatch(c.projectId) && isDateMatch(c.startDate)).forEach(c => {
+          const amount = calculateFinalContractAmount(c);
+          const advance = safeNum(c.prepaymentAmount);
+          const contractTxs = allTransactions.filter(t => (t as any).contractId === c.id);
+          const paidTxs = contractTxs.reduce((acc, t) => acc + safeNum(t.amount), 0);
+          const paid = advance + paidTxs;
+          const remain = Math.max(0, amount - paid);
+
+          if (settlementFilter === 'PAID' && remain > 0) return;
+          if (settlementFilter === 'UNPAID' && remain <= 0) return;
+
+          const statusLabel = c.status === 'ACTIVE' ? 'در حال اجرا' : c.status === 'COMPLETED' ? 'تسویه شده' : c.status === 'TERMINATED' ? 'فسخ شده' : c.status === 'SUSPENDED' ? 'معلق' : 'پیش‌نویس';
+
+          raw.push({
+            _id: `cnt_${c.id}`,
+            _index: globalIndex++,
+            _module: 'CONTRACTS',
+            module: 'قراردادها',
+            projectName: c.projectName || getProjectName(c.projectId),
+            date: c.startDate,
+            title: c.title,
+            vendor: c.partyName,
+            phase: c.contractNumber || 'بدون شماره',
+            amount,
+            paidAmount: paid,
+            remain,
+            status: statusLabel,
+            profit: 0,
+            dueDate: c.currentEndDate || c.initialEndDate || '-',
+            receiptDetails: `حسن انجام کار: ${c.retentionPercent}٪ | تاخیر روزانه: ${c.dailyDelayPenalty.toLocaleString('fa-IR')} تومان`
+          });
+        });
+      }
     }
 
     return raw.sort((a,b) => {
@@ -519,7 +793,7 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
       return 0;
     });
 
-  }, [projectId, clientId, workerId, allProjects, allPurchases, allLaborLogs, allLogs, allTransactions, selectedModules, startDate, endDate, phaseFilter, txStatusFilter, settlementFilter, priceStrategy, projectPhases, sortConfig, selectedProjectIds, derivedContext]);
+  }, [projectId, clientId, workerId, vehicleId, toolId, allProjects, allPurchases, allLaborLogs, allLogs, allToolRentals, allRepairs, allInsurances, allPeriodicServices, allMiscExpenses, allDriverAssignments, allTransactions, allContracts, selectedModules, startDate, endDate, phaseFilter, txStatusFilter, settlementFilter, priceStrategy, projectPhases, sortConfig, selectedProjectIds, derivedContext]);
 
   const getFinalValue = (row: any, key: string, isExportingMode: boolean = false) => {
     const overrideKey = `${row._id}_${key}`;
@@ -555,6 +829,7 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
     
     selectedModules.forEach(mod => {
       const groupName = moduleGroups[mod];
+      if (!groupName) return;
       if (!groups[groupName]) {
         groups[groupName] = { modules: [], data: [], mergedSchema: {} };
       }
@@ -564,7 +839,7 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
     Object.keys(groups).forEach(groupName => {
       const group = groups[groupName];
       if (group.modules.length === 1) {
-        group.mergedSchema = SCHEMAS[group.modules[0]];
+        group.mergedSchema = SCHEMAS[group.modules[0]] || SCHEMAS.MIXED;
       } else {
         group.mergedSchema = SCHEMAS.MIXED; 
       }
@@ -593,10 +868,9 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
 
     rawDataList.forEach((r:any) => {
       if (selectedRows.includes(r._id)) {
-        // 💡 در منطق نیروی کار LABOR_FINANCE نقش دریافتی رو داره
-        if (r._module === 'FINANCE' || r._module === 'LABOR_FINANCE') {
+        if (r._module === 'FINANCE' || r._module === 'LABOR_FINANCE' || r._module === 'VEHICLE_FREIGHT' || r._module === 'TOOL_RENTALS') {
           totalReceipts += safeNum(r.amount) * currencyMultiplier;
-        } else {
+        } else if (r._module !== 'LOGISTICS_FINANCE') {
           totalExpenses += safeNum(r.amount) * currencyMultiplier;
         }
       }
@@ -617,11 +891,15 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
       billingDesc = `حجم/مساحت (${dimL} × ${dimW} × ${dimH}) با قیمت واحد ${(safeNum(dimPrice) * currencyMultiplier).toLocaleString('fa-IR')}`;
     }
 
-    const balance = finalBillingAmount - totalReceipts;
-    const balanceStatus = balance > 0 ? 'کارفرما بدهکار است' : balance < 0 ? 'پیمانکار بدهکار است (بستانکار)' : 'تسویه کامل';
+    const balance = (derivedContext === 'VEHICLE' || derivedContext === 'TOOL')
+      ? (totalReceipts - finalBillingAmount)
+      : (finalBillingAmount - totalReceipts);
+    const balanceStatus = (derivedContext === 'VEHICLE' || derivedContext === 'TOOL')
+      ? (balance > 0 ? 'سود خالص (مثبت)' : balance < 0 ? 'زیان / هزینه بیشتر از درآمد' : 'تراز صفر')
+      : (balance > 0 ? 'کارفرما بدهکار است' : balance < 0 ? 'پیمانکار بدهکار است (بستانکار)' : 'تسویه کامل');
 
     return { totalExpenses, totalReceipts, finalBillingAmount, billingDesc, balance, balanceStatus };
-  }, [rawDataList, selectedRows, billingMode, billingPercent, billingFixed, dimL, dimW, dimH, dimPrice, exportCurrency]);
+  }, [rawDataList, selectedRows, billingMode, billingPercent, billingFixed, dimL, dimW, dimH, dimPrice, exportCurrency, derivedContext]);
 
   const handleExport = async (format: 'EXCEL' | 'PDF') => {
     const dataToExport = rawDataList.filter((r:any) => selectedRows.includes(r._id));
@@ -754,15 +1032,15 @@ export default function ExportBuilder({ projectId, clientId, workerId, context, 
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm space-y-4">
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-500">عنوان اصلی گزارش</label>
-                  <input type="text" value={customReportTitle} onChange={e => setCustomReportTitle(e.target.value)} placeholder="گزارش جامع..." className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-500 transition-all" />
+                  <input type="text" value={customReportTitle} onChange={e => setCustomReportTitle(e.target.value)} placeholder="گزارش جامع..." className="w-full text-slate-800 dark:text-white placeholder:text-slate-400 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-500 transition-all" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-500">نام کارفرما / مشتری</label>
-                  <input type="text" value={customClientName} onChange={e => setCustomClientName(e.target.value)} placeholder="نام کارفرما..." className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-500 transition-all" />
+                  <input type="text" value={customClientName} onChange={e => setCustomClientName(e.target.value)} placeholder="نام کارفرما..." className="w-full text-slate-800 dark:text-white placeholder:text-slate-400 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-500 transition-all" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-500">تاریخ درج در سربرگ</label>
-                  <input type="text" value={customReportDate} onChange={e => setCustomReportDate(e.target.value)} dir="ltr" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-500 transition-all text-center" />
+                  <input type="text" value={customReportDate} onChange={e => setCustomReportDate(e.target.value)} dir="ltr" className="w-full text-slate-800 dark:text-white placeholder:text-slate-400 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-500 transition-all text-center" />
                 </div>
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer group">

@@ -17,7 +17,7 @@ import { usePurchaseStore } from '../../store/purchaseStore';
 
 import ClientFormModal from './components/ClientFormModal';
 import ClientFinanceTab from './components/ClientFinanceTab';
-import ClientTransactionModal from './components/ClientTransactionModal';
+import UniversalTransactionModal from '../../components/shared/UniversalTransactionModal';
 import ClientProjectsTab from './components/ClientProjectsTab'; 
 import ClientInvoicesTab from './components/ClientInvoicesTab'; 
 import ClientDocumentsTab from './components/tabs/ClientDocumentsTab'; 
@@ -31,6 +31,7 @@ import InvoiceBuilder from '../projects/components/InvoiceBuilder';
 import AdvancedPurchaseModal from '../projects/components/AdvancedPurchaseModal';
 import NewLogisticsModal from '../projects/components/NewLogisticsModal';
 import GlassSelect from '../../components/ui/GlassSelect';
+import ThreeDTabs from '../../components/ui/ThreeDTabs';
 
 import ExportBuilder from '../../components/shared/ExportBuilder';
 import ImportBuilder from '../../components/shared/ImportBuilder';
@@ -71,7 +72,7 @@ export default function ClientProfile({ clientId, onBack }: { clientId: string, 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-  const currentYear = moment().jYear();
+  const currentYear = (moment as any)().jYear ? (moment as any)().jYear() : 1403;
   const [yearFilter, setYearFilter] = useState('ALL');
   const yearOptions = [
     { value: 'ALL', label: 'تمام سال‌ها' },
@@ -377,32 +378,15 @@ export default function ClientProfile({ clientId, onBack }: { clientId: string, 
         </div>
       </div>
 
-      <div className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/50 dark:border-slate-700/50 shadow-[0_4px_20px_rgba(0,0,0,0.05)] rounded-[1.5rem] p-2 z-[90] sticky top-[130px] overflow-x-auto modal-scrollbar flex items-center gap-2 mt-4 transition-all">
-        {PROFILE_TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-black transition-colors duration-300 shrink-0 ${
-                isActive 
-                  ? 'text-indigo-700 dark:text-indigo-300' 
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-white'
-              }`}
-            >
-              {isActive && (
-                <motion.div 
-                  layoutId="activeTabProfileIndicator" 
-                  transition={{ type: "tween", ease: "easeInOut", duration: 0.25 }}
-                  className="absolute inset-0 bg-white/90 dark:bg-slate-700/90 backdrop-blur-md rounded-xl border border-white dark:border-slate-500 shadow-[0_6px_12px_rgba(0,0,0,0.08),inset_0_2px_4px_rgba(255,255,255,0.9)] dark:shadow-[0_6px_12px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] z-0" 
-                />
-              )}
-              <Icon className={`w-4 h-4 relative z-10 transition-colors duration-300 ${isActive ? tab.activeClass : tab.color}`} />
-              <span className="relative z-10">{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* نوار تب‌های سه‌بعدی */}
+      <div className="w-full z-[90] sticky top-[130px] mt-4">
+        <ThreeDTabs
+          tabs={PROFILE_TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          theme="indigo"
+          layoutId="activeTabProfileIndicator"
+        />
       </div>
 
       <div className="w-full flex-1 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/60 dark:border-slate-700/60 shadow-xl rounded-[2.5rem] p-6 sm:p-8 z-[70] relative min-h-[400px]">
@@ -452,7 +436,7 @@ export default function ClientProfile({ clientId, onBack }: { clientId: string, 
       </div>
 
       <ClientFormModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} clientToEdit={client} />
-      {isTxModalOpen && <ClientTransactionModal clientId={client.id} isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} />}
+      {isTxModalOpen && <UniversalTransactionModal clientId={client.id} isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} context="CLIENT" initialDirection="IN" />}
       <NewProjectModal isOpen={isNewProjectModalOpen} onClose={() => setIsNewProjectModalOpen(false)} preSelectedClientId={client.id} />
       <AnimatePresence>{isNewInvoiceModalOpen && (<InvoiceBuilder clientId={client.id} existingInvoiceId={editInvoiceId} onClose={() => { setIsNewInvoiceModalOpen(false); setEditInvoiceId(undefined); }} />)}</AnimatePresence>
       

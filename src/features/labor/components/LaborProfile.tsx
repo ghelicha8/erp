@@ -13,10 +13,11 @@ import moment from 'moment-jalaali';
 import { useLaborStore } from '../../../store/laborStore'; 
 import { useClientStore } from '../../../store/clientStore';
 import { useProjectStore } from '../../projects/store/projectStore'; 
+import { useLogisticsStore } from '../../../store/logisticsStore'; 
 
 import LaborFormModal from './LaborFormModal'; 
 import LaborFinanceTab from './LaborFinanceTab';
-import LaborPaymentModal from './LaborPaymentModal'; 
+import UniversalTransactionModal from '../../../components/shared/UniversalTransactionModal'; 
 import LaborWorkLogsTab from './LaborWorkLogsTab';
 import LaborWorkLogModal from './LaborWorkLogModal';
 import LaborPriceBookTab from './LaborPriceBookTab';
@@ -36,6 +37,7 @@ import LaborAnalyticsTab from './LaborAnalyticsTab';
 // 💡 ایمپورت فایل‌های مادرِ ایمپورت و اکسپورت با مسیر اصلاح شده به پوشه shared
 import ExportBuilder from '../../../components/shared/ExportBuilder';
 import ImportBuilder from '../../../components/shared/ImportBuilder';
+import ThreeDTabs from '../../../components/ui/ThreeDTabs';
 
 const safeNum = (val: any): number => {
   if (!val) return 0;
@@ -185,6 +187,7 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
   const { workers, logs, specialtyTags } = useLaborStore();
   const { clients } = useClientStore();
   const { projects } = useProjectStore();
+  const { driverAssignments, logs: logisticsLogs, toolRentals } = useLogisticsStore();
   const worker = workers.find(w => w.id === workerId);
   
   const [activeTab, setActiveTab] = useState('finance');
@@ -258,10 +261,51 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
       totalPaid += safeNum(log.loanDeduction) || 0;
     });
 
+    // 💡 اتصال شبکه عنکبوتی: افزودن کارکردها و دستمزدهای رانندگی در لجستیک
+    const matchedAssignments = (driverAssignments || []).filter(a => a.driverId === workerId);
+    matchedAssignments.forEach(a => {
+      if (yearFilter !== 'ALL' && !(a.assignedDate || '').startsWith(yearFilter)) return;
+      totalEarned += safeNum(a.totalWage);
+      if (a.isPaid) {
+        totalPaid += safeNum(a.totalWage);
+      }
+    });
+
+    const matchedLogisticsLogs = (logisticsLogs || []).filter(l => l.provider === workerId);
+    matchedLogisticsLogs.forEach(l => {
+      if (yearFilter !== 'ALL' && !(l.date || '').startsWith(yearFilter)) return;
+      if (projectFilter !== 'ALL' && l.projectId !== projectFilter) return;
+      if (l.driverWage && safeNum(l.driverWage) > 0) {
+        totalEarned += safeNum(l.driverWage);
+        if (l.settlementStatus === 'SETTLED' || (l.paidAmount && safeNum(l.paidAmount) > 0)) {
+          totalPaid += safeNum(l.paidAmount) || safeNum(l.driverWage);
+        }
+      }
+    });
+
+    // 💡 اتصال شبکه عنکبوتی: افزودن دستمزد اپراتور ابزارآلات
+    const matchedToolRentals = (toolRentals || []).filter(r => r.hasOperator && r.operatorId === workerId);
+    matchedToolRentals.forEach(r => {
+      if (yearFilter !== 'ALL' && !(r.startDate || '').startsWith(yearFilter)) return;
+      if (projectFilter !== 'ALL' && r.projectId !== projectFilter) return;
+      const opWage = safeNum(r.operatorTotalWage);
+      if (opWage > 0) {
+        totalEarned += opWage;
+        if (r.operatorPaid) {
+          totalPaid += opWage;
+        }
+      }
+    });
+
     const balance = totalEarned - totalPaid; 
 
-    return { logCount: filteredLogs.length, totalEarned, totalPaid, balance };
-  }, [logs, workerId, yearFilter, projectFilter, clientFilter, projects]);
+    return { 
+      logCount: filteredLogs.length + matchedAssignments.length + matchedLogisticsLogs.length + matchedToolRentals.length, 
+      totalEarned, 
+      totalPaid, 
+      balance 
+    };
+  }, [logs, workerId, yearFilter, projectFilter, clientFilter, projects, driverAssignments, logisticsLogs, toolRentals]);
 
   if (!worker) return null;
 
@@ -425,27 +469,14 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
         </div>
       </div>
 
-      <div className="w-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgba(0,0,0,0.06)] rounded-[1.5rem] p-2.5 z-[90] sticky top-[130px] overflow-x-auto glass-scroll flex items-center gap-2 mt-4 transition-all">
-        {PROFILE_TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-black transition-all duration-300 shrink-0 ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-white hover:shadow-sm'}`}
-            >
-              {isActive && (
-                <motion.div 
-                  layoutId="activeLaborTabIndicator" 
-                  transition={{ type: "tween", ease: "easeInOut", duration: 0.25 }} 
-                  className="absolute inset-0 bg-gradient-to-b from-white/90 to-white/50 dark:from-slate-700/90 dark:to-slate-800/50 backdrop-blur-xl rounded-xl border border-white dark:border-slate-500 shadow-[0_8px_16px_rgba(0,0,0,0.1),inset_0_4px_8px_rgba(255,255,255,0.8)] dark:shadow-[0_8px_16px_rgba(0,0,0,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] z-0" 
-                />
-              )}
-              <Icon className={`w-4 h-4 relative z-10 transition-colors duration-300 ${isActive ? tab.activeClass : tab.color}`} />
-              <span className="relative z-10 pt-0.5">{tab.label}</span>
-            </button>
-          );
-        })}
+      <div className="w-full z-[90] sticky top-[130px] mt-4">
+        <ThreeDTabs
+          tabs={PROFILE_TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          theme="emerald"
+          layoutId="activeLaborTabIndicator"
+        />
       </div>
 
       <div className="w-full flex flex-col h-auto min-h-[400px] bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/60 dark:border-slate-700/60 shadow-xl rounded-[2.5rem] p-4 sm:p-8 z-[70] relative">
@@ -498,7 +529,7 @@ export default function LaborProfile({ workerId, onBack }: { workerId: string, o
       {isEditModalOpen && <LaborFormModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} editWorkerId={worker.id} />}
       
       {/* پاپ‌آپ‌های سراسری */}
-      {isPaymentModalOpen && <LaborPaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} workerId={worker.id} />}
+      {isPaymentModalOpen && <UniversalTransactionModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} context="LABOR" workerId={worker.id} />}
       {isWorkLogModalOpen && <LaborWorkLogModal isOpen={isWorkLogModalOpen} onClose={() => setIsWorkLogModalOpen(false)} workerId={worker.id} />}
       {isPriceBookModalOpen && <LaborPriceBookModal isOpen={isPriceBookModalOpen} onClose={() => setIsPriceBookModalOpen(false)} workerId={worker.id} />}
       {isHseModalOpen && <LaborHSEModal isOpen={isHseModalOpen} onClose={() => setIsHseModalOpen(false)} workerId={worker.id} />}

@@ -14,7 +14,7 @@ import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 import GlassSelect from '../../../components/ui/GlassSelect';
 
 import LaborFormModal from '../../labor/components/LaborFormModal';
-import { LuxuryTimePicker } from '../../../components/ui/SharedLaborUI';
+import { LuxuryTimePicker, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 const formatNumber = (num: number | string | undefined) => {
   if (num === undefined || num === null || num === '') return '';
@@ -336,10 +336,13 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
           const dayBilled = billed > 0 ? (billed / calculatedDaysCount) : unitP;
           const dayWage = modalSource === 'INTERNAL' ? wageP : 0;
 
+          const selectedProj = allProjects.find(p => p.id === formData.projectId);
+          const resolvedClientId = formData.clientId || selectedProj?.clientId || undefined;
+
           const intervalData = {
             type: modalType,
             source: modalSource,
-            clientId: formData.clientId || undefined, 
+            clientId: resolvedClientId, 
             projectId: formData.projectId, 
             phaseId: formData.phaseId === 'GENERAL' ? undefined : formData.phaseId,
             title: `${formData.title} (${dayStr})`,
@@ -362,10 +365,13 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
       }
     }
     
+    const selectedProj = allProjects.find(p => p.id === formData.projectId);
+    const resolvedClientId = formData.clientId || selectedProj?.clientId || undefined;
+
     const finalData = {
       type: modalType,
       source: modalSource,
-      clientId: formData.clientId || undefined, 
+      clientId: resolvedClientId, 
       projectId: formData.projectId, 
       phaseId: formData.phaseId === 'GENERAL' ? undefined : formData.phaseId,
       title: formData.title,
@@ -451,7 +457,7 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
               </div>
               <div className={`space-y-2 relative z-[70] transition-all duration-300 ${lockedProject ? 'opacity-60 pointer-events-none grayscale-[30%]' : ''}`}>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1"><Briefcase className="w-3.5 h-3.5"/> پروژه مربوطه *</label>
-                <GlassSelect options={projectOptions} value={formData.projectId} onChange={(val: string) => { const proj = allProjects.find(p => p.id === val); setFormData(prev => ({...prev, projectId: val, clientId: proj ? proj.clientId : prev.clientId, phaseId: 'GENERAL'})); }} placeholder="انتخاب پروژه..." hasSearch />
+                <GlassSelect options={projectOptions} value={formData.projectId} onChange={(val: string) => { const proj = allProjects.find(p => p.id === val); if (proj?.clientId) { setLockedClient(true); } else if (!propClientId) { setLockedClient(false); } setFormData(prev => ({...prev, projectId: val, clientId: proj ? proj.clientId : prev.clientId, phaseId: 'GENERAL'})); }} placeholder="انتخاب پروژه..." hasSearch />
               </div>
               <div className="space-y-2 relative z-[65]">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1"><Layers className="w-3.5 h-3.5"/> ارتباط با فاز پروژه</label>
@@ -482,7 +488,14 @@ export default function NewLogisticsModal({ projectId: propProjectId, clientId: 
               
               <div className="space-y-2 relative z-[45]">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1"><HardHat className="w-3.5 h-3.5"/> انتخاب راننده / اپراتور</label>
-                <GlassSelect options={driverOptions} value={formData.provider} onChange={handleDriverChange} placeholder="جستجو یا انتخاب راننده..." hasSearch />
+                <PortalSelect 
+                  options={driverOptions} 
+                  value={formData.provider} 
+                  onChange={handleDriverChange} 
+                  placeholder="جستجو یا انتخاب راننده..." 
+                  searchable={true} 
+                  className="w-full"
+                />
               </div>
             </div>
           </div>

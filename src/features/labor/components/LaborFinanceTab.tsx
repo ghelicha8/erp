@@ -13,10 +13,12 @@ import moment from 'moment-jalaali';
 import { useFinanceStore } from '../../../store/financeStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useLaborStore } from '../../../store/laborStore';
+import { useLogisticsStore } from '../../../store/logisticsStore';
 
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
-import NewTransactionModal from '../../projects/components/NewTransactionModal'; 
+import UniversalTransactionModal from '../../../components/shared/UniversalTransactionModal'; 
 import type { Transaction } from '../../../store/financeStore';
+import { AppSearchInput } from '../../../components/ui/SharedLaborUI';
 
 const formatAmount = (val: string | number) => Number(val).toLocaleString('fa-IR');
 
@@ -25,15 +27,6 @@ const AnimatedCheckbox = ({ checked, onChange }: { checked: boolean, onChange: (
     <AnimatePresence>
       {checked && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}><CheckCircle className="w-3 h-3 text-white stroke-[3]" /></motion.div>}
     </AnimatePresence>
-  </div>
-);
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/20 dark:bg-slate-800/40 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all border border-white/50 dark:border-slate-700/50 ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
   </div>
 );
 
@@ -121,6 +114,7 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
   const { workers, logs, deleteLog } = useLaborStore();
   const allProjects = useProjectStore(state => state.projects);
   const { transactions, deleteTransaction, deleteChequeHistory } = useFinanceStore();
+  const { driverAssignments, logs: logisticsLogs, vehicles, tools, toolRentals, removeDriverAssignment } = useLogisticsStore();
   
   const worker = workers.find(w => w.id === workerId);
   
@@ -133,7 +127,7 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
-  const [undoItems, setUndoItems] = useState<{ id: string, items: { id: string, source: 'FINANCE' | 'LABOR' }[], expireAt: number }[]>([]);
+  const [undoItems, setUndoItems] = useState<{ id: string, items: { id: string, source: 'FINANCE' | 'LABOR' | 'LOGISTICS' }[], expireAt: number }[]>([]);
   
   const [selectedReceiptTx, setSelectedReceiptTx] = useState<any | null>(null);
   const [selectedArchiveTx, setSelectedArchiveTx] = useState<Transaction | null>(null);
@@ -161,6 +155,7 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
             expired.forEach(u => u.items.forEach(item => {
               if (item.source === 'FINANCE') deleteTransaction(item.id);
               if (item.source === 'LABOR') deleteLog(item.id);
+              if (item.source === 'LOGISTICS') removeDriverAssignment(item.id);
             }));
             setTimeout(() => setPendingDeleteIds(curr => curr.filter(id => !expired.flatMap(e=>e.items.map(i=>i.id)).includes(id))), 0);
          }
@@ -168,7 +163,7 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
       });
     }, 500);
     return () => clearInterval(interval);
-  }, [deleteTransaction, deleteLog]);
+  }, [deleteTransaction, deleteLog, removeDriverAssignment]);
 
   useEffect(() => {
     if (!archiveUndo) return;
@@ -215,8 +210,98 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
       if (log.loanDeduction && log.loanDeduction > 0) records.push({ id: `lded_${log.id}`, realId: log.id, source: 'LABOR', date: logDate, description: 'کسر قسط وام/مساعده', amount: log.loanDeduction, direction: 'IN', type: 'LOAN_DEDUCTION', projectId: pId });
       if (log.penaltyDeduction && log.penaltyDeduction > 0) records.push({ id: `pded_${log.id}`, realId: log.id, source: 'LABOR', date: logDate, description: 'جریمه و کسورات کارگاه', amount: log.penaltyDeduction, direction: 'IN', type: 'PENALTY', projectId: pId });
     });
+
+    // 💡 اتصال دستمزدها و کارکردهای رانندگی در لجستیک
+    (driverAssignments || []).forEach(assignment => {
+      if (assignment.driverId !== workerId || pendingDeleteIds.includes(assignment.id)) return;
+      const veh = (vehicles || []).find(v => v.id === assignment.vehicleId);
+      const vehLabel = veh ? `${veh.name} (${veh.plate})` : 'ناوگان لجستیک';
+
+      if (assignment.isPaid) {
+        records.push({
+          id: `drv_paid_${assignment.id}`,
+          realId: assignment.id,
+          source: 'LOGISTICS',
+          date: assignment.assignedDate || '',
+          description: `تسویه دستمزد رانندگی: ${vehLabel} (${assignment.serviceCount} سرویس)`,
+          amount: assignment.totalWage,
+          direction: 'OUT',
+          type: 'CASH',
+          projectId: 'FREE'
+        });
+      } else {
+        records.push({
+          id: `drv_pending_${assignment.id}`,
+          realId: assignment.id,
+          source: 'LOGISTICS',
+          date: assignment.assignedDate || '',
+          description: `طلب دستمزد رانندگی (در انتظار پرداخت): ${vehLabel} (${assignment.serviceCount} سرویس)`,
+          amount: assignment.totalWage,
+          direction: 'IN',
+          type: 'CASH',
+          projectId: 'FREE'
+        });
+      }
+    });
+
+    (logisticsLogs || []).forEach(lLog => {
+      if (lLog.provider !== workerId || pendingDeleteIds.includes(lLog.id)) return;
+      if (!lLog.driverWage || lLog.driverWage <= 0) return;
+      const veh = (vehicles || []).find(v => v.id === lLog.vehicleInfo);
+      const vehLabel = veh ? `${veh.name} (${veh.plate})` : 'ناوگان باربری';
+      const isSettled = lLog.settlementStatus === 'SETTLED' || (lLog.paidAmount && lLog.paidAmount >= lLog.driverWage);
+
+      if (isSettled) {
+        records.push({
+          id: `llog_paid_${lLog.id}`,
+          realId: lLog.id,
+          source: 'LOGISTICS',
+          date: lLog.date || '',
+          description: `تسویه کرایه باربری: ${lLog.title || vehLabel}`,
+          amount: lLog.paidAmount || lLog.driverWage,
+          direction: 'OUT',
+          type: 'CASH',
+          projectId: lLog.projectId || 'FREE'
+        });
+      }
+    });
+
+    (toolRentals || []).forEach(rental => {
+      if (!rental.hasOperator || rental.operatorId !== workerId || pendingDeleteIds.includes(rental.id)) return;
+      const opWage = rental.operatorTotalWage || 0;
+      if (opWage <= 0) return;
+      const toolObj = (tools || []).find(t => t.id === rental.toolId);
+      const toolLabel = toolObj ? `${toolObj.name} (${toolObj.serialNumber})` : 'ابزارآلات';
+
+      if (rental.operatorPaid) {
+        records.push({
+          id: `trent_paid_${rental.id}`,
+          realId: rental.id,
+          source: 'LOGISTICS',
+          date: rental.startDate || '',
+          description: `تسویه دستمزد اپراتور ابزار: ${toolLabel}`,
+          amount: opWage,
+          direction: 'OUT',
+          type: 'CASH',
+          projectId: rental.projectId || 'FREE'
+        });
+      } else {
+        records.push({
+          id: `trent_pending_${rental.id}`,
+          realId: rental.id,
+          source: 'LOGISTICS',
+          date: rental.startDate || '',
+          description: `طلب دستمزد اپراتور ابزار (در انتظار پرداخت): ${toolLabel}`,
+          amount: opWage,
+          direction: 'IN',
+          type: 'CASH',
+          projectId: rental.projectId || 'FREE'
+        });
+      }
+    });
+
     return records;
-  }, [transactions, logs, workerId, pendingDeleteIds]);
+  }, [transactions, logs, workerId, pendingDeleteIds, driverAssignments, logisticsLogs, vehicles, tools, toolRentals]);
 
   const visibleRecords = useMemo(() => {
     let result = [...unifiedRecords];
@@ -275,11 +360,12 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
       
       <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 bg-white/40 dark:bg-slate-800/40 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-sm rounded-[1.5rem] px-4 py-4 z-[50] relative w-full">
         
-        <NeonSearchWrapper className="flex-1 w-full min-w-[200px] h-[42px]">
-          <Search className="w-4 h-4 text-slate-400 shrink-0" />
-          <input placeholder="جستجو (مبلغ، شرح، سریال چک)..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white pl-2 pr-3 transition-colors placeholder:text-slate-500/70" />
-          {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3 h-3 text-slate-500 dark:text-slate-400" /></button>}
-        </NeonSearchWrapper>
+        <AppSearchInput
+          placeholder="جستجو (مبلغ، شرح، سریال چک)..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+          className="flex-1 w-full min-w-[200px] h-[42px]"
+        />
         
         <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto flex-[2_1_auto] relative z-[10000]">
           <div className="w-[calc(50%-0.25rem)] sm:w-[150px] shrink-0 h-[42px] relative z-[10005]">
@@ -332,8 +418,14 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 text-indigo-600 bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30 whitespace-nowrap shadow-sm">
                             <Layers className="w-3 h-3" /> {projectName}
                           </span>
-                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md whitespace-nowrap shadow-sm border ${rec.source === 'LABOR' ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/30 dark:border-amber-800/50' : 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800/50'}`}>
-                            {rec.source === 'LABOR' ? 'ثبت در کارکرد' : 'سند مالی'}
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md whitespace-nowrap shadow-sm border ${
+                            rec.source === 'LABOR' 
+                              ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/30 dark:border-amber-800/50' 
+                              : rec.source === 'LOGISTICS'
+                                ? 'bg-teal-50 border-teal-200 text-teal-600 dark:bg-teal-900/30 dark:border-teal-800/50'
+                                : 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800/50'
+                          }`}>
+                            {rec.source === 'LABOR' ? 'ثبت در کارکرد' : rec.source === 'LOGISTICS' ? 'ناوگان و باربری' : 'سند مالی'}
                           </span>
                         </div>
                       </div>
@@ -442,16 +534,15 @@ export default function LaborFinanceTab({ workerId }: { workerId: string }) {
         </AnimatePresence>, document.body
       )}
 
-      {/* 💡 پورتال مرکزی مودال اصلی پروژه‌ها */}
-      {typeof document !== 'undefined' && createPortal(
-        <NewTransactionModal 
-          projectId={selectedProjectFilter !== 'ALL' ? selectedProjectFilter : ''} 
-          isOpen={isTransactionModalOpen} 
-          onClose={() => { setIsTransactionModalOpen(false); setEditTransactionData(null); }} 
-          editData={editTransactionData} 
-        />,
-        document.body
-      )}
+      {/* 💡 پورتال مرکزی مودال اصلی تراکنش‌ها */}
+      <UniversalTransactionModal 
+        isOpen={isTransactionModalOpen} 
+        onClose={() => { setIsTransactionModalOpen(false); setEditTransactionData(null); }} 
+        context="LABOR"
+        workerId={workerId}
+        projectId={selectedProjectFilter !== 'ALL' ? selectedProjectFilter : undefined}
+        editTransaction={editTransactionData} 
+      />
     </motion.div>
   );
 }

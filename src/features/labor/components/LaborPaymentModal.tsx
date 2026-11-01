@@ -20,6 +20,7 @@ import { useLaborStore } from '../../../store/laborStore';
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
+import { generateUUID } from '../../../core/utils/uuid';
 
 // ==========================================
 // 💡 الگوریتم مترجم هوشمند اعداد (رفع باگ پاک شدن و ناعدد)
@@ -259,7 +260,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
   const handleRemainderToCheque = () => setValue('amount', formatAmount(Math.max(parseAmount(watch('totalAmount')) - parseAmount(watch('cashAmount')), 0)), { shouldValidate: true });
   const handleRemainderToCash = () => setValue('cashAmount', formatAmount(Math.max(parseAmount(watch('totalAmount')) - parseAmount(watch('amount')), 0)), { shouldValidate: true });
 
-  const addAllocationRow = () => setAllocations(prev => [...prev, { id: crypto.randomUUID(), logId: '', amount: remainderToAutoAllocate > 0 ? remainderToAutoAllocate.toString() : '' }]);
+  const addAllocationRow = () => setAllocations(prev => [...prev, { id: generateUUID(), logId: '', amount: remainderToAutoAllocate > 0 ? remainderToAutoAllocate.toString() : '' }]);
   const removeAllocationRow = (id: string) => setAllocations(prev => prev.filter(a => a.id !== id));
   
   const selectLogForAllocation = (allocId: string, logId: string) => {
@@ -296,7 +297,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
     const rawCash = parseAmount(data.cashAmount);
 
     const manualAllocations = allocations.filter(a => a.logId && a.amount).map(a => ({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       amount: parseAmount(a.amount),
       allocationType: 'FREELANCE' as const, 
       recordType: 'LABOR' as const,
@@ -316,7 +317,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
         currentRemainder -= paymentForThisLog;
         
         autoAllocations.push({
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           amount: paymentForThisLog,
           allocationType: 'FREELANCE' as const,
           recordType: 'LABOR' as const,
@@ -344,7 +345,7 @@ export default function LaborPaymentModal({ isOpen, onClose, workerId }: LaborPa
       date: data.date, direction: 'OUT', attachments: data.attachments, textReceipt: data.textReceipt 
     };
 
-    const newIdBase = crypto.randomUUID(); 
+    const newIdBase = generateUUID(); 
     if (data.type === 'COMBINED') {
       addTransaction({ ...basePayload, id: newIdBase + '-1', amount: rawCash, type: 'CASH', description: (data.description || 'تسویه حساب ترکیبی') + ' (بخش نقدی)' });
       addTransaction({ ...basePayload, id: newIdBase + '-2', amount: rawAmount, type: 'CHEQUE', description: (data.description || 'تسویه حساب ترکیبی') + ' (بخش چک)', chequeDetails: chequeData });

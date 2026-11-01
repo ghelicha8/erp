@@ -15,6 +15,8 @@ import { jsPDF } from 'jspdf';
 import GlassDatePicker from '../../../../components/ui/GlassDatePicker';
 import { useProjectStore } from '../../store/projectStore';
 import { useFinanceStore } from '../../../../store/financeStore';
+import { AppSearchInput } from '../../../../components/ui/SharedLaborUI';
+import { generateUUID } from '../../../../core/utils/uuid';
 
 interface NotesTabProps {
   projectId: string;
@@ -51,15 +53,6 @@ const safeNum = (val: any): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 const formatValue = (val: any) => val ? Number(String(val).replace(/\D/g, '')).toLocaleString('fa-IR') : '0';
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center">{children}</div>
-  </div>
-);
 
 const GlassInputWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
   <div className={`relative rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/60 dark:border-slate-600/50 shadow-sm focus-within:border-indigo-500/60 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all duration-300 overflow-hidden group ${className}`}>
@@ -210,9 +203,9 @@ export default function NotesTab({ projectId }: NotesTabProps) {
       try {
         const parsed = JSON.parse(note.content);
         if (Array.isArray(parsed)) setBlocks(parsed);
-        else setBlocks([{ id: crypto.randomUUID(), type: 'text', content: note.content || '', size: 'text-base' }]);
+        else setBlocks([{ id: generateUUID(), type: 'text', content: note.content || '', size: 'text-base' }]);
       } catch {
-        setBlocks([{ id: crypto.randomUUID(), type: 'text', content: note.content || '', size: 'text-base' }]);
+        setBlocks([{ id: generateUUID(), type: 'text', content: note.content || '', size: 'text-base' }]);
       }
     } else {
       setNoteToEdit(null);
@@ -220,7 +213,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
       setFormDate(new Date().toLocaleDateString('fa-IR'));
       setFormTag('GENERAL');
       setFormAlignment('right');
-      setBlocks([{ id: crypto.randomUUID(), type: 'text', content: '', size: 'text-base' }]);
+      setBlocks([{ id: generateUUID(), type: 'text', content: '', size: 'text-base' }]);
     }
     setIsModalOpen(true);
   };
@@ -326,7 +319,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
       updatedNotes = notes.map(n => n.id === noteToEdit.id ? { ...n, title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment } : n);
       toast.success('سند با موفقیت ویرایش شد.');
     } else {
-      updatedNotes = [{ id: crypto.randomUUID(), title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment, isPinned: false }, ...notes];
+      updatedNotes = [{ id: generateUUID(), title: formTitle, content: finalContentStr, date: formDate, tag: formTag, textAlignment: formAlignment, isPinned: false }, ...notes];
       toast.success('سند جدید در سیستم ثبت شد.');
     }
     updateProject(projectId, { notes: updatedNotes });
@@ -454,7 +447,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
       <tbody>${trs}</tbody>
     </table>`;
 
-    setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: 'table', html: htmlString }, { id: crypto.randomUUID(), type: 'text', content: '', size: 'text-base' }]);
+    setBlocks(prev => [...prev, { id: generateUUID(), type: 'table', html: htmlString }, { id: generateUUID(), type: 'text', content: '', size: 'text-base' }]);
     setBuilderState({ isOpen: false, module: '', availableCols: [], availableRows: [] });
     toast.success('گزارش انتخابی با موفقیت در سند درج شد.');
   };
@@ -482,7 +475,7 @@ export default function NotesTab({ projectId }: NotesTabProps) {
       if (lastBlock && lastBlock.type === 'text') {
          return prev.map((b, i) => i === prev.length - 1 ? { ...b, content: b.content + reportText } : b);
       }
-      return [...prev, { id: crypto.randomUUID(), type: 'text', content: reportText, size: 'text-base' }];
+      return [...prev, { id: generateUUID(), type: 'text', content: reportText, size: 'text-base' }];
     });
     toast.success('متن خلاصه گزارش اضافه شد.');
   };
@@ -496,11 +489,12 @@ export default function NotesTab({ projectId }: NotesTabProps) {
       
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white/10 dark:bg-slate-900/10 backdrop-blur-md border border-white/20 dark:border-slate-700/30 shadow-sm rounded-[2rem] px-6 py-4 z-[90] relative">
         <div className="flex flex-wrap items-center gap-4 flex-1">
-          <NeonSearchWrapper className="w-full sm:w-80">
-            <Search className="w-5 h-5 text-slate-400 shrink-0 ml-3" />
-            <input placeholder="جستجو در دفترچه و گزارشات..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold py-3" />
-            {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 rounded-full mr-3"><X className="w-3 h-3 text-slate-500" /></button>}
-          </NeonSearchWrapper>
+          <AppSearchInput
+            placeholder="جستجو در دفترچه و گزارشات..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+            className="w-full sm:w-80 h-[46px]"
+          />
           
           <div className="w-44 z-[100]"><GlassSelect options={TAG_OPTIONS} value={selectedTagFilter} onChange={setSelectedTagFilter} placeholder="همه تگ‌ها" /></div>
           <div className="h-8 w-px bg-slate-300/50 dark:bg-slate-700/50 hidden sm:block" />

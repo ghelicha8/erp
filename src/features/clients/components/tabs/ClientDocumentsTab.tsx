@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useClientStore } from '../../../../store/clientStore';
 import { useProjectStore } from '../../../projects/store/projectStore';
 import GlassSelect from '../../../../components/ui/GlassSelect';
+import { AppSearchInput } from '../../../../components/ui/SharedLaborUI';
 
 interface ClientDocumentsTabProps {
   clientId: string;
@@ -23,15 +24,6 @@ const FOLDERS = [
   { id: 'نامه‌نگاری‌ها و مکاتبات', icon: Mail, color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10 border-fuchsia-500/20' },
   { id: 'سایر مدارک', icon: File, color: 'text-slate-500', bg: 'bg-slate-500/10 border-slate-500/20' },
 ];
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-indigo-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
   const client = useClientStore(state => state.clients.find(c => c.id === clientId));
@@ -423,11 +415,13 @@ export default function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps
       {/* نوار ابزار هوشمند */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-4 px-4 relative z-50">
         <div className="flex-1 flex flex-col sm:flex-row items-center gap-3 w-full">
-          <NeonSearchWrapper className="flex-1 w-full sm:min-w-[200px] h-[48px]">
-            <Search className="w-5 h-5 text-slate-400 shrink-0" />
-            <input placeholder="جستجوی نام سند، تگ، یادداشت یا نام پروژه..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 transition-colors placeholder:text-slate-500" />
-            {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
-          </NeonSearchWrapper>
+          <div className="flex-1 w-full sm:min-w-[200px]">
+            <AppSearchInput
+              placeholder="جستجوی نام سند، تگ، یادداشت یا نام پروژه..."
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+          </div>
           <div className="w-full sm:w-64 h-[48px]">
             <GlassSelect options={[{ value: 'ALL', label: 'همه پوشه‌ها' }, ...FOLDERS.map(f => ({ value: f.id, label: f.id }))]} value={filterFolder} onChange={setFilterFolder} placeholder="فیلتر پوشه‌ها" />
           </div>

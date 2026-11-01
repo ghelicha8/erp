@@ -17,29 +17,11 @@ import { useInvoiceStore, type InvoiceStatus } from '../../../store/invoiceStore
 import { useProjectStore } from '../../projects/store/projectStore';
 import { useClientStore } from '../../../store/clientStore';
 import { useSettingsStore } from '../../../store/settingsStore';
+import { generateUUID } from '../../../core/utils/uuid';
 
-import GlassSelect from '../../../components/ui/GlassSelect';
-// 💡 دقت کن مسیر InvoiceBuilder رو بر اساس پوشه‌بندی خودت تنظیم کن (احتمالا همینه)
+import { AppSearchInput, AnimatedCheckbox, PortalSelect } from '../../../components/ui/SharedLaborUI';
 import InvoiceBuilder from '../../projects/components/InvoiceBuilder';
-import A4InvoiceTemplate from '../../../components/ui/A4InvoiceTemplate';
-
-// چک‌باکس انیمیشنی
-const GlassCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
-  <div onClick={onChange} className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${checked ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-white/50 dark:bg-slate-800/50 border-slate-300 dark:border-slate-600 hover:border-indigo-400'}`}>
-    <motion.div initial={{ scale: 0 }} animate={{ scale: checked ? 1 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 25 }}>
-       <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-    </motion.div>
-  </div>
-);
-
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#a855f7,#d946ef,#f59e0b,#ff00aa,#8b5cf6,#a855f7,#d946ef,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-fuchsia-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
+import A4InvoiceTemplate, { type InvoicePrintSize } from '../../../components/ui/A4InvoiceTemplate';
 
 const InvoiceStatusBadge = ({ status }: { status: InvoiceStatus }) => {
   const config = {
@@ -95,6 +77,30 @@ const exportDirectPDF = async (elementId: string, fileName: string) => {
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
     
     pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    
+    // 💡 پشتیبانی از اشتراک‌گذاری نیتیو در موبایل (اندروید و آیفون)
+    if (typeof navigator !== 'undefined' && navigator.canShare) {
+      try {
+        const pdfBlob = pdf.output('blob');
+        const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [pdfFile] })) {
+          await navigator.share({
+            files: [pdfFile],
+            title: fileName,
+            text: `صورت‌وضعیت: ${fileName}`,
+          });
+          toast.dismiss('pdf-gen');
+          toast.success('فایل PDF با موفقیت به اشتراک گذاشته شد.');
+          return;
+        }
+      } catch (shareErr: any) {
+        if (shareErr.name === 'AbortError') {
+          toast.dismiss('pdf-gen');
+          return;
+        }
+      }
+    }
+
     pdf.save(`${fileName}.pdf`); 
     
     toast.dismiss('pdf-gen');
@@ -136,6 +142,7 @@ export default function InvoicesDashboard() {
   const [editInvoiceId, setEditInvoiceId] = useState<string | undefined>(undefined);
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [printSize, setPrintSize] = useState<InvoicePrintSize>('A4');
   const [undoItems, setUndoItems] = useState<{ id: string, invoiceId: string, isSynced: boolean }[]>([]);
 
   // Helpers
@@ -159,7 +166,7 @@ export default function InvoicesDashboard() {
   ];
 
   const triggerDelete = (invoiceId: string, isSynced: boolean) => {
-    const undoId = crypto.randomUUID();
+    const undoId = generateUUID();
     setUndoItems(prev => [...prev, { id: undoId, invoiceId, isSynced }]);
     setTimeout(() => {
       setUndoItems(current => {
@@ -211,7 +218,7 @@ export default function InvoicesDashboard() {
 
   const totalPages = pageSize === 'ALL' ? 1 : Math.ceil(filteredInvoices.length / Number(pageSize));
 
-  const isRial = settings?.currency === 'RIAL';
+  const isRial = settings?.currency === 'rial' || (settings as any)?.currency === 'RIAL';
   const currencyLabel = isRial ? 'ریال' : 'تومان';
   const formatNum = (val: number) => (val * (isRial ? 10 : 1)).toLocaleString('fa-IR');
 
@@ -329,25 +336,22 @@ export default function InvoicesDashboard() {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 bg-white/30 dark:bg-slate-900/30 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-sm rounded-[2rem] px-6 py-4 z-[50] relative">
-        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]">
-          <Search className="w-5 h-5 text-slate-400 shrink-0" />
-          <input 
-            placeholder="جستجو با شماره یا نام چاپی..." 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-            className="w-full h-full bg-transparent border-none outline-none text-sm font-bold text-slate-800 dark:text-white pl-2 pr-4 transition-colors placeholder:text-slate-500" 
+        <div className="flex-1 w-full xl:w-auto min-w-[250px]">
+          <AppSearchInput
+            placeholder="جستجو با شماره یا نام چاپی..."
+            value={searchQuery}
+            onChange={setSearchQuery}
           />
-          {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
-        </NeonSearchWrapper>
+        </div>
         
         <div className="w-full xl:w-px h-px xl:h-8 bg-slate-300 dark:bg-slate-700 hidden xl:block" />
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto relative z-[100]">
-          <div className="w-full sm:w-32 h-[46px]">
-            <GlassSelect options={paginationOptions} value={pageSize} onChange={setPageSize} placeholder="تعداد نمایش" />
+          <div className="w-full sm:w-36 h-[46px]">
+            <PortalSelect options={paginationOptions} value={pageSize} onChange={(val) => setPageSize(Number(val))} placeholder="تعداد نمایش" />
           </div>
           <div className="w-full sm:w-56 h-[46px]">
-            <GlassSelect 
+            <PortalSelect 
               options={[
                 {value:'ALL', label:'همه وضعیت‌ها'},
                 {value:'OFFICIAL', label:'فاکتور رسمی (دارایی)'},
@@ -355,7 +359,8 @@ export default function InvoicesDashboard() {
                 {value:'PROFORMA', label:'پیش‌فاکتور (استعلام)'},
                 {value:'HAS_DEBT', label:'دارای بدهی (نسیه)'}
               ]} 
-              value={statusFilter} onChange={setStatusFilter} placeholder="فیلتر وضعیت" 
+              value={statusFilter} onChange={(val) => setStatusFilter(String(val))} placeholder="فیلتر وضعیت" 
+              searchable={true}
             />
           </div>
         </div>
@@ -366,7 +371,7 @@ export default function InvoicesDashboard() {
          <table className="w-full text-right border-collapse min-w-[1000px] flex-1">
            <thead>
              <tr className="bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-               <th className="p-5 w-16 text-center"><GlassCheckbox checked={selectedIds.length > 0 && selectedIds.length === filteredInvoices.length} onChange={toggleAll} /></th>
+               <th className="p-5 w-16 text-center"><AnimatedCheckbox theme="emerald" checked={selectedIds.length > 0 && selectedIds.length === filteredInvoices.length} onChange={toggleAll} /></th>
                <th className="p-5 text-sm font-bold text-slate-800 dark:text-white">شماره و تاریخ</th>
                {/* 💡 در بخش اصلی، مشتری و پروژه با هم نمایش داده می‌شوند */}
                <th className="p-5 text-sm font-bold text-slate-800 dark:text-white w-1/4">مشتری و پروژه</th>
@@ -387,7 +392,7 @@ export default function InvoicesDashboard() {
 
                  return (
                  <motion.tr key={inv.id} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className={`border-b border-slate-100 dark:border-slate-800 transition-colors hover:bg-white dark:hover:bg-slate-800/50 group ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}`}>
-                    <td className="p-5 text-center align-top"><GlassCheckbox checked={isSelected} onChange={() => toggleSelection(inv.id)} /></td>
+                    <td className="p-5 text-center align-top"><AnimatedCheckbox theme="emerald" checked={isSelected} onChange={() => toggleSelection(inv.id)} /></td>
                     
                     <td className="p-5 align-top">
                       <div className="flex flex-col gap-1">
@@ -538,24 +543,85 @@ export default function InvoicesDashboard() {
               
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-4xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-3xl overflow-hidden z-10 flex flex-col h-[95vh] sm:h-[90vh]">
                 
-                <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl z-20 shadow-sm">
-                  <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2"><Eye className="w-5 h-5 text-indigo-500"/> پیش‌نمایش فاکتور چاپی</h3>
+                <div className="flex flex-wrap justify-between items-center p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl z-20 shadow-sm gap-3">
                   <div className="flex items-center gap-3">
-                    <button onClick={() => exportDirectPDF('invoice-print-area', `فاکتور_${viewInvoiceId}`)} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white rounded-xl text-sm font-black transition-all shadow-md active:scale-95">
-                      <FileDown className="w-4 h-4"/> دانلود PDF مستقیم
+                    <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+                      <Eye className="w-5 h-5 text-indigo-500"/> پیش‌نمایش چاپ فاکتور
+                    </h3>
+
+                    {/* کنترلگر انتخاب اندازه خروجی پرینت (A4 / A5 / رول حرارتی POS) */}
+                    <div className="flex bg-slate-200/70 dark:bg-slate-700/70 p-1 rounded-xl gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setPrintSize('A4')}
+                        className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                          printSize === 'A4'
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        A4 رسمی
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPrintSize('A5')}
+                        className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                          printSize === 'A5'
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        A5 نیم‌برگ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPrintSize('POS_80MM')}
+                        className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                          printSize === 'POS_80MM'
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        رول حرارتی (80mm)
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-xl text-xs font-black transition-all shadow-sm cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                      <span>چاپ بومی</span>
+                    </button>
+
+                    <button 
+                      onClick={() => exportDirectPDF('invoice-print-area', `فاکتور_${viewInvoiceId}_${printSize}`)} 
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white rounded-xl text-xs font-black transition-all shadow-md active:scale-95 cursor-pointer"
+                    >
+                      <FileDown className="w-4 h-4"/> دانلود PDF
                     </button>
                     <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
-                    <button onClick={() => setViewInvoiceId(null)} className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:text-rose-500 transition-colors shadow-sm"><X className="w-5 h-5"/></button>
+                    <button onClick={() => setViewInvoiceId(null)} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:text-rose-500 transition-colors shadow-sm cursor-pointer"><X className="w-5 h-5"/></button>
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto modal-scrollbar bg-slate-100/50 dark:bg-slate-900/50 flex justify-center py-10 relative">
                    <div className="transform scale-[0.6] sm:scale-[0.8] md:scale-90 xl:scale-100 origin-top h-max pb-32 transition-transform duration-300">
-                      <div id="invoice-print-area" className="bg-white shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
+                      <div 
+                        id="invoice-print-area" 
+                        className="bg-white shadow-2xl mx-auto" 
+                        style={{ 
+                          width: printSize === 'POS_80MM' ? '80mm' : printSize === 'A5' ? '148mm' : '210mm', 
+                          minHeight: printSize === 'POS_80MM' ? 'auto' : printSize === 'A5' ? '210mm' : '297mm' 
+                        }}
+                      >
                          {(() => {
                             const inv = invoices.find(i => i.id === viewInvoiceId);
                             if(!inv) return null;
-                            return <A4InvoiceTemplate invoice={inv} userSettings={settings} />;
+                            return <A4InvoiceTemplate invoice={inv} userSettings={settings} pageSize={printSize} />;
                          })()}
                       </div>
                    </div>

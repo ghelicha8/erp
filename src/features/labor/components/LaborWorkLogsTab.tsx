@@ -17,7 +17,7 @@ import { useClientStore } from '../../../store/clientStore';
 import GlassDatePicker from '../../../components/ui/GlassDatePicker';
 
 // 💡 ایمپورت پاپ‌آپ‌های یکپارچه از فایل مشترک
-import { FloatingUndoToast, BulkSelectionToast } from '../../../components/ui/SharedLaborUI';
+import { FloatingUndoToast, BulkSelectionToast, AppSearchInput, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 // 💡 فراخوانی مودال یکپارچه و مادر از همین پوشه
 import UniversalLaborModal from './UniversalLaborModal';
@@ -71,95 +71,6 @@ const AnimatedCheckbox = ({ checked, onChange, theme = 'amber' }: { checked: boo
         )}
       </AnimatePresence>
     </div>
-  );
-};
-
-// ==========================================
-// 💡 Wrapper جستجوی نئونی
-// ==========================================
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/40 dark:bg-slate-800/30 border border-white/60 dark:border-slate-700 backdrop-blur-md overflow-hidden ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa,#8b5cf6,#06b6d4,#10b981,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-cyan-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
-
-// ==========================================
-// 💡 PortalSelect (با سرچ‌باکس و حل مشکل اسکرول)
-// ==========================================
-const PortalSelect = ({ value, onChange, options, placeholder, className = '', searchable = false }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  
-  const selected = options.find((o:any) => o.id === value || o.value === value);
-
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
-    return options.filter((o:any) => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [options, searchTerm]);
-
-  const updatePosition = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 8, left: rect.left, width: rect.width });
-    }
-  };
-
-  const openDropdown = () => {
-    updatePosition();
-    setIsOpen(true);
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
-    }
-    return () => {
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
-    };
-  }, [isOpen]);
-
-  return (
-    <>
-      <button type="button" ref={btnRef} onClick={() => isOpen ? setIsOpen(false) : openDropdown()} className={`w-full h-full min-h-[48px] bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 flex justify-between items-center outline-none transition-all shadow-inner backdrop-blur-md focus:ring-2 focus:ring-indigo-500/30 ${className}`}>
-        <span className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">{selected ? selected.label : placeholder}</span>
-        <ChevronDown className={`w-4 h-4 text-indigo-500 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && createPortal(
-        <>
-          <div className="fixed inset-0 z-[999999]" onClick={() => setIsOpen(false)} />
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ top: coords.top, left: coords.left, width: coords.width }} className="fixed bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-[1000000] overflow-hidden flex flex-col max-h-72">
-            
-            {searchable && (
-              <div className="p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
-                <div className="relative">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="text" autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="جستجو..." className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg pr-9 pl-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 focus:border-indigo-500 focus:ring-1 ring-indigo-500/30" />
-                </div>
-              </div>
-            )}
-
-            <div className="overflow-y-auto glass-scroll p-1.5 flex-1">
-              {filteredOptions.length > 0 ? filteredOptions.map((opt: any) => (
-                <button type="button" key={opt.id || opt.value} onClick={() => { onChange(opt.id || opt.value); setIsOpen(false); setSearchTerm(''); }} className={`w-full text-right px-4 py-3 text-xs font-bold transition-colors flex items-center justify-between group rounded-xl ${(value === opt.id || value === opt.value) ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-                  <span className="truncate pl-2">{opt.label}</span>
-                  {(value === opt.id || value === opt.value) && <Check className="w-4 h-4 text-indigo-500 shrink-0" />}
-                </button>
-              )) : (
-                <div className="py-6 text-center text-xs font-bold text-slate-400">موردی یافت نشد!</div>
-              )}
-            </div>
-          </motion.div>
-        </>, document.body
-      )}
-    </>
   );
 };
 
@@ -376,11 +287,12 @@ export default function LaborWorkLogsTab({ workerId }: LaborWorkLogsTabProps) {
               <span className="hidden sm:inline relative z-10">{showHiddenProfit ? 'مخفی کردن سود' : 'نمایش سود'}</span>
             </motion.button>
 
-            <NeonSearchWrapper className="w-full md:max-w-[300px] h-[46px]">
-              <Search className="w-4 h-4 text-slate-400 shrink-0" />
-              <input placeholder="جستجو در شرح کار..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-800 dark:text-white font-bold pl-2 pr-3 text-xs placeholder:text-slate-500" />
-              {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1 hover:bg-black/10 rounded-full"><X className="w-3.5 h-3.5 text-slate-500" /></button>}
-            </NeonSearchWrapper>
+            <AppSearchInput
+              placeholder="جستجو در شرح کار..."
+              value={searchQuery}
+              onChange={setSearchQuery}
+              className="w-full md:max-w-[300px] h-[46px]"
+            />
           </div>
         </div>
 

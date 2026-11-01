@@ -1,25 +1,39 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Truck, Search, Star, Wrench, ShieldCheck, TrendingUp, TrendingDown,
-  LayoutGrid, List as ListIcon, ShieldAlert, Plus, ChevronDown, Check, X, Trash2, Activity, Ban
+  Truck, Star, Wrench, ShieldCheck, TrendingUp, TrendingDown,
+  LayoutGrid, List as ListIcon, ShieldAlert, Plus, Trash2, Activity, Ban, Edit2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment-jalaali';
 
-import { useLogisticsStore } from '../../../store/logisticsStore';
+import { useLogisticsStore, INSURANCE_TYPE_LABELS, calculateSmartDriverCostForVehicle } from '../../../store/logisticsStore';
 import type { VehicleProfile as VehicleProfileType } from '../../../store/logisticsStore';
 import VehicleFormModal from './VehicleFormModal'; 
 
 // 💡 استفاده‌ی ۱۰۰٪ مستقیم از ابزارهای آماده‌شده در SharedLaborUI
-import { NeonSearchWrapper, FloatingUndoToast } from '../../../components/ui/SharedLaborUI';
+import { AppSearchInput, FloatingUndoToast, PortalSelect } from '../../../components/ui/SharedLaborUI';
 
 // 💡 ایمپورت کامپوننت پروفایل خودرو که به تازگی ساختیم
 import VehicleProfile from './VehicleProfile';
 
-const VehicleCard = ({ vehicle, onTogglePin, onDelete, onClick }: { vehicle: VehicleProfileType, onTogglePin: (id: string) => void, onDelete: (id: string) => void, onClick: () => void }) => {
-  const mockProfit = 15000000; 
-
+const VehicleCard = ({ 
+  vehicle, 
+  computedStatus,
+  netBalance,
+  onTogglePin, 
+  onEdit,
+  onDelete, 
+  onClick 
+}: { 
+  vehicle: VehicleProfileType; 
+  computedStatus: string;
+  netBalance: number;
+  onTogglePin: (id: string) => void; 
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void; 
+  onClick: () => void; 
+}) => {
   return (
     <motion.div 
       layout="position" transition={{ layout: { type: "spring", stiffness: 400, damping: 30, mass: 0.8 }, opacity: { duration: 0.2 } }}
@@ -41,11 +55,11 @@ const VehicleCard = ({ vehicle, onTogglePin, onDelete, onClick }: { vehicle: Veh
                 <Truck className="w-7 h-7" />
               </div>
             )}
-            <div className={`absolute -bottom-2 -right-2 rounded-lg px-1.5 py-0.5 shadow-md border flex items-center gap-0.5 text-[10px] font-black ${vehicle.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : vehicle.status === 'REPAIR' ? 'bg-amber-100 text-amber-600 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-              {vehicle.status === 'ACTIVE' && <Activity className="w-3 h-3" />}
-              {vehicle.status === 'REPAIR' && <Wrench className="w-3 h-3" />}
-              {vehicle.status === 'INACTIVE' && <Ban className="w-3 h-3" />}
-              {vehicle.status === 'ACTIVE' ? 'فعال' : vehicle.status === 'REPAIR' ? 'تعمیرگاه' : 'غیرفعال'}
+            <div className={`absolute -bottom-2 -right-2 rounded-lg px-1.5 py-0.5 shadow-md border flex items-center gap-0.5 text-[10px] font-black ${computedStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : computedStatus === 'REPAIR' ? 'bg-amber-100 text-amber-600 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+              {computedStatus === 'ACTIVE' && <Activity className="w-3 h-3" />}
+              {computedStatus === 'REPAIR' && <Wrench className="w-3 h-3" />}
+              {computedStatus === 'INACTIVE' && <Ban className="w-3 h-3" />}
+              {computedStatus === 'ACTIVE' ? 'فعال' : computedStatus === 'REPAIR' ? 'تعمیرگاه' : 'غیرفعال'}
             </div>
           </div>
           <div className="flex flex-col">
@@ -60,6 +74,9 @@ const VehicleCard = ({ vehicle, onTogglePin, onDelete, onClick }: { vehicle: Veh
         </div>
 
         <div className="flex items-center gap-1 z-20">
+          <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.85 }} onClick={(e) => { e.stopPropagation(); onEdit(vehicle.id); }} title="ویرایش خودرو" className="relative p-2 rounded-xl transition-all text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 cursor-pointer opacity-0 group-hover:opacity-100">
+            <Edit2 className="w-4 h-4 transition-all" />
+          </motion.button>
           <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.85 }} onClick={(e) => { e.stopPropagation(); onDelete(vehicle.id); }} title="حذف خودرو" className="relative p-2 rounded-xl transition-all text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 cursor-pointer opacity-0 group-hover:opacity-100">
             <Trash2 className="w-5 h-5 transition-all" />
           </motion.button>
@@ -74,15 +91,15 @@ const VehicleCard = ({ vehicle, onTogglePin, onDelete, onClick }: { vehicle: Veh
 
       <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-slate-200/60 dark:border-slate-700/50 relative z-10">
         <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-3 rounded-xl border border-white/80 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
-          <span className="text-[10px] font-bold text-slate-500 block mb-1">وضعیت بیمه ({vehicle.insuranceType || 'نامشخص'})</span>
+          <span className="text-[10px] font-bold text-slate-500 block mb-1">وضعیت بیمه ({vehicle.insuranceType ? (INSURANCE_TYPE_LABELS[vehicle.insuranceType as keyof typeof INSURANCE_TYPE_LABELS] || vehicle.insuranceType) : 'نامشخص'})</span>
           <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4" /> {vehicle.insuranceDate ? moment(vehicle.insuranceDate).format('jYYYY/jMM/jDD') : 'ثبت نشده'}
+            <ShieldCheck className="w-4 h-4" /> {vehicle.insuranceDate ? (vehicle.insuranceDate.includes('/') ? vehicle.insuranceDate : moment(vehicle.insuranceDate).format('jYYYY/jMM/jDD')) : 'ثبت نشده'}
           </span>
         </div>
         <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-3 rounded-xl border border-white/80 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
           <span className="text-[10px] font-bold text-slate-500 block mb-1">تراز مالی (سود/زیان)</span>
-          <span className={`text-sm font-black flex items-center gap-1 ${mockProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-            {mockProfit >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />} {Math.abs(mockProfit).toLocaleString('fa-IR')} <span className="text-[10px]">تومان</span>
+          <span className={`text-sm font-black flex items-center gap-1 ${netBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            {netBalance >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />} {Math.abs(netBalance).toLocaleString('fa-IR')} <span className="text-[10px]">تومان</span>
           </span>
         </div>
       </div>
@@ -97,13 +114,14 @@ const SORT_OPTIONS = [
 ];
 
 export default function VehiclesView({ activeTab, setActiveTab }: any) {
-  const { vehicles, toggleVehiclePin, deleteVehicle } = useLogisticsStore();
+  const { vehicles, logs, repairs, insurances, miscExpenses, periodicServices, drivers, toggleVehiclePin, deleteVehicle } = useLogisticsStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
 
   const [undoItems, setUndoItems] = useState<{ id: string, items: string[], expireAt: number }[]>([]);
@@ -137,6 +155,30 @@ export default function VehiclesView({ activeTab, setActiveTab }: any) {
     const undoId = Date.now().toString();
     setUndoItems(prev => [...prev, { id: undoId, items: ids, expireAt: Date.now() + 5000 }]);
     setPendingDeleteIds(prev => [...prev, ...ids]);
+  };
+
+  const getComputedVehicleMeta = (vehicle: VehicleProfileType) => {
+    const vRepairs = (repairs || []).filter(r => r.vehicleId === vehicle.id);
+    const vLogs = (logs || []).filter(l => l.vehicleId === vehicle.id || (l.provider && l.provider.includes(vehicle.name)));
+    const vInsurances = (insurances || []).filter(i => i.vehicleId === vehicle.id);
+    const vMisc = (miscExpenses || []).filter(m => m.vehicleId === vehicle.id);
+    const vPeriodic = (periodicServices || []).filter(p => p.vehicleId === vehicle.id);
+
+    const hasOpenRepair = vRepairs.some(r => r.inWorkshop);
+    let computedStatus: string = vehicle.status || 'ACTIVE';
+    if (hasOpenRepair) computedStatus = 'REPAIR';
+    else if (computedStatus === 'REPAIR') computedStatus = 'ACTIVE';
+
+    const income = vLogs.reduce((s, l) => s + (Number(l.billedCost || l.internalCost) || 0), 0);
+    const smartDriversCost = calculateSmartDriverCostForVehicle(vehicle.id, drivers || [], vLogs);
+    const expenses = 
+      vRepairs.reduce((s, r) => s + (Number(r.cost) || 0), 0) +
+      vInsurances.reduce((s, i) => s + (Number(i.cost) || 0), 0) +
+      vMisc.reduce((s, m) => s + (Number(m.amount) || 0), 0) +
+      vPeriodic.reduce((s, p) => s + (Number(p.cost) || 0), 0) +
+      smartDriversCost;
+
+    return { computedStatus, netBalance: income - expenses };
   };
 
   const processedVehicles = useMemo(() => {
@@ -192,31 +234,24 @@ export default function VehiclesView({ activeTab, setActiveTab }: any) {
               </div>
 
               <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-4 w-full">
-                {/* استفاده از سرچ نئونیِ پورت‌شده از SharedLaborUI */}
-                <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[52px]">
-                  <Search className="w-5 h-5 text-slate-400 shrink-0" />
-                  <input placeholder="جستجو نام یا پلاک..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-full bg-transparent border-none outline-none text-slate-900 dark:text-white font-bold pl-2 pr-4 transition-colors placeholder:text-slate-500" />
-                  {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-4 h-4 text-slate-500 dark:text-slate-400" /></button>}
-                </NeonSearchWrapper>
+                <div className="flex-1 w-full xl:w-auto min-w-[250px]">
+                  <AppSearchInput
+                    placeholder="جستجو نام یا پلاک..."
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                  />
+                </div>
 
-                <div className="relative shrink-0" ref={dropdownRef}>
-                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="h-[52px] bg-white/40 dark:bg-slate-800/50 rounded-2xl border border-white/60 dark:border-slate-600/50 shadow-[0_8px_16px_rgba(0,0,0,0.03)] backdrop-blur-2xl flex items-center justify-between gap-3 px-5 min-w-[200px] text-sm font-black text-slate-700 dark:text-slate-200 transition-all hover:bg-white/80 dark:hover:bg-slate-700/80 hover:border-blue-300/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] focus:ring-2 focus:ring-blue-500/50">
-                    <span className="truncate">{sortBy.label}</span>
-                    <ChevronDown className={`w-4 h-4 text-blue-500 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  <AnimatePresence>
-                    {isDropdownOpen && (
-                      <motion.div initial={{ opacity: 0, y: 15, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute top-[calc(100%+8px)] w-full bg-white/90 dark:bg-slate-800/95 backdrop-blur-3xl border border-white/80 dark:border-slate-600/50 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[100] flex flex-col py-2">
-                        {SORT_OPTIONS.map((option) => (
-                          <button key={option.id} onClick={() => { setSortBy(option); setIsDropdownOpen(false); }} className={`flex items-center justify-between px-5 py-3.5 text-sm font-bold transition-all relative overflow-hidden group ${sortBy.id === option.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>
-                            <div className={`absolute inset-0 transition-opacity ${sortBy.id === option.id ? 'bg-blue-50 dark:bg-blue-500/10 opacity-100' : 'bg-slate-100 dark:bg-slate-700/50 opacity-0 group-hover:opacity-100'}`} />
-                            <span className="relative z-10">{option.label}</span>
-                            {sortBy.id === option.id && <Check className="w-4 h-4 relative z-10 drop-shadow-sm" />}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                <div className="w-full sm:w-[200px] h-[52px]">
+                  <PortalSelect
+                    options={SORT_OPTIONS}
+                    value={sortBy.id}
+                    onChange={(val) => {
+                      const opt = SORT_OPTIONS.find(o => o.id === val);
+                      if (opt) setSortBy(opt);
+                    }}
+                    placeholder="مرتب‌سازی"
+                  />
                 </div>
 
                 <div className="flex bg-slate-200/50 dark:bg-slate-800/80 p-1.5 rounded-2xl shadow-inner border border-white/50 dark:border-slate-700/50 shrink-0 h-[52px] z-20">
@@ -224,7 +259,7 @@ export default function VehiclesView({ activeTab, setActiveTab }: any) {
                   <button onClick={() => setViewMode('LIST')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'LIST' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}><ListIcon className="w-5 h-5" /></button>
                 </div>
 
-                <motion.button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(true); }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="h-[52px] px-7 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(59,130,246,0.4)] border-t-2 border-blue-300/50 transition-all shrink-0 w-full md:w-auto relative overflow-hidden group z-20">
+                <motion.button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingVehicleId(null); setIsModalOpen(true); }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="h-[52px] px-7 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white rounded-2xl font-black shadow-[0_10px_25px_rgba(59,130,246,0.4)] border-t-2 border-blue-300/50 transition-all shrink-0 w-full md:w-auto relative overflow-hidden group z-20">
                   <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shine" />
                   <Plus className="w-5 h-5 relative z-10"/> <span className="relative z-10">خودروی جدید</span>
                 </motion.button>
@@ -240,9 +275,21 @@ export default function VehiclesView({ activeTab, setActiveTab }: any) {
             ) : (
               <motion.div layout className={`grid gap-6 ${viewMode === 'GRID' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
                 <AnimatePresence>
-                  {processedVehicles.map(vehicle => (
-                    <VehicleCard key={vehicle.id} vehicle={vehicle} onTogglePin={toggleVehiclePin} onDelete={(id) => triggerDelete([id])} onClick={() => setSelectedVehicleId(vehicle.id)} />
-                  ))}
+                  {processedVehicles.map(vehicle => {
+                    const { computedStatus, netBalance } = getComputedVehicleMeta(vehicle);
+                    return (
+                      <VehicleCard 
+                        key={vehicle.id} 
+                        vehicle={vehicle} 
+                        computedStatus={computedStatus}
+                        netBalance={netBalance}
+                        onTogglePin={toggleVehiclePin} 
+                        onEdit={(id) => { setEditingVehicleId(id); setIsModalOpen(true); }}
+                        onDelete={(id) => triggerDelete([id])} 
+                        onClick={() => setSelectedVehicleId(vehicle.id)} 
+                      />
+                    );
+                  })}
                 </AnimatePresence>
               </motion.div>
             )}
@@ -261,7 +308,13 @@ export default function VehiclesView({ activeTab, setActiveTab }: any) {
         )}
       </AnimatePresence>
       
-      {isModalOpen && <VehicleFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && (
+        <VehicleFormModal 
+          isOpen={isModalOpen} 
+          onClose={() => { setIsModalOpen(false); setEditingVehicleId(null); }} 
+          editVehicleId={editingVehicleId || undefined}
+        />
+      )}
     </div>
   );
 }

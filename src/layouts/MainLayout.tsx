@@ -6,6 +6,7 @@ import {
   HardHat, Truck, Package, Factory, Settings,
   Menu, X, Sun, Moon, Calendar as CalendarIcon, UserCircle, Activity, ChevronLeft
 } from 'lucide-react';
+import { useSettingsStore } from '../store/settingsStore';
 
 // ============================================================================
 // Types & Interfaces
@@ -74,6 +75,8 @@ export default function MainLayout({
 }: MainLayoutProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isBellHovered, setIsBellHovered] = useState(false);
+  const { settings } = useSettingsStore();
+  const enableThemeTransitions = settings.enableThemeTransitions ?? true;
 
   const todayShamsi = new Date().toLocaleDateString('fa-IR', {
     weekday: 'long',
@@ -83,7 +86,7 @@ export default function MainLayout({
   });
 
   return (
-    <div dir="rtl" className="h-screen bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 overflow-hidden flex relative font-sans transition-colors duration-500">
+    <div dir="rtl" className="h-[100dvh] bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 overflow-hidden flex relative font-sans transition-colors duration-500 safe-top safe-bottom">
       
       {/* پس‌زمینه تزئینی (Glow) */}
       <div className="absolute top-[-15%] right-[-10%] w-[800px] h-[800px] bg-blue-500/15 dark:bg-blue-500/20 rounded-full blur-[120px] pointer-events-none z-0" />
@@ -270,34 +273,90 @@ export default function MainLayout({
 
             <button
               onClick={toggleDarkMode}
-              className="relative p-3 rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95
-                         backdrop-blur-xl bg-white/60 dark:bg-slate-800/50 
+              className="relative p-2.5 rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95
+                         backdrop-blur-xl bg-white/60 dark:bg-slate-800/60 
                          border border-white/60 dark:border-white/10 
-                         text-slate-800 dark:text-yellow-400 shadow-sm overflow-hidden flex items-center justify-center w-[46px] h-[46px]"
-              title="تغییر تم (تاریک/روشن)"
+                         shadow-sm overflow-hidden flex items-center justify-center w-[48px] h-[48px] group"
+              title="تغییر تم (روز / شب)"
             >
               <AnimatePresence mode="wait">
                 {isDarkMode ? (
                   <motion.div
-                    key="moon"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute"
+                    key="moon-container"
+                    initial={
+                      enableThemeTransitions
+                        ? { y: 24, x: 10, scale: 0.4, rotate: -45, opacity: 0 }
+                        : { opacity: 0 }
+                    }
+                    animate={
+                      enableThemeTransitions
+                        ? { y: 0, x: 0, scale: 1, rotate: 0, opacity: 1 }
+                        : { opacity: 1 }
+                    }
+                    exit={
+                      enableThemeTransitions
+                        ? { y: 24, x: 10, scale: 0.4, rotate: 45, opacity: 0 }
+                        : { opacity: 0 }
+                    }
+                    transition={{ duration: 0.45, ease: [0.34, 1.3, 0.64, 1] }}
+                    className="relative flex items-center justify-center w-full h-full text-amber-300"
                   >
-                    <Moon className="w-5 h-5 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+                    {/* هاله نئونی ماه */}
+                    <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-[8px] scale-75 pointer-events-none" />
+
+                    {/* هلال ماه نئونی */}
+                    <Moon className="w-5 h-5 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)] relative z-10 text-amber-300 fill-amber-300/20" />
+
+                    {/* ستاره‌های چشمک‌زن همراه با طلوع ماه */}
+                    {enableThemeTransitions && (
+                      <>
+                        <motion.span
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: [0, 1.2, 0.8], opacity: [0, 1, 0.8] }}
+                          transition={{ delay: 0.2, duration: 0.5 }}
+                          className="absolute -top-0.5 right-1 w-1.5 h-1.5 bg-cyan-300 rounded-full shadow-[0_0_6px_#67e8f9]"
+                        />
+                        <motion.span
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: [0, 1, 0.7], opacity: [0, 1, 0.7] }}
+                          transition={{ delay: 0.35, duration: 0.5 }}
+                          className="absolute bottom-1 -left-0.5 w-1 h-1 bg-amber-200 rounded-full shadow-[0_0_4px_#fde68a]"
+                        />
+                      </>
+                    )}
                   </motion.div>
                 ) : (
                   <motion.div
-                    key="sun"
-                    initial={{ rotate: 90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute"
+                    key="sun-container"
+                    initial={
+                      enableThemeTransitions
+                        ? { y: 24, x: -10, scale: 0.4, rotate: -90, opacity: 0 }
+                        : { opacity: 0 }
+                    }
+                    animate={
+                      enableThemeTransitions
+                        ? { y: 0, x: 0, scale: 1, rotate: 0, opacity: 1 }
+                        : { opacity: 1 }
+                    }
+                    exit={
+                      enableThemeTransitions
+                        ? { y: 24, x: -10, scale: 0.4, rotate: 60, opacity: 0 }
+                        : { opacity: 0 }
+                    }
+                    transition={{ duration: 0.45, ease: [0.34, 1.3, 0.64, 1] }}
+                    className="relative flex items-center justify-center w-full h-full text-amber-500"
                   >
-                    <Sun className="w-5 h-5 drop-shadow-sm" />
+                    {/* هاله گرم طلوع خورشید */}
+                    <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-[8px] scale-75 pointer-events-none" />
+
+                    {/* خورشید با پرتوهای نورانی و انیمیشن چرخان */}
+                    <motion.div
+                      animate={enableThemeTransitions ? { rotate: [0, 45, 90] } : {}}
+                      transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+                      className="relative z-10 flex items-center justify-center"
+                    >
+                      <Sun className="w-5 h-5 drop-shadow-[0_0_10px_rgba(245,158,11,0.7)] text-amber-500 fill-amber-400/20" />
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>

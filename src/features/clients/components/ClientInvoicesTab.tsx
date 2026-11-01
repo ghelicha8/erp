@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Search, X, Edit, Trash2, CheckCircle, Eye, Check,
   FileDown, Copy, Link as LinkIcon, MessageSquareWarning, 
-  CalendarDays, AlertTriangle, ShieldAlert, Image as ImageIcon
+  CalendarDays, AlertTriangle, ShieldAlert, Image as ImageIcon,
+  ChevronRight, ChevronLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,6 +22,7 @@ import InvoiceBuilder from '../../projects/components/InvoiceBuilder';
 import GlassSelect from '../../../components/ui/GlassSelect';
 // 💡 ایمپورت قالب اصلی فاکتور
 import A4InvoiceTemplate from '../../../components/ui/A4InvoiceTemplate';
+import { AppSearchInput } from '../../../components/ui/SharedLaborUI';
 
 const GlassCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => (
   <div onClick={onChange} className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${checked ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-white/50 dark:bg-slate-800/50 border-slate-300 dark:border-slate-600 hover:border-indigo-400'}`}>
@@ -30,14 +32,6 @@ const GlassCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () =
   </div>
 );
 
-const NeonSearchWrapper = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`relative rounded-xl group bg-white/10 dark:bg-slate-800/30 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all ${className}`}>
-    <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none group-focus-within:animate-pulse z-0" style={{ padding: '2px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}>
-      <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#ff00aa,#8b5cf6,#a855f7,#d946ef,#f59e0b,#ff00aa,#8b5cf6,#a855f7,#d946ef,#f59e0b,#ff00aa)] animate-[spin_4s_linear_infinite] group-focus-within:bg-gradient-to-r group-focus-within:from-purple-500 group-focus-within:to-fuchsia-500 group-focus-within:animate-none" />
-    </div>
-    <div className="relative z-10 w-full h-full bg-transparent flex items-center px-4">{children}</div>
-  </div>
-);
 
 const InvoiceStatusBadge = ({ status }: { status: InvoiceStatus }) => {
   const config = {
@@ -326,16 +320,13 @@ export default function ClientInvoicesTab({ clientId }: { clientId: string }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 bg-white/30 dark:bg-slate-900/30 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-sm rounded-[2rem] px-6 py-4 z-[50] relative">
-        <NeonSearchWrapper className="flex-1 w-full xl:w-auto min-w-[250px] h-[46px]">
-          <Search className="w-5 h-5 text-slate-400 shrink-0" />
-          <input 
-            placeholder="جستجو با شماره یا نام چاپی..." 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-            className="w-full h-full bg-transparent border-none outline-none text-sm font-bold text-slate-800 dark:text-white pl-2 pr-4 transition-colors placeholder:text-slate-500" 
+        <div className="flex-1 w-full xl:w-auto min-w-[250px]">
+          <AppSearchInput
+            placeholder="جستجو با شماره یا نام چاپی..."
+            value={searchQuery}
+            onChange={setSearchQuery}
           />
-          {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></button>}
-        </NeonSearchWrapper>
+        </div>
         
         <div className="w-full xl:w-px h-px xl:h-8 bg-slate-300 dark:bg-slate-700 hidden xl:block" />
         

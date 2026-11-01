@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { generateUUID } from '../core/utils/uuid';
 
 export type ChequeStatus = 'PENDING' | 'CASHED' | 'BOUNCED' | 'RETURNED' | 'EXCHANGED';
 export type AllocationRecordType = 'NONE' | 'PURCHASE' | 'LABOR' | 'LOGISTICS';
@@ -45,10 +46,15 @@ export interface Transaction {
     serialNumber?: string;
     series?: string;
     bank?: string;
+    bankName?: string;
+    branch?: string;
+    accountNumber?: string;
+    receiver?: string;
     issueDate?: string;
     dueDate?: string;
     status: ChequeStatus; 
     history: ChequeHistory[];
+    [key: string]: any;
   };
 }
 
@@ -69,7 +75,7 @@ export const useFinanceStore = create<FinanceState>()(
       transactions: [],
       
       addTransaction: (tx) => set((state) => ({
-        transactions: [...state.transactions, { ...tx, id: crypto.randomUUID() }]
+        transactions: [...state.transactions, { ...tx, id: generateUUID() }]
       })),
       
       updateTransaction: (id, data) => set((state) => ({
@@ -87,7 +93,7 @@ export const useFinanceStore = create<FinanceState>()(
               const previousStatus = t.chequeDetails.status;
               const { history, ...oldChequeDetails } = t.chequeDetails;
               const fullSnapshot = { ...oldChequeDetails, amount: t.amount, attachments: t.attachments, textReceipt: t.textReceipt, description: t.description };
-              const newHistoryRecord: ChequeHistory = { id: crypto.randomUUID(), date, previousStatus, newStatus, description, attachments, snapshot: fullSnapshot };
+              const newHistoryRecord: ChequeHistory = { id: generateUUID(), date, previousStatus, newStatus, description, attachments, snapshot: fullSnapshot };
 
               return {
                 ...t,

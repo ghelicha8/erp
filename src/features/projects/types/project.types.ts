@@ -1,4 +1,4 @@
-import type { LaborRecord } from './core.types';
+import type { LaborRecord } from '../../../types/core.types';
 
 export type ProjectStatus = 'IN_PROGRESS' | 'FINISHED' | 'PAUSED';
 export type ContractType = 'CONTRAT' | 'METRI' | 'PERCENTAGE' | 'CUSTOM';
@@ -80,4 +80,5 @@ export interface Project {
   // 👈 آرایه‌های جدید به هسته پروژه اضافه شدند
   purchases?: PurchaseRecord[];
   logistics?: LogisticsRecord[];
+  address?: string;
 }
